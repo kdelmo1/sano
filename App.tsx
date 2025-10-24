@@ -1,20 +1,14 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StrictMode } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+
+import Home from "./screens/home/home";
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Welcome to sano</Text>
-      <StatusBar style="auto" />
-    </View>
+    <StrictMode>
+      <SafeAreaProvider>
+        <Home></Home>
+      </SafeAreaProvider>
+    </StrictMode>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

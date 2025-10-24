@@ -7,55 +7,56 @@ import {
   Pressable,
   Modal,
   TextInput,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useEffect, useState } from "react";
 import Post from "./post";
 import Search from "./filter";
-import Avatar from "./accessDB";
 import { supabase } from "./supabaseClient";
 
 export default function Home() {
-  const posts = [
-    { id: 1, name: "john", date: Date(), content: "null" },
-    { id: 2, name: "ethan", date: Date(), content: "null" },
-    { id: 3, name: "mark", date: Date(), content: "null" },
-    { id: 1, name: "john", date: Date(), content: "null" },
-    { id: 2, name: "ethan", date: Date(), content: "null" },
-    { id: 3, name: "mark", date: Date(), content: "null" },
-    { id: 1, name: "john", date: Date(), content: "null" },
-    { id: 2, name: "ethan", date: Date(), content: "null" },
-    { id: 3, name: "mark", date: Date(), content: "null" },
-    { id: 1, name: "john", date: Date(), content: "null" },
-    { id: 2, name: "ethan", date: Date(), content: "null" },
-    { id: 3, name: "mark", date: Date(), content: "null" },
-    { id: 1, name: "john", date: Date(), content: "null" },
-    { id: 2, name: "ethan", date: Date(), content: "null" },
-    { id: 3, name: "mark", date: Date(), content: "null" },
-  ]; // delete later for post data
+  const [posts, setPosts] = React.useState<
+    { id: number; name: string; date: string; content: string }[]
+  >([]);
 
   const [openPost, setOpenPost] = React.useState<number>(-1);
   const [toPost, setToPost] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [getPost, setGetPost] = React.useState(false);
+
+  const onRefresh = () => {
+    setGetPost(!getPost);
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  };
 
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    let ignore = false;
-    console.log(123);
-    async function getProfile() {
+    async function getFromDB() {
       const { data, error } = await supabase.from("Posts").select(`*`);
+      setPosts([]);
       console.log(data, error);
-      if (!ignore) {
-        if (error) {
-        } else if (data) {
-        }
+      if (error) {
+        console.log("err");
+      } else {
+        setPosts(
+          data.map((val) => {
+            return {
+              id: val["id"],
+              name: "John",
+              date: Date(),
+              content: "NULL",
+            };
+          })
+        );
       }
     }
-    getProfile();
-    return () => {
-      ignore = true;
-    };
-  }, [openPost]);
+    getFromDB();
+  }, [getPost]);
 
   return (
     <View
@@ -72,7 +73,12 @@ export default function Home() {
             <Text>Sano</Text>
           </View>
         </View>
-        <ScrollView style={styles.scroller}>
+        <ScrollView
+          style={styles.scroller}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
           {posts.map((post, index) => (
             <Post
               key={index}
