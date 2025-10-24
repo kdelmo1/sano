@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useEffect, useState } from "react";
 import Post from "./post";
 import Search from "./filter";
+import Form from "./form";
 import { supabase } from "./supabaseClient";
 
 export default function Home() {
@@ -25,9 +26,6 @@ export default function Home() {
   const [toPost, setToPost] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const [getPost, setGetPost] = React.useState(false);
-  const [myID, setMyID] = React.useState("");
-  const [myContent, setMyContent] = React.useState("");
-  const [newPost, setNewPost] = React.useState(false);
 
   const onRefresh = () => {
     setGetPost(!getPost);
@@ -37,24 +35,7 @@ export default function Home() {
     }, 2000);
   };
 
-  function onChangeNumber(
-    text: string,
-    setState: React.Dispatch<React.SetStateAction<string>>
-  ) {
-    for (let i of text) {
-      const isNum = i.charCodeAt(0) - "0".charCodeAt(0);
-      if (isNum < 0 || isNum > 9) {
-        return;
-      }
-    }
-    setState(text);
-  }
-
   const insets = useSafeAreaInsets();
-
-  const handlePost = () => {
-    setNewPost(!newPost);
-  };
 
   useEffect(() => {
     async function getFromDB() {
@@ -78,29 +59,6 @@ export default function Home() {
     }
     getFromDB();
   }, [getPost]);
-
-  useEffect(() => {
-    async function insertToDB() {
-      // check if post is valid
-      const time = new Date();
-      const { error } = await supabase.from("Posts").insert({
-        postID: Number(myID),
-        id: 0,
-        name: "John Doe",
-        startTime: time.toISOString(),
-        content: myContent,
-      });
-      console.log("Posted");
-      if (error) {
-        console.log(error);
-      } else {
-        setMyID("");
-        setMyContent("");
-        setToPost(false);
-      }
-    }
-    insertToDB();
-  }, [newPost]);
 
   return (
     <View
@@ -143,7 +101,8 @@ export default function Home() {
             }}
           ></Pressable>
         </View>
-        <Modal transparent={true} visible={toPost}>
+        <Form toPost={toPost} setToPost={setToPost}></Form>
+        {/* <Modal transparent={true} visible={toPost}>
           <View
             style={{
               width: "100%",
@@ -230,7 +189,8 @@ export default function Home() {
               </Pressable>
             </View>
           </View>
-        </Modal>
+        </Modal> */}
+
         <StatusBar style="auto" />
       </View>
     </View>
