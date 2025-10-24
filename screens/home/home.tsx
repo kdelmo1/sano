@@ -5,10 +5,7 @@ import {
   View,
   ScrollView,
   Pressable,
-  Modal,
-  TextInput,
   RefreshControl,
-  Button,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useEffect, useState } from "react";
@@ -39,9 +36,17 @@ export default function Home() {
 
   useEffect(() => {
     async function getFromDB() {
-      const { data, error } = await supabase.from("Posts").select(`*`);
+      //const { data, error } = await supabase.from("Posts").select(`*`);
+      const data = [
+        { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
+        { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
+        { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
+        { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
+        { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
+        { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
+      ];
+      const error = null;
       setPosts([]);
-      console.log(data, error);
       if (error) {
         console.log("err");
       } else {
