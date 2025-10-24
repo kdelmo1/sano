@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import LoginScreen from './screens/auth/loginScreen'
-import { View } from 'react-native'
+import { View, Text } from 'react-native'
 import { Session } from '@supabase/supabase-js'
 
 export default function App() {
@@ -18,8 +18,12 @@ export default function App() {
   }, [])
 
   return (
-    <View>
+  <View>
+    {session ? (
+      <Text>Welcome, {session.user.email}</Text>
+    ) : (
       <LoginScreen />
-    </View>
+    )}
+  </View>
   )
 }
