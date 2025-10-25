@@ -88,6 +88,7 @@ export default function popup(data: {
           height: "100%",
           alignItems: "center",
           justifyContent: "center",
+          backgroundColor: "#606070",
         }}
       >
         <View
@@ -124,7 +125,40 @@ export default function popup(data: {
               }}
             ></Pressable>
           </View>
-          <TextInput
+          <View
+            style={{
+              width: "100%",
+              paddingHorizontal: "5%",
+              paddingVertical: "3%",
+              //borderColor: "#000",
+              //borderWidth: 1,
+            }}
+          >
+            <Text style={{ fontSize: 20 }}>From</Text>
+            <RNDateTimePicker
+              value={startDate}
+              onChange={setDateFunc(setStartDate)}
+              mode="datetime"
+            ></RNDateTimePicker>
+          </View>
+
+          <View
+            style={{
+              width: "100%",
+              paddingHorizontal: "5%",
+              paddingVertical: "3%",
+              //borderColor: "#000",
+              //borderWidth: 1,
+            }}
+          >
+            <Text style={{ fontSize: 20 }}>To</Text>
+            <RNDateTimePicker
+              value={endDate}
+              onChange={setDateFunc(setEndDate)}
+              mode="datetime"
+            ></RNDateTimePicker>
+          </View>
+          {/* <TextInput
             style={{
               borderWidth: 1,
               borderColor: "#000",
@@ -132,19 +166,21 @@ export default function popup(data: {
               width: "90%",
               padding: "2%",
               marginTop: "5%",
+              borderRadius: 5,
             }}
             onChangeText={(text) => onChangeNumber(text, setMyID)}
             value={myID}
-          ></TextInput>
+          ></TextInput> */}
           <TextInput
             style={{
               borderWidth: 1,
               borderColor: "#000",
-              backgroundColor: "#888",
               width: "90%",
-              height: "60%",
-              padding: "2%",
+              height: "40%",
+              padding: "4%",
               marginTop: "5%",
+              borderRadius: 5,
+              fontSize: 20,
             }}
             multiline
             numberOfLines={4}
@@ -153,37 +189,30 @@ export default function popup(data: {
             }}
             value={myContent}
           ></TextInput>
-
-          <View style={{ width: "100%" }}>
-            <Text>From</Text>
-          </View>
-          <RNDateTimePicker
-            value={startDate}
-            onChange={setDateFunc(setStartDate)}
-            mode="datetime"
-          ></RNDateTimePicker>
-          <View style={{ width: "100%" }}>
-            <Text>To</Text>
-          </View>
-          <RNDateTimePicker
-            value={endDate}
-            onChange={setDateFunc(setEndDate)}
-            mode="datetime"
-          ></RNDateTimePicker>
-
-          <Pressable
+          <View
             style={{
-              margin: "5%",
-              backgroundColor: "rgba(48, 48, 255, 1)",
-              padding: "2%",
-              borderRadius: 10,
-            }}
-            onPress={() => {
-              handlePost();
+              //borderColor: "#000",
+              //borderWidth: 1,
+              width: "100%",
+              padding: "5%",
+              direction: "rtl",
             }}
           >
-            <Text style={{ fontSize: 20, color: "#FFF" }}>Post</Text>
-          </Pressable>
+            <Pressable
+              style={{
+                backgroundColor: "rgba(48, 48, 255, 1)",
+                padding: "2%",
+                borderRadius: 10,
+                width: "20%",
+                alignItems: "center",
+              }}
+              onPress={() => {
+                handlePost();
+              }}
+            >
+              <Text style={{ fontSize: 20, color: "#FFF" }}>Post</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     </Modal>
