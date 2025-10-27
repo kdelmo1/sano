@@ -1,20 +1,29 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StrictMode } from "react";
+import { useState } from 'react';
+import { View } from 'react-native';
+import { SafeAreaProvider } from "react-native-safe-area-context";
+
+import LoginScreen from './screens/auth/loginScreen';
+import Home from './screens/home/home';
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Welcome to sano</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+	const [isLoggedIn, setIsLoggedIn] = useState(false)
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+	const handleLoginSuccess = () => {
+		setIsLoggedIn(true)
+	}
+
+	return (
+    <StrictMode>
+      <SafeAreaProvider>
+        <View>
+          {isLoggedIn ? (
+            <Home />
+          ) : (
+            <LoginScreen onLoginSuccess={handleLoginSuccess} />
+          )}
+        </View>
+      </SafeAreaProvider>
+    </StrictMode>
+	)
+}
