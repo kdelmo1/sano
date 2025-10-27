@@ -6,6 +6,7 @@ import {
   ScrollView,
   Pressable,
   RefreshControl,
+  TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useEffect, useState } from "react";
@@ -36,24 +37,28 @@ export default function Home() {
 
   useEffect(() => {
     async function getFromDB() {
-      //const { data, error } = await supabase.from("Posts").select(`*`);
-      const data = [
-        { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
-        { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
-        { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
-        { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
-        { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
-        { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
-      ];
-      const error = null;
+      const { data, error } = await supabase
+        .from("Posts")
+        .select(`*`)
+        .order("startTime", { ascending: false });
+      // const data = [
+      //   { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
+      //   { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
+      //   { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
+      //   { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
+      //   { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
+      //   { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
+      // ];
+      // const error = null;
+
       setPosts([]);
       if (error) {
-        console.log("err");
+        console.log("err", error);
       } else {
         setPosts(
           data.map((val) => {
             return {
-              id: val["id"],
+              id: val["postID"],
               name: val["name"],
               date: val["startTime"],
               content: val["content"],
@@ -76,8 +81,12 @@ export default function Home() {
     >
       <View style={styles.container}>
         <View style={styles.navbar}>
-          <View style={styles.logo}>
-            <Text>Sano</Text>
+          <View style={styles.search_bar_container}>
+            <TextInput
+              style={styles.search_input}
+              placeholder="Search for posts"
+              editable={false}
+            />
           </View>
         </View>
         <ScrollView
@@ -98,15 +107,38 @@ export default function Home() {
             />
           ))}
         </ScrollView>
+        <Form
+          toPost={toPost}
+          setToPost={setToPost}
+          onPostSuccess={() => setGetPost((prev) => !prev)}
+        />
         <View style={styles.footer}>
+          {/* Post button */}
           <Pressable
-            style={styles.button}
+            style={styles.nav_button}
             onPress={() => {
               setToPost(true);
             }}
-          ></Pressable>
+          >
+            <Text style={styles.plus_text}>+</Text>
+          </Pressable>
+
+          {/* main feed button */}
+          <Pressable style={styles.nav_button} onPress={onRefresh}>
+            <Text style={styles.nav_text}>🏠</Text>
+          </Pressable>
+
+          {/* profile page button */}
+          <Pressable
+            style={styles.nav_button}
+            onPress={() => {
+              console.log("Navigating to Profile Page...");
+            }}
+          >
+            <Text style={styles.nav_text}>👤</Text>
+          </Pressable>
         </View>
-        <Form toPost={toPost} setToPost={setToPost}></Form>
+
         {/* <Modal transparent={true} visible={toPost}>
           <View
             style={{
@@ -218,36 +250,76 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "10%",
     borderColor: "#000",
-    borderWidth: 1,
+    borderWidth: 0,
+    // borderBottomWidth: 1,
+    justifyContent: "flex-end",
   },
-  logo: {
-    top: 0,
-    height: "50%",
+  // logo: {
+  //   top: 0,
+  //   height: "50%",
+  //   width: "100%",
+  //   alignItems: "center" as const,
+  //   justifyContent: "center" as const,
+  // },
+  search_bar_container: {
     width: "100%",
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    paddingHorizontal: "5%",
+    paddingBottom: 15,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  search_input: {
+    width: "100%",
+    height: 40,
+    backgroundColor: "#EEEEEE",
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
   },
   scroller: {
     backgroundColor: "#FFF",
     position: "absolute" as const,
     width: "100%",
-    height: "85%",
+    height: "80%",
     top: "10%",
   },
   footer: {
     width: "100%",
-    height: "5%",
-    top: "47.5%",
+    position: "absolute" as const,
+    bottom: 0,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    borderTopWidth: 1,
     borderColor: "#000",
-    borderWidth: 1,
+    zIndex: 100,
+  },
+  nav_button: {
+    height: 40,
+    width: 80, // Set a specific width
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: 5,
   },
-  button: {
-    height: "100%",
-    aspectRatio: 1,
-    borderColor: "#000",
-    borderWidth: 1,
-    borderRadius: "100%",
+  nav_text: {
+    fontSize: 24, // Size for emoji icons
+  },
+
+  // button: {
+  //   height: "100%",
+  //   aspectRatio: 1,
+  //   borderColor: "#000",
+  //   borderWidth: 1,
+  //   borderRadius: "100%",
+  // },
+
+  plus_text: {
+    fontSize: 30,
+    lineHeight: 30,
+    color: "rgba(48, 48, 255, 1)", // Use the original blue color for the plus icon
+    fontWeight: "bold",
   },
 });

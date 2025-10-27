@@ -8,77 +8,125 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
-import RNDateTimePicker from "@react-native-community/datetimepicker";
-import DateTimePickerEvent from "@react-native-community/datetimepicker";
+
+// Maybe for later feature including time slots
+// import RNDateTimePicker from "@react-native-community/datetimepicker";
+// import DateTimePickerEvent from "@react-native-community/datetimepicker";
 
 export default function popup(data: {
   toPost: boolean;
   setToPost: React.Dispatch<React.SetStateAction<boolean>>;
+  onPostSuccess: () => void;
 }) {
   const toPost = data.toPost;
   const setToPost = data.setToPost;
   const [myID, setMyID] = React.useState("");
-  const [myContent, setMyContent] = React.useState("");
-  const [startDate, setStartDate] = React.useState(new Date());
-  const [endDate, setEndDate] = React.useState(new Date());
+  const onPostSuccess = data.onPostSuccess;
 
-  function onChangeNumber(
-    text: string,
-    setState: React.Dispatch<React.SetStateAction<string>>
-  ) {
-    for (let i of text) {
-      const isNum = i.charCodeAt(0) - "0".charCodeAt(0);
-      if (isNum < 0 || isNum > 9) {
-        return;
-      }
+  const [myContent, setMyContent] = React.useState("");
+  // const [startDate, setStartDate] = React.useState(new Date());
+  // const [endDate, setEndDate] = React.useState(new Date());
+
+  const resetForm = () => {
+    setMyContent("");
+  };
+
+  useEffect(() => {
+    if (toPost) {
+      resetForm();
     }
-    setState(text);
-  }
+  }, [toPost]);
+
+  // function onChangeNumber(
+  //   text: string,
+  //   setState: React.Dispatch<React.SetStateAction<string>>
+  // ) {
+  //   for (let i of text) {
+  //     const isNum = i.charCodeAt(0) - "0".charCodeAt(0);
+  //     if (isNum < 0 || isNum > 9) {
+  //       return;
+  //     }
+  //   }
+  //   setState(text);
+  // }
 
   const handlePost = () => {
     insertToDB();
   };
 
-  function setDateFunc(setDate: React.Dispatch<React.SetStateAction<Date>>) {
-    const handleSetDate = (event: any, date: Date | undefined) => {
-      const {
-        type,
-        nativeEvent: { timestamp, utcOffset },
-      } = event;
-      setDate(new Date(timestamp));
-    };
-    return handleSetDate;
-  }
+  // function setDateFunc(setDate: React.Dispatch<React.SetStateAction<Date>>) {
+  //   const handleSetDate = (event: any, date: Date | undefined) => {
+  //     const {
+  //       type,
+  //       nativeEvent: { timestamp, utcOffset },
+  //     } = event;
+  //     setDate(new Date(timestamp));
+  //   };
+  //   return handleSetDate;
+  // }
 
   async function insertToDB() {
-    // add check to see if post is valid
-    const time = new Date();
-    // uncomment to flood supabase
-    // const { error } = await supabase.from("Posts").insert({
-    //   postID: Number(myID),
+    // // add check to see if post is valid
+    // const time = new Date();
+    // // uncomment to flood supabase
+    // const { data: userData, error: authError } = await supabase.auth.getUser(){
+    // //   postID: Number(myID),
     //   id: 0,
     //   name: "John Doe",
     //   startTime: time.toISOString(),
     //   content: myContent,
-    // });
-    const sendJSON = {
-      postID: 100,
-      id: 0,
-      name: "John Doe",
-      startTime: startDate,
-      endTime: endDate,
+    if (!myContent.trim()) {
+      console.log("Post cannot be empty.");
+      return;
+    }
+
+    const { data: userData, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !userData?.user) {
+      console.error("Authentication Error: User is not logged in.", authError);
+      alert("You must log in to create a post.");
+      return;
+    }
+    const userId = userData.user.id;
+
+    const newPost = {
+      id: userId,
+      name: "user",
       content: myContent,
     };
-    const error = null;
-    console.log("Post:", sendJSON);
+
+    const { error } = await supabase.from("Posts").insert(newPost);
+
     if (error) {
-      console.log(error);
+      console.error("Supabase Insert Error:", error);
+      alert("Failed to post: " + error.message);
     } else {
-      setMyID("");
-      setMyContent("");
+      console.log("Post created successfully:", newPost);
+
+      resetForm();
       setToPost(false);
+      onPostSuccess();
     }
   }
+
+  //   const sendJSON = {
+  //     postID: 100,
+  //     id: 0,
+  //     name: "John Doe",
+  //     startTime: startDate,
+  //     endTime: endDate,
+  //     content: myContent,
+  //   };
+  //   const error = null;
+  //   console.log("Post:", sendJSON);
+  //   if (error) {
+  //     console.log(error);
+  //   } else {
+  //     setMyID("");
+  //     setMyContent("");
+  //     setToPost(false);
+  //   }
+  // }
 
   return (
     <Modal transparent={true} visible={toPost}>
@@ -122,10 +170,11 @@ export default function popup(data: {
               }}
               onPress={() => {
                 setToPost(false);
+                resetForm();
               }}
             ></Pressable>
           </View>
-          <View
+          {/* <View
             style={{
               width: "100%",
               paddingHorizontal: "5%",
@@ -157,7 +206,7 @@ export default function popup(data: {
               onChange={setDateFunc(setEndDate)}
               mode="datetime"
             ></RNDateTimePicker>
-          </View>
+          </View> */}
           {/* <TextInput
             style={{
               borderWidth: 1,
