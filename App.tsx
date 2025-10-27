@@ -1,37 +1,35 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-import { supabase } from './lib/supabase'
-import { StrictMode, useState, useEffect } from "react";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import Home from "./screens/home/home";
-import { Session } from '@supabase/supabase-js'
+import { View, StyleSheet } from 'react-native'
+import { useState } from 'react'
 import LoginScreen from './screens/auth/loginScreen'
+import Home from './screens/home/home'
+import { StrictMode } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function App() {
-  const [session, setSession] = useState<Session | null>(null)
+	const [isLoggedIn, setIsLoggedIn] = useState(false)
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-    })
+	const handleLoginSuccess = () => {
+		setIsLoggedIn(true)
+	}
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
-  }, [])
-
-  return (
-    <View>
-      {session ? (
-      <Text>Welcome, {session.user.email}</Text>
-    ) : (
-      <LoginScreen />
-    )}
-    {/* </View>
+	return (
     <StrictMode>
-      <SafeAreaProvider>
-        <Home></Home>
-      </SafeAreaProvider>
-    </StrictMode> */}
-  );
+		<SafeAreaProvider>
+			<View style={styles.container}>
+				{isLoggedIn ? (
+					<Home />
+				) : (
+					<LoginScreen onLoginSuccess={handleLoginSuccess} />
+				)}
+			</View>
+		</SafeAreaProvider>
+    </StrictMode>
+	)
 }
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		backgroundColor: '#fff',
+	},
+})
