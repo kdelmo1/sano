@@ -14,8 +14,9 @@ import Post from "./post";
 import Search from "./filter";
 import Form from "./form";
 import { supabase } from "./supabaseClient";
+import { User } from "@supabase/supabase-js";
 
-export default function Home() {
+export default function Home(data: { user: User | null }) {
   const [posts, setPosts] = React.useState<
     { id: number; name: string; date: string; content: string }[]
   >([]);
@@ -41,15 +42,6 @@ export default function Home() {
         .from("Posts")
         .select(`*`)
         .order("startTime", { ascending: false });
-      // const data = [
-      //   { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
-      //   { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
-      //   { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
-      //   { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
-      //   { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
-      //   { id: 1, name: "John Doe", startTime: Date(), content: "NULL" },
-      // ];
-      // const error = null;
 
       setPosts([]);
       if (error) {
@@ -108,6 +100,7 @@ export default function Home() {
           ))}
         </ScrollView>
         <Form
+          user={data.user}
           toPost={toPost}
           setToPost={setToPost}
           onPostSuccess={() => setGetPost((prev) => !prev)}
@@ -138,95 +131,6 @@ export default function Home() {
             <Text style={styles.nav_text}>👤</Text>
           </Pressable>
         </View>
-
-        {/* <Modal transparent={true} visible={toPost}>
-          <View
-            style={{
-              width: "100%",
-              height: "100%",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <View
-              style={{
-                width: "95%",
-                height: "60%",
-                position: "absolute",
-                alignItems: "center",
-                backgroundColor: "#FFF",
-                borderRadius: 5,
-                borderWidth: 1,
-                borderColor: "#000",
-              }}
-            >
-              <View
-                style={{
-                  alignItems: "flex-end",
-                  width: "100%",
-                  height: "7%",
-                  padding: "2%",
-                }}
-              >
-                <Pressable
-                  style={{
-                    height: "100%",
-                    aspectRatio: 1,
-                    borderRadius: "100%",
-                    backgroundColor: "#FFF",
-                    borderWidth: 1,
-                    borderColor: "#000",
-                  }}
-                  onPress={() => {
-                    setToPost(false);
-                  }}
-                ></Pressable>
-              </View>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#000",
-                  backgroundColor: "#888",
-                  width: "90%",
-                  padding: "2%",
-                  marginTop: "5%",
-                }}
-                onChangeText={(text) => onChangeNumber(text, setMyID)}
-                value={myID}
-              ></TextInput>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#000",
-                  backgroundColor: "#888",
-                  width: "90%",
-                  height: "60%",
-                  padding: "2%",
-                  marginTop: "5%",
-                }}
-                multiline
-                numberOfLines={4}
-                onChangeText={(text) => {
-                  setMyContent(text);
-                }}
-                value={myContent}
-              ></TextInput>
-              <Pressable
-                style={{
-                  margin: "5%",
-                  backgroundColor: "rgba(48, 48, 255, 1)",
-                  padding: "2%",
-                  borderRadius: 10,
-                }}
-                onPress={() => {
-                  handlePost();
-                }}
-              >
-                <Text style={{ fontSize: 20, color: "#FFF" }}>Post</Text>
-              </Pressable>
-            </View>
-          </View>
-        </Modal> */}
 
         <StatusBar style="auto" />
       </View>

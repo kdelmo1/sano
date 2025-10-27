@@ -8,12 +8,14 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
+import { User } from "@supabase/supabase-js";
 
 // Maybe for later feature including time slots
 // import RNDateTimePicker from "@react-native-community/datetimepicker";
 // import DateTimePickerEvent from "@react-native-community/datetimepicker";
 
 export default function popup(data: {
+  user: User | null;
   toPost: boolean;
   setToPost: React.Dispatch<React.SetStateAction<boolean>>;
   onPostSuccess: () => void;
@@ -89,13 +91,14 @@ export default function popup(data: {
     // }
     // const userId = userData.user.id;
 
-    const postId = 1000;
+    const postId = 1003;
 
     const newPost = {
       postID: postId,
       studentID: 2,
       name: "John Doe",
       content: myContent,
+      studentEmail: data.user?.email,
     };
 
     const { error } = await supabase.from("Posts").insert(newPost);
