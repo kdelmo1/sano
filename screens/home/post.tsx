@@ -6,7 +6,7 @@ export default function Post(data: {
   id: number;
   name: string;
   date: string;
-  content: string | null;
+  content: string;
   openPost: number;
   setOpenPost: React.Dispatch<React.SetStateAction<number>>;
 }) {

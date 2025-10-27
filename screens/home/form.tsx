@@ -80,18 +80,21 @@ export default function popup(data: {
       return;
     }
 
-    const { data: userData, error: authError } = await supabase.auth.getUser();
+    // const { data: userData, error: authError } = await supabase.auth.getUser();
 
-    if (authError || !userData?.user) {
-      console.error("Authentication Error: User is not logged in.", authError);
-      alert("You must log in to create a post.");
-      return;
-    }
-    const userId = userData.user.id;
+    // if (authError || !userData?.user) {
+    //   console.error("Authentication Error: User is not logged in.", authError);
+    //   alert("You must log in to create a post.");
+    //   return;
+    // }
+    // const userId = userData.user.id;
+
+    const postId = 1000;
 
     const newPost = {
-      id: userId,
-      name: "user",
+      postID: postId,
+      studentID: 2,
+      name: "John Doe",
       content: myContent,
     };
 
