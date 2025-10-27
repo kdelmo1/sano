@@ -1,9 +1,10 @@
-import { View, StyleSheet } from 'react-native'
-import { useState } from 'react'
-import LoginScreen from './screens/auth/loginScreen'
-import Home from './screens/home/home'
 import { StrictMode } from "react";
+import { useState } from 'react';
+import { View } from 'react-native';
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
+import LoginScreen from './screens/auth/loginScreen';
+import Home from './screens/home/home';
 
 export default function App() {
 	const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -14,22 +15,15 @@ export default function App() {
 
 	return (
     <StrictMode>
-		<SafeAreaProvider>
-			<View style={styles.container}>
-				{isLoggedIn ? (
-					<Home />
-				) : (
-					<LoginScreen onLoginSuccess={handleLoginSuccess} />
-				)}
-			</View>
-		</SafeAreaProvider>
+      <SafeAreaProvider>
+        <View>
+          {isLoggedIn ? (
+            <Home />
+          ) : (
+            <LoginScreen onLoginSuccess={handleLoginSuccess} />
+          )}
+        </View>
+      </SafeAreaProvider>
     </StrictMode>
 	)
 }
-
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: '#fff',
-	},
-})
