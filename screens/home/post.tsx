@@ -32,42 +32,28 @@ export default function Post(data: {
         }
       }}
     >
-      {() => {
-        if (data.openPost == data.id) {
-          return (
+      <View style={styles.post_container}>
+        <View style={styles.post}>
+          {data.openPost == data.id ? (
             <DisplayView
-              id={data.id}
               name={data.name}
               date={postDate}
               content={data.content}
             />
-          );
-        } else {
-          const snippet = getSnippet(data.content);
-          return (
-            <View style={styles.post_container}>
-              <View style={styles.post}>
-                <HeaderView
-                  id={data.id}
-                  name={data.name}
-                  date={postDate}
-                  content={snippet}
-                />
-              </View>
-            </View>
-          );
-        }
-      }}
+          ) : (
+            <HeaderView
+              name={data.name}
+              date={postDate}
+              content={getSnippet(data.content)}
+            />
+          )}
+        </View>
+      </View>
     </Pressable>
   );
 }
 
-function HeaderView(data: {
-  id: number;
-  name: string;
-  date: Date;
-  content: string;
-}) {
+function HeaderView(data: { name: string; date: Date; content: string }) {
   return (
     <View style={styles.header_container}>
       <View style={styles.header_row}>
@@ -89,27 +75,15 @@ function HeaderView(data: {
   );
 }
 
-function DisplayView(data: {
-  id: number;
-  name: string;
-  date: Date;
-  content: string;
-}) {
+function DisplayView(data: { name: string; date: Date; content: string }) {
   return (
-    <View style={styles.post_container}>
-      <View style={styles.post}>
-        <HeaderView
-          id={data.id}
-          name={data.name}
-          date={data.date}
-          content={data.content}
-        />
-        <View style={styles.post_divider}></View>
-        <View style={styles.post_content}>
-          <Text style={{ color: "#000" }}>{data.content}</Text>
-        </View>
+    <>
+      <HeaderView name={data.name} date={data.date} content={""} />
+      <View style={styles.post_divider}></View>
+      <View style={styles.post_content}>
+        <Text style={{ color: "#000" }}>{data.content}</Text>
       </View>
-    </View>
+    </>
   );
 }
 

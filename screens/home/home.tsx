@@ -18,7 +18,7 @@ import { User } from "@supabase/supabase-js";
 
 export default function Home(data: { user: User | null }) {
   const [posts, setPosts] = React.useState<
-    { id: number; name: string; date: string; content: string }[]
+    { name: string; date: string; content: string }[]
   >([]);
 
   const [openPost, setOpenPost] = React.useState<number>(-1);
@@ -50,7 +50,6 @@ export default function Home(data: { user: User | null }) {
         setPosts(
           data.map((val) => {
             return {
-              id: val["postID"],
               name: val["name"],
               date: val["startTime"],
               content: val["content"],

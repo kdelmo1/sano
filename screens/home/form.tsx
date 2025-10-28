@@ -91,10 +91,7 @@ export default function popup(data: {
     // }
     // const userId = userData.user.id;
 
-    const postId = 1003;
-
     const newPost = {
-      postID: postId,
       studentID: 2,
       name: "John Doe",
       content: myContent,
