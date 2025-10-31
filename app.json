@@ -1,6 +1,8 @@
 {
   "expo": {
     "name": "sano",
+    "scheme": "sano",
+    "deepLinking": true,
     "slug": "sano",
     "version": "1.0.0",
     "orientation": "portrait",
