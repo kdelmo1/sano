@@ -1,5 +1,5 @@
 import { StrictMode, useEffect, useState } from "react";
-import { View } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import LoginScreen from "./screens/auth/loginScreen";
 import Home from "./screens/home/home";
@@ -9,7 +9,7 @@ import { User } from "@supabase/supabase-js";
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  // check auth when app loads or returns from OAuth
+  
   useEffect(() => {
     const initAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -37,10 +37,18 @@ export default function App() {
   return (
     <StrictMode>
       <SafeAreaProvider>
-        <View>
+        <View style={styles.container}>
           {isLoggedIn ? <Home user={user} /> : <LoginScreen onLoginSuccess={() => {}} />}
         </View>
       </SafeAreaProvider>
     </StrictMode>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
+});

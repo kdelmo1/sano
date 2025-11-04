@@ -7,24 +7,33 @@ import {
   Pressable,
   RefreshControl,
   TextInput,
+  Animated,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Post from "./post";
-import Search from "./filter";
 import Form from "./form";
-import { supabase } from "./supabaseClient";
+import { supabase } from "../../lib/supabase";
 import { User } from "@supabase/supabase-js";
+
+type NavButton = "home" | "post" | "signout";
 
 export default function Home(data: { user: User | null }) {
   const [posts, setPosts] = React.useState<
-    { name: string; date: string; content: string }[]
+    { id: string; title: string; startTime: string; endTime: string; name: string; content: string }[]
   >([]);
 
-  const [openPost, setOpenPost] = React.useState<number>(-1);
+  const [activeNav, setActiveNav] = useState<NavButton>("home");
   const [toPost, setToPost] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const [getPost, setGetPost] = React.useState(false);
+  const [openPost, setOpenPost] = React.useState("");
+
+  // Animation values for each button
+  const homeAnim = useRef(new Animated.Value(1)).current;
+  const postAnim = useRef(new Animated.Value(0)).current;
+  const signoutAnim = useRef(new Animated.Value(0)).current;
 
   const onRefresh = () => {
     setGetPost(!getPost);
@@ -50,8 +59,11 @@ export default function Home(data: { user: User | null }) {
         setPosts(
           data.map((val) => {
             return {
+              id: val["postID"],
+              title: val["title"] || "Untitled Post",
+              startTime: val["startTime"],
+              endTime: val["endTime"] || val["startTime"],
               name: val["name"],
-              date: val["startTime"],
               content: val["content"],
             };
           })
@@ -61,6 +73,39 @@ export default function Home(data: { user: User | null }) {
     getFromDB();
   }, [getPost]);
 
+  // Animate nav button selection
+  const animateNavButton = (button: NavButton) => {
+    const animations = {
+      home: homeAnim,
+      post: postAnim,
+      signout: signoutAnim,
+    };
+
+    // Animate all buttons
+    Object.entries(animations).forEach(([key, anim]) => {
+      Animated.spring(anim, {
+        toValue: key === button ? 1 : 0,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 7,
+      }).start();
+    });
+
+    setActiveNav(button);
+  };
+
+  const handleNavPress = (button: NavButton) => {
+    animateNavButton(button);
+    
+    if (button === "home") {
+      onRefresh();
+    } else if (button === "post") {
+      setToPost(true);
+    } else if (button === "signout") {
+      supabase.auth.signOut();
+    }
+  };
+
   return (
     <View
       style={{
@@ -68,6 +113,7 @@ export default function Home(data: { user: User | null }) {
         paddingLeft: insets.left,
         paddingBottom: insets.bottom,
         paddingRight: insets.right,
+        backgroundColor: "#F5F5F5",
       }}
     >
       <View style={styles.container}>
@@ -75,59 +121,115 @@ export default function Home(data: { user: User | null }) {
           <View style={styles.search_bar_container}>
             <TextInput
               style={styles.search_input}
-              placeholder="Search for posts"
-              editable={false}
+              placeholder="type something..."
+              placeholderTextColor="#999"
             />
           </View>
         </View>
+
         <ScrollView
           style={styles.scroller}
+          contentContainerStyle={styles.scrollContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {posts.map((post, index) => (
+          {posts.map((post) => (
             <Post
-              key={index}
-              id={index}
+              key={post.id}
+              id={post.id}
+              title={post.title}
+              startTime={post.startTime}
+              endTime={post.endTime}
               name={post.name}
-              date={post.date}
-              content={post.content}
               openPost={openPost}
               setOpenPost={setOpenPost}
             />
           ))}
         </ScrollView>
+
         <Form
           user={data.user}
           toPost={toPost}
           setToPost={setToPost}
           onPostSuccess={() => setGetPost((prev) => !prev)}
         />
-        <View style={styles.footer}>
-          {/* Post button */}
+
+        {/* Floating Navigation Bar */}
+        <View style={styles.floatingNav}>
+          {/* Post Button */}
           <Pressable
             style={styles.nav_button}
-            onPress={() => {
-              setToPost(true);
-            }}
+            onPress={() => handleNavPress("post")}
           >
-            <Text style={styles.plus_text}>+</Text>
+            <Animated.View
+              style={[
+                styles.navCircle,
+                {
+                  opacity: postAnim,
+                  transform: [{ scale: postAnim }],
+                },
+              ]}
+            />
+            <Image
+              source={require("../../assets/images/icon-post.png")}
+              style={[
+                styles.nav_icon_image,
+                {
+                  tintColor: activeNav === "post" ? "#D4B75F" : "#FFF",
+                },
+              ]}
+            />
           </Pressable>
 
-          {/* main feed button */}
-          <Pressable style={styles.nav_button} onPress={onRefresh}>
-            <Text style={styles.nav_text}>🏠</Text>
-          </Pressable>
-
-          {/* profile page button */}
+          {/* Home Button */}
           <Pressable
             style={styles.nav_button}
-            onPress={() => {
-              console.log("Navigating to Profile Page...");
-            }}
+            onPress={() => handleNavPress("home")}
           >
-            <Text style={styles.nav_text}>👤</Text>
+            <Animated.View
+              style={[
+                styles.navCircle,
+                {
+                  opacity: homeAnim,
+                  transform: [{ scale: homeAnim }],
+                },
+              ]}
+            />
+            <Image
+              source={require("../../assets/images/icon-home.png")}
+              style={[
+                styles.nav_icon_image,
+                {
+                  tintColor: activeNav === "home" ? "#D4B75F" : "#FFF",
+                },
+              ]}
+            />
+          </Pressable>
+
+          {/* Sign Out Button */}
+          <Pressable
+            style={styles.nav_button}
+            onPress={() => handleNavPress("signout")}
+          >
+            <Animated.View
+              style={[
+                styles.navCircle,
+                {
+                  opacity: signoutAnim,
+                  transform: [{ scale: signoutAnim }],
+                },
+              ]}
+            />
+            <Image
+              source={require("../../assets/images/icon-signout.png")}
+              style={[
+                styles.nav_icon_image,
+                {
+                  tintColor: activeNav === "signout" ? "#D4B75F" : "#FFF",
+                },
+              ]}
+            />
           </Pressable>
         </View>
 
@@ -140,89 +242,84 @@ export default function Home(data: { user: User | null }) {
 const styles = StyleSheet.create({
   container: {
     display: "flex",
-    backgroundColor: "#fff",
+    backgroundColor: "#F5F5F5",
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
     height: "100%",
   },
   navbar: {
-    backgroundColor: "#FFF",
+    backgroundColor: "#F5F5F5",
     position: "absolute" as const,
     top: 0,
     width: "100%",
-    height: "10%",
-    borderColor: "#000",
-    borderWidth: 0,
-    // borderBottomWidth: 1,
-    justifyContent: "flex-end",
+    paddingTop: 10,
+    zIndex: 10,
   },
-  // logo: {
-  //   top: 0,
-  //   height: "50%",
-  //   width: "100%",
-  //   alignItems: "center" as const,
-  //   justifyContent: "center" as const,
-  // },
   search_bar_container: {
     width: "100%",
-    paddingHorizontal: "5%",
+    paddingHorizontal: 20,
     paddingBottom: 15,
+    paddingTop: 10,
     alignItems: "center",
     justifyContent: "center",
   },
   search_input: {
-    width: "100%",
-    height: 40,
-    backgroundColor: "#EEEEEE",
-    borderRadius: 8,
-    paddingHorizontal: 15,
+    width: "85%",
+    height: 45,
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    paddingHorizontal: 20,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: "#CCCCCC",
+    color: "#333",
   },
   scroller: {
-    backgroundColor: "#FFF",
+    backgroundColor: "#F5F5F5",
     position: "absolute" as const,
     width: "100%",
-    height: "80%",
-    top: "10%",
+    top: 80,
+    bottom: 100,
   },
-  footer: {
-    width: "100%",
+  scrollContent: {
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  floatingNav: {
     position: "absolute" as const,
-    bottom: 0,
+    bottom: 10,
+    height: 70,
+    width: 390,
+    backgroundColor: "#D4B75F",
+    borderRadius: 20,
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    backgroundColor: "#FFF",
-    borderTopWidth: 1,
-    borderColor: "#000",
-    zIndex: 100,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 10,
   },
   nav_button: {
-    height: 40,
-    width: 80, // Set a specific width
+    width: 60,
+    height: 60,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 5,
+    position: "relative",
   },
-  nav_text: {
-    fontSize: 24, // Size for emoji icons
+  navCircle: {
+    position: "absolute",
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#FFF",
   },
-
-  // button: {
-  //   height: "100%",
-  //   aspectRatio: 1,
-  //   borderColor: "#000",
-  //   borderWidth: 1,
-  //   borderRadius: "100%",
-  // },
-
-  plus_text: {
-    fontSize: 30,
-    lineHeight: 30,
-    color: "rgba(48, 48, 255, 1)", // Use the original blue color for the plus icon
-    fontWeight: "bold",
+  nav_icon_image: {
+    width: 32,
+    height: 32,
+    zIndex: 1,
   },
 });

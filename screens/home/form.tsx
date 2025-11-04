@@ -5,14 +5,12 @@ import {
   Pressable,
   Modal,
   TextInput,
+  Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 import { User } from "@supabase/supabase-js";
-
-// Maybe for later feature including time slots
-// import RNDateTimePicker from "@react-native-community/datetimepicker";
-// import DateTimePickerEvent from "@react-native-community/datetimepicker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function popup(data: {
   user: User | null;
@@ -22,15 +20,18 @@ export default function popup(data: {
 }) {
   const toPost = data.toPost;
   const setToPost = data.setToPost;
-  const [myID, setMyID] = React.useState("");
   const onPostSuccess = data.onPostSuccess;
 
-  const [myContent, setMyContent] = React.useState("");
-  // const [startDate, setStartDate] = React.useState(new Date());
-  // const [endDate, setEndDate] = React.useState(new Date());
+  const [location, setLocation] = React.useState("");
+  const [startTime, setStartTime] = React.useState(new Date());
+  const [endTime, setEndTime] = React.useState(new Date());
+  const [showStartPicker, setShowStartPicker] = React.useState(false);
+  const [showEndPicker, setShowEndPicker] = React.useState(false);
 
   const resetForm = () => {
-    setMyContent("");
+    setLocation("");
+    setStartTime(new Date());
+    setEndTime(new Date());
   };
 
   useEffect(() => {
@@ -39,63 +40,57 @@ export default function popup(data: {
     }
   }, [toPost]);
 
-  // function onChangeNumber(
-  //   text: string,
-  //   setState: React.Dispatch<React.SetStateAction<string>>
-  // ) {
-  //   for (let i of text) {
-  //     const isNum = i.charCodeAt(0) - "0".charCodeAt(0);
-  //     if (isNum < 0 || isNum > 9) {
-  //       return;
-  //     }
-  //   }
-  //   setState(text);
-  // }
-
   const handlePost = () => {
     insertToDB();
   };
 
-  // function setDateFunc(setDate: React.Dispatch<React.SetStateAction<Date>>) {
-  //   const handleSetDate = (event: any, date: Date | undefined) => {
-  //     const {
-  //       type,
-  //       nativeEvent: { timestamp, utcOffset },
-  //     } = event;
-  //     setDate(new Date(timestamp));
-  //   };
-  //   return handleSetDate;
-  // }
+  const onStartTimeChange = (event: any, selectedDate?: Date) => {
+    setShowStartPicker(Platform.OS === "ios");
+    if (selectedDate) {
+      setStartTime(selectedDate);
+    }
+  };
+
+  const onEndTimeChange = (event: any, selectedDate?: Date) => {
+    setShowEndPicker(Platform.OS === "ios");
+    if (selectedDate) {
+      setEndTime(selectedDate);
+    }
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
 
   async function insertToDB() {
-    // // add check to see if post is valid
-    // const time = new Date();
-    // // uncomment to flood supabase
-    // const { data: userData, error: authError } = await supabase.auth.getUser(){
-    // //   postID: Number(myID),
-    //   id: 0,
-    //   name: "John Doe",
-    //   startTime: time.toISOString(),
-    //   content: myContent,
-    if (!myContent.trim()) {
-      console.log("Post cannot be empty.");
+    if (!location.trim()) {
+      alert("Location is required.");
       return;
     }
 
-    // const { data: userData, error: authError } = await supabase.auth.getUser();
+    if (endTime <= startTime) {
+      alert("End time must be after start time.");
+      return;
+    }
 
-    // if (authError || !userData?.user) {
-    //   console.error("Authentication Error: User is not logged in.", authError);
-    //   alert("You must log in to create a post.");
-    //   return;
-    // }
-    // const userId = userData.user.id;
+    // const userName = data.user?.user_metadata?.full_name || 
+    //                  data.user?.email?.split("@")[0] || 
+    //                  "Anonymous";
+    const userName = data.user?.email?.split("@")[0] || 
+                     "Anonymous";
 
     const newPost = {
-      studentID: 2,
-      name: "John Doe",
-      content: myContent,
+      title: location,
+      name: userName,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      location: location,
       studentEmail: data.user?.email,
+      studentID: 2,
     };
 
     const { error } = await supabase.from("Posts").insert(newPost);
@@ -105,164 +100,101 @@ export default function popup(data: {
       alert("Failed to post: " + error.message);
     } else {
       console.log("Post created successfully:", newPost);
-
       resetForm();
       setToPost(false);
       onPostSuccess();
     }
   }
 
-  //   const sendJSON = {
-  //     postID: 100,
-  //     id: 0,
-  //     name: "John Doe",
-  //     startTime: startDate,
-  //     endTime: endDate,
-  //     content: myContent,
-  //   };
-  //   const error = null;
-  //   console.log("Post:", sendJSON);
-  //   if (error) {
-  //     console.log(error);
-  //   } else {
-  //     setMyID("");
-  //     setMyContent("");
-  //     setToPost(false);
-  //   }
-  // }
-
   return (
-    <Modal transparent={true} visible={toPost}>
-      <View
-        style={{
-          width: "100%",
-          height: "100%",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#606070",
-        }}
-      >
-        <View
-          style={{
-            width: "95%",
-            height: "60%",
-            position: "absolute",
-            alignItems: "center",
-            backgroundColor: "#FFF",
-            borderRadius: 5,
-            borderWidth: 1,
-            borderColor: "#000",
-          }}
-        >
-          <View
-            style={{
-              alignItems: "flex-end",
-              width: "100%",
-              height: "7%",
-              padding: "2%",
-            }}
-          >
+    <Modal transparent={true} visible={toPost} animationType="fade">
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>new post</Text>
             <Pressable
-              style={{
-                height: "100%",
-                aspectRatio: 1,
-                borderRadius: "100%",
-                backgroundColor: "#FFF",
-                borderWidth: 1,
-                borderColor: "#000",
-              }}
+              style={styles.closeButton}
               onPress={() => {
                 setToPost(false);
                 resetForm();
               }}
-            ></Pressable>
-          </View>
-          {/* <View
-            style={{
-              width: "100%",
-              paddingHorizontal: "5%",
-              paddingVertical: "3%",
-              //borderColor: "#000",
-              //borderWidth: 1,
-            }}
-          >
-            <Text style={{ fontSize: 20 }}>From</Text>
-            <RNDateTimePicker
-              value={startDate}
-              onChange={setDateFunc(setStartDate)}
-              mode="datetime"
-            ></RNDateTimePicker>
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </Pressable>
           </View>
 
-          <View
-            style={{
-              width: "100%",
-              paddingHorizontal: "5%",
-              paddingVertical: "3%",
-              //borderColor: "#000",
-              //borderWidth: 1,
-            }}
-          >
-            <Text style={{ fontSize: 20 }}>To</Text>
-            <RNDateTimePicker
-              value={endDate}
-              onChange={setDateFunc(setEndDate)}
-              mode="datetime"
-            ></RNDateTimePicker>
-          </View> */}
-          {/* <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: "#000",
-              backgroundColor: "#888",
-              width: "90%",
-              padding: "2%",
-              marginTop: "5%",
-              borderRadius: 5,
-            }}
-            onChangeText={(text) => onChangeNumber(text, setMyID)}
-            value={myID}
-          ></TextInput> */}
-          <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: "#000",
-              width: "90%",
-              height: "40%",
-              padding: "4%",
-              marginTop: "5%",
-              borderRadius: 5,
-              fontSize: 20,
-            }}
-            multiline
-            numberOfLines={4}
-            onChangeText={(text) => {
-              setMyContent(text);
-            }}
-            value={myContent}
-          ></TextInput>
-          <View
-            style={{
-              //borderColor: "#000",
-              //borderWidth: 1,
-              width: "100%",
-              padding: "5%",
-              direction: "rtl",
-            }}
-          >
-            <Pressable
-              style={{
-                backgroundColor: "rgba(48, 48, 255, 1)",
-                padding: "2%",
-                borderRadius: 10,
-                width: "20%",
-                alignItems: "center",
-              }}
-              onPress={() => {
-                handlePost();
-              }}
-            >
-              <Text style={{ fontSize: 20, color: "#FFF" }}>Post</Text>
+          {/* Form Content */}
+          <View style={styles.formContent}>
+            {/* Location Field */}
+            <View style={styles.fieldContainer}>
+              <View style={styles.iconContainer}>
+                <Text style={styles.iconText}>📍</Text>
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="location"
+                placeholderTextColor="#999"
+                value={location}
+                onChangeText={setLocation}
+              />
+            </View>
+
+            {/* Start Time Field */}
+            <View style={styles.fieldContainer}>
+              <View style={styles.iconContainer}>
+                <Text style={styles.iconText}>🕐</Text>
+              </View>
+              <Pressable
+                style={styles.timeButton}
+                onPress={() => setShowStartPicker(true)}
+              >
+                <Text style={styles.timeButtonText}>
+                  Start: {formatTime(startTime)}
+                </Text>
+              </Pressable>
+            </View>
+
+            {showStartPicker && (
+              <DateTimePicker
+                value={startTime}
+                mode="time"
+                is24Hour={false}
+                display="default"
+                onChange={onStartTimeChange}
+              />
+            )}
+
+            {/* End Time Field */}
+            <View style={styles.fieldContainer}>
+              <View style={styles.iconContainer}>
+                <Text style={styles.iconText}>🕐</Text>
+              </View>
+              <Pressable
+                style={styles.timeButton}
+                onPress={() => setShowEndPicker(true)}
+              >
+                <Text style={styles.timeButtonText}>
+                  End: {formatTime(endTime)}
+                </Text>
+              </Pressable>
+            </View>
+
+            {showEndPicker && (
+              <DateTimePicker
+                value={endTime}
+                mode="time"
+                is24Hour={false}
+                display="default"
+                onChange={onEndTimeChange}
+              />
+            )}
+          </View>
+
+          {/* Post Button */}
+          <View style={styles.postButtonContainer}>
+            <Pressable style={styles.postButton} onPress={handlePost}>
+              <Text style={styles.postButtonText}>post ✓</Text>
             </Pressable>
           </View>
         </View>
@@ -270,3 +202,106 @@ export default function popup(data: {
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalContent: {
+    width: "90%",
+    backgroundColor: "#FFF",
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  header: {
+    backgroundColor: "#D4B75F",
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#FFF",
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#FFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: "#D4B75F",
+    fontWeight: "600",
+  },
+  formContent: {
+    padding: 20,
+  },
+  fieldContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  iconText: {
+    fontSize: 28,
+  },
+  input: {
+    flex: 1,
+    height: 50,
+    backgroundColor: "#F0F0F0",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    color: "#333",
+  },
+  timeButton: {
+    flex: 1,
+    height: 50,
+    backgroundColor: "#F0F0F0",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    justifyContent: "center",
+  },
+  timeButtonText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  postButtonContainer: {
+    padding: 20,
+    alignItems: "flex-end",
+  },
+  postButton: {
+    backgroundColor: "#D4B75F",
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  postButtonText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#FFF",
+  },
+});

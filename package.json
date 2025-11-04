@@ -15,6 +15,7 @@
     "@supabase/supabase-js": "^2.75.1",
     "expo": "~54.0.13",
     "expo-status-bar": "~3.0.8",
+    "expo-web-browser": "^15.0.8",
     "react": "19.1.0",
     "react-native": "0.81.4",
     "uuid": "^13.0.0",
