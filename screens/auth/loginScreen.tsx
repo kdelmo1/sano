@@ -1,136 +1,141 @@
-import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Alert } from "react-native";
-import { Input, Button, Text } from "@rneui/themed";
+import React, { useEffect } from "react";
+import { View, StyleSheet, Text, Pressable, Image, Platform } from "react-native";
 import { supabase } from "../../lib/supabase";
+import * as WebBrowser from "expo-web-browser";
 
 type LoginScreenProps = {
   onLoginSuccess: () => void;
 };
 
+WebBrowser.maybeCompleteAuthSession();
+
 export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const redirectUrl = "sano://auth/callback";
 
-  const isValidEmail = (email: string) => /\S+@\S+\.\S+/.test(email);
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_IN" && session) onLoginSuccess();
+      }
+    );
+    return () => listener.subscription.unsubscribe();
+  }, [onLoginSuccess]);
 
-  const [loading, setLoading] = useState(false);
-
-  // const handleLogin = async () => {
-  //   if (!isValidEmail(email)) {
-  //     setError("Please enter a valid email address.");
-  //     return;
-  //   }
-  //   if (password.length < 6) {
-  //     setError("Password must be at least 6 characters.");
-  //     return;
-  //   }
-
-  //   const { data: user, error } = await supabase
-  //     .from("users")
-  //     .select("*")
-  //     .eq("email", email)
-  //     .eq("password", password)
-  //     .maybeSingle();
-
-  //   supabase.auth.signInWithPassword({
-  //     email: email,
-  //     password: password,
-  //   });
-
-  //   if (error || !user) {
-  //     setError("Invalid email or password.");
-  //   } else {
-  //     setError("");
-  //     Alert.alert("Login successful!", `Welcome ${email}`);
-  //     onLoginSuccess();
-  //   }
-  // };
-
-  //   const handleSignUp = async () => {
-  //   if (!isValidEmail(email)) {
-  //     setError("Please enter a valid email address.");
-  //     return;
-  //   }
-  //   if (password.length < 6) {
-  //     setError("Password must be at least 6 characters.");
-  //     return;
-  //   }
-
-  //   const { data: existingUser } = await supabase
-  //     .from("users")
-  //     .select("*")
-  //     .eq("email", email)
-  //     .maybeSingle();
-
-  //   if (existingUser) {
-  //     setError("User already exists. Please log in.");
-  //     return;
-  //   }
-
-  //   const { error } = await supabase
-  //     .from("users")
-  //     .insert([{ email: email, password: password }]);
-
-  //   if (error) {
-  //     setError(error.message);
-  //   } else {
-  //     setError("");
-  //     Alert.alert("Success", "Account created! You can now log in.");
-  //   }
-  // };
-
-  async function signInWithEmail() {
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
-    if (error) Alert.alert(error.message);
-    onLoginSuccess();
+  function parseHashParams(url: string) {
+    const hashIndex = url.indexOf("#");
+    const query = hashIndex >= 0 ? url.substring(hashIndex + 1) : "";
+    const params = new URLSearchParams(query);
+    return {
+      access_token: params.get("access_token"),
+      refresh_token: params.get("refresh_token"),
+    };
   }
 
-  async function signUpWithEmail() {
-    const { data, error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
+  const signInWithGoogle = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: redirectUrl,
+        queryParams: {
+          prompt: "select_account",
+          access_type: "offline",
+        },
+      },
     });
-    if (error) Alert.alert(error.message);
-    console.log(error);
-    if (!data.session)
-      Alert.alert("Please check your inbox for email verification!");
-    onLoginSuccess();
-  }
+
+    if (error) {
+      console.error("Google login error:", error.message);
+      return;
+    }
+
+    if (data?.url) {
+      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+      if (res.type === "success" && res.url) {
+        const { access_token, refresh_token } = parseHashParams(res.url);
+        if (access_token && refresh_token) {
+          const { error: setErr } = await supabase.auth.setSession({
+            access_token,
+            refresh_token,
+          });
+          if (setErr) console.error("setSession error:", setErr.message);
+        } else {
+          console.error("Token non trovati nel callback URL");
+        }
+      }
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <Input
-        label="Email"
-        onChangeText={setEmail}
-        value={email}
-        placeholder="@ucsc.edu"
-        inputStyle={{ color: "red" }}
-      />
-      <Input
-        label="Password"
-        onChangeText={setPassword}
-        value={password}
-        secureTextEntry
-        placeholder="Password"
-        inputStyle={{ color: "red" }}
-      />
-      {error ? (
-        <Text style={{ color: "red", marginBottom: 10 }}>{error}</Text>
-      ) : null}
-      <Button title="Login" onPress={() => signInWithEmail()} />
-      <Button title="Sign Up" onPress={() => signUpWithEmail()} type="clear" />
+      <View style={styles.content}>
+        {/* Logo */}
+        <Image 
+          source={require('../../assets/images/sano-logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        
+        {/* Google Sign-In Button - Native Component */}
+        <Pressable 
+          style={({ pressed }) => [
+            styles.button,
+            pressed && styles.buttonPressed
+          ]} 
+          onPress={signInWithGoogle}
+        >
+          <Text style={styles.buttonText}>sign-in with google</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 50,
-    padding: 16,
-    backgroundColor: "#000",
+    flex: 1,
+    backgroundColor: "#DDBE45",
+    width: "100%",
+    height: "100%",
+  },
+  content: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 40,
+    width: "100%",
+  },
+  logo: {
+    width: 190,
+    height: 80,
+    marginBottom: 0,
+  },
+  button: {
+    backgroundColor: "#DDBE45",
+    width: "85%",
+    height: 65,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    // iOS shadow
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    // Android shadow
+    elevation: 8,
+  },
+  buttonPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 30,
+    fontWeight: "600",
+    fontFamily: 'System',
+    letterSpacing: 0.3,
   },
 });

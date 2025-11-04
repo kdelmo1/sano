@@ -1,32 +1,31 @@
-import { Header } from "@rneui/themed";
-import React, { useRef, useEffect, useState } from "react";
+import React from "react";
 import { StyleSheet, Text, View, Pressable } from "react-native";
 
 export default function Post(data: {
-  id: number;
+  id: string;
+  title: string;
+  startTime: string;
+  endTime: string;
   name: string;
-  date: string;
-  content: string;
-  openPost: number;
-  setOpenPost: React.Dispatch<React.SetStateAction<number>>;
+  openPost: string;
+  setOpenPost: React.Dispatch<React.SetStateAction<string>>;
 }) {
-  const postDate = new Date(data.date);
-
-  const getSnippet = (text: string | null, maxLength: number = 80) => {
-    if (!text) {
-      return "No content.";
-    }
-    if (text.length <= maxLength) {
-      return text;
-    }
-    return text.substring(0, maxLength).trim() + "...";
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).toLowerCase();
   };
+
+  const isOpen = data.openPost === data.id;
 
   return (
     <Pressable
       onPress={() => {
-        if (data.openPost == data.id) {
-          data.setOpenPost(-1);
+        if (isOpen) {
+          data.setOpenPost("");
         } else {
           data.setOpenPost(data.id);
         }
@@ -34,137 +33,65 @@ export default function Post(data: {
     >
       <View style={styles.post_container}>
         <View style={styles.post}>
-          {data.openPost == data.id ? (
-            <DisplayView
-              name={data.name}
-              date={postDate}
-              content={data.content}
-            />
-          ) : (
-            <HeaderView
-              name={data.name}
-              date={postDate}
-              content={getSnippet(data.content)}
-            />
-          )}
+          {/* Title */}
+          <Text style={styles.title}>{data.title}</Text>
+          
+          {/* Time Range */}
+          <Text style={styles.timeRange}>
+            {formatTime(data.startTime)} - {formatTime(data.endTime)}
+          </Text>
+          
+          {/* Username in bottom right */}
+          <View style={styles.userContainer}>
+            <Text style={styles.username}>{data.name}</Text>
+          </View>
         </View>
       </View>
     </Pressable>
   );
 }
 
-function HeaderView(data: { name: string; date: Date; content: string }) {
-  return (
-    <View style={styles.header_container}>
-      <View style={styles.header_row}>
-        <View style={styles.header_name}>
-          <Text style={{ fontWeight: "bold" }}>{data.name}</Text>
-        </View>
-        <View style={styles.header_time}>
-          <GetTime date={data.date} />
-        </View>
-      </View>
-
-      {/* 💡 NEW: Content Preview Section */}
-      <View style={styles.snippet_content}>
-        <Text numberOfLines={2} style={styles.snippet_text}>
-          {data.content}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-function DisplayView(data: { name: string; date: Date; content: string }) {
-  return (
-    <>
-      <HeaderView name={data.name} date={data.date} content={""} />
-      <View style={styles.post_divider}></View>
-      <View style={styles.post_content}>
-        <Text style={{ color: "#000" }}>{data.content}</Text>
-      </View>
-    </>
-  );
-}
-
-function GetTime(data: { date: Date }) {
-  // const year = data.date.getFullYear();
-  // const month = data.date.getMonth();
-  // const day = data.date.getDay();
-  // const hr = data.date.getHours();
-  // const min = data.date.getMinutes();
-  const formattedTime = data.date.toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return (
-    <Text style={{ fontSize: 12, color: "#666" }}>Posted {formattedTime}</Text>
-  );
-}
-
 const styles = StyleSheet.create({
   post_container: {
-    paddingHorizontal: "3%",
-    paddingVertical: "1%",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   post: {
-    justifyContent: "center",
-    display: "flex",
     width: "100%",
-    borderWidth: 1, // Add border to see it
-    borderColor: "#000",
-    borderRadius: 5,
-    overflow: "hidden" as const,
-  },
-  header_row: {
-    flexDirection: "row",
-    width: "100%",
-  },
-  header_name: {
-    width: "33%",
     backgroundColor: "#FFF",
-    paddingHorizontal: "5%",
-    paddingVertical: "4%",
-    //borderWidth: 1,
-    borderColor: "#00F",
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  header_time: {
-    width: "67%",
+  title: {
+    fontSize: 24,
+    fontWeight: "700", // Bold
+    fontFamily: "System", // SF Pro on iOS
+    color: "#000",
+    marginBottom: 8,
+  },
+  timeRange: {
+    fontSize: 16,
+    fontWeight: "400", // Regular
+    fontStyle: "italic",
+    fontFamily: "System",
+    color: "#888",
+    marginBottom: 16,
+  },
+  userContainer: {
     alignItems: "flex-end",
-    backgroundColor: "#FFF",
-    paddingHorizontal: "5%",
-    paddingVertical: "4%",
-    //borderWidth: 1,
-    borderColor: "#F00",
   },
-  post_divider: {
-    width: "100%",
-    height: 1,
-    backgroundColor: "#000",
-  },
-  post_content: {
-    width: "100%",
-    height: 100,
-    backgroundColor: "#FFF",
-    justifyContent: "center" as const,
-    padding: "5%",
-    borderColor: "#000",
-  },
-  header_container: {
-    width: "100%",
-    paddingBottom: 10,
-  },
-  snippet_content: {
-    width: "100%",
-    paddingHorizontal: "5%",
-    paddingVertical: 5,
-    backgroundColor: "#FFF",
-  },
-  snippet_text: {
+  username: {
     fontSize: 14,
-    color: "#333",
+    fontWeight: "400",
+    fontFamily: "System",
+    color: "#666",
   },
 });
