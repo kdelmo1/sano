@@ -19,10 +19,22 @@ import { User } from "@supabase/supabase-js";
 
 type NavButton = "home" | "post" | "signout";
 
-export default function Home(data: { user: User | null }) {
-  const [posts, setPosts] = React.useState<
-    { id: string; title: string; startTime: string; endTime: string; name: string; content: string }[]
-  >([]);
+type HomeProps = {
+  user: User | null;
+};
+
+interface post {
+  id: string;
+  location: string;
+  startTime: string;
+  endTime: string;
+  name: string;
+  content: string;
+  select: boolean;
+}
+
+export default function Home({ user }: HomeProps) {
+  const [posts, setPosts] = useState<post[]>([]);
 
   const [activeNav, setActiveNav] = useState<NavButton>("home");
   const [toPost, setToPost] = React.useState(false);
@@ -47,12 +59,28 @@ export default function Home(data: { user: User | null }) {
 
   useEffect(() => {
     async function getFromDB() {
+      const reserve = await supabase
+        .from("reservation")
+        .select("postID")
+        .eq("studentID", user?.id);
+      let postIDs = [];
+      if (reserve.data && reserve.data?.length != 0) {
+        postIDs = reserve.data?.map((ids) => {
+          return ids["postID"];
+        });
+      }
       const { data, error } = await supabase
         .from("Posts")
-        .select(`*`)
+        .select()
+        .or(
+          `slots.gt.0,postID.in.(${postIDs.map((p) => {
+            return `"${p}"`;
+          })})`
+        )
         .order("startTime", { ascending: false });
 
       setPosts([]);
+
       if (error) {
         console.log("err", error);
       } else {
@@ -60,11 +88,12 @@ export default function Home(data: { user: User | null }) {
           data.map((val) => {
             return {
               id: val["postID"],
-              title: val["title"] || "Untitled Post",
+              location: val["title"] || "Untitled Post",
               startTime: val["startTime"],
               endTime: val["endTime"] || val["startTime"],
               name: val["name"],
               content: val["content"],
+              select: postIDs.includes(val["postID"]),
             };
           })
         );
@@ -72,6 +101,36 @@ export default function Home(data: { user: User | null }) {
     }
     getFromDB();
   }, [getPost]);
+
+  const reserve = async (id: string, select: boolean) => {
+    const func = select ? "increment" : "decrement";
+    const { error } = await supabase.rpc(func, {
+      post_id: id,
+      student_id: user?.id,
+    });
+    if (func === "decrement" && error) {
+      onRefresh();
+    }
+    return error ? false : true;
+  };
+
+  async function setSelect(id: string) {
+    const idx = posts.findIndex((p) => p.id == id);
+    if (await reserve(id, posts[idx].select)) {
+      setPosts((prev) =>
+        prev.map((post) => {
+          if (post.id == id) {
+            let newPost = { ...post };
+            newPost.select = !post.select;
+            return newPost;
+          }
+          return post;
+        })
+      );
+    }
+
+    return;
+  }
 
   // Animate nav button selection
   const animateNavButton = (button: NavButton) => {
@@ -96,7 +155,7 @@ export default function Home(data: { user: User | null }) {
 
   const handleNavPress = (button: NavButton) => {
     animateNavButton(button);
-    
+
     if (button === "home") {
       onRefresh();
     } else if (button === "post") {
@@ -134,22 +193,34 @@ export default function Home(data: { user: User | null }) {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {posts.map((post) => (
-            <Post
-              key={post.id}
-              id={post.id}
-              title={post.title}
-              startTime={post.startTime}
-              endTime={post.endTime}
-              name={post.name}
-              openPost={openPost}
-              setOpenPost={setOpenPost}
-            />
-          ))}
+          {posts.map((post) => {
+            return (
+              <View
+                key={post.id}
+                style={{
+                  borderColor: "#000",
+                  borderWidth: post.select ? 1 : 0,
+                }}
+              >
+                <Post
+                  key={post.id}
+                  id={post.id}
+                  location={post.location}
+                  startTime={post.startTime}
+                  endTime={post.endTime}
+                  name={post.name}
+                  openPost={openPost}
+                  setOpenPost={setOpenPost}
+                  select={post.select}
+                  setSelect={setSelect}
+                />
+              </View>
+            );
+          })}
         </ScrollView>
 
         <Form
-          user={data.user}
+          user={user}
           toPost={toPost}
           setToPost={setToPost}
           onPostSuccess={() => setGetPost((prev) => !prev)}

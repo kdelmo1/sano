@@ -1,49 +1,71 @@
 import React from "react";
 import { StyleSheet, Text, View, Pressable } from "react-native";
 
-export default function Post(data: {
+type PostProps = {
   id: string;
-  title: string;
+  location: string;
   startTime: string;
   endTime: string;
   name: string;
   openPost: string;
   setOpenPost: React.Dispatch<React.SetStateAction<string>>;
-}) {
+  select: boolean;
+  setSelect: (id: string) => void;
+};
+
+export default function Post({
+  id,
+  location,
+  startTime,
+  endTime,
+  name,
+  openPost,
+  setOpenPost,
+  select,
+  setSelect,
+}: PostProps) {
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    }).toLowerCase();
+    return date
+      .toLocaleTimeString(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })
+      .toLowerCase();
   };
 
-  const isOpen = data.openPost === data.id;
+  const isOpen = openPost === id;
 
   return (
     <Pressable
       onPress={() => {
         if (isOpen) {
-          data.setOpenPost("");
+          setOpenPost("");
         } else {
-          data.setOpenPost(data.id);
+          setOpenPost(id);
         }
       }}
     >
       <View style={styles.post_container}>
+        <Pressable
+          style={{ width: 10, height: 10, backgroundColor: "#000" }}
+          onPress={() => {
+            setSelect(id);
+          }}
+        ></Pressable>
         <View style={styles.post}>
           {/* Title */}
-          <Text style={styles.title}>{data.title}</Text>
-          
+          <Text style={styles.title}>{location}</Text>
+
           {/* Time Range */}
           <Text style={styles.timeRange}>
-            {formatTime(data.startTime)} - {formatTime(data.endTime)}
+            {formatTime(startTime)} - {formatTime(endTime)}
           </Text>
-          
+
           {/* Username in bottom right */}
           <View style={styles.userContainer}>
-            <Text style={styles.username}>{data.name}</Text>
+            <Text style={styles.username}>{name}</Text>
           </View>
         </View>
       </View>
