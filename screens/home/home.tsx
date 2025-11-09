@@ -16,6 +16,8 @@ import Post from "./post";
 import Form from "./form";
 import { supabase } from "../../lib/supabase";
 import { User } from "@supabase/supabase-js";
+import Filter from "./filter";
+import { Modal } from "react-native";
 
 type NavButton = "home" | "post" | "signout";
 
@@ -35,6 +37,21 @@ export default function Home(data: { user: User | null }) {
   const postAnim = useRef(new Animated.Value(0)).current;
   const signoutAnim = useRef(new Animated.Value(0)).current;
 
+  // Filter values
+  const [showFilter, setShowFilter] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [selectedTime, setSelectedTime] = useState("all");
+  const [selectedTag, setSelectedTag] = useState("all");
+  const [tempLocation, setTempLocation] = useState(selectedLocation);
+  const [tempTime, setTempTime] = useState(selectedTime);
+  const [tempTag, setTempTag] = useState(selectedTag);
+  const openFilterModal = () => {
+    setTempLocation(selectedLocation);
+    setTempTime(selectedTime);
+    setShowFilter(true);
+  };
+
+
   const onRefresh = () => {
     setGetPost(!getPost);
     setRefreshing(true);
@@ -47,10 +64,27 @@ export default function Home(data: { user: User | null }) {
 
   useEffect(() => {
     async function getFromDB() {
-      const { data, error } = await supabase
-        .from("Posts")
-        .select(`*`)
-        .order("startTime", { ascending: false });
+      let query = supabase.from("Posts").select("*").order("startTime", { ascending: false });
+
+      // Filter by location
+      if (selectedLocation !== "all") {
+        query = query.eq("location", selectedLocation);
+      }
+
+      // Filter by time
+      if (selectedTime !== "all") {
+        const now = new Date();
+        let since = new Date();
+        if (selectedTime === "24h") since.setDate(now.getDate() - 1);
+        if (selectedTime === "7d") since.setDate(now.getDate() - 7);
+        if (selectedTime === "30d") since.setDate(now.getDate() - 30);
+        query = query.gte("startTime", since.toISOString());
+      }
+
+      // Do smth for tags...cuz i see no tags on supabase
+
+      const { data, error } = await query;
+
 
       setPosts([]);
       if (error) {
@@ -71,7 +105,7 @@ export default function Home(data: { user: User | null }) {
       }
     }
     getFromDB();
-  }, [getPost]);
+  }, [getPost, selectedLocation, selectedTime]);
 
   // Animate nav button selection
   const animateNavButton = (button: NavButton) => {
@@ -119,11 +153,64 @@ export default function Home(data: { user: User | null }) {
       <View style={styles.container}>
         <View style={styles.navbar}>
           <View style={styles.search_bar_container}>
-            <TextInput
-              style={styles.search_input}
-              placeholder="type something..."
-              placeholderTextColor="#999"
-            />
+
+            {/* Filter Open Button */}
+            <Pressable
+              style={{
+                backgroundColor: "#E8E8E8",
+                padding: 10,
+                marginTop: 10,
+                marginHorizontal: 15,
+                borderRadius: 8,
+                alignItems: "center",
+              }}
+              onPress={() => setShowFilter(!showFilter)}
+            >
+              <Text style={{ fontSize: 16, fontWeight: "600" }}>
+                {showFilter ? "Hide Filters ▲" : "Show Filters ▼"}
+              </Text>
+            </Pressable>
+            {/* Filter Screen */}
+            <Modal
+              visible={showFilter}
+              animationType="slide"
+              transparent={false} // false means it takes full screen
+              onRequestClose={() => setShowFilter(false)}
+            >
+              <View style={{ flex: 1, backgroundColor: "#fff" }}>
+                {/* Header Title and Buttons */}
+                <View
+                 style={styles.filterHeader} 
+                >
+                  <Pressable onPress={() => setShowFilter(false)}>
+                    <Text style={{ fontSize: 18, color: "#007AFF" }}>Cancel</Text>
+                  </Pressable>
+                  <Text style={{ fontSize: 18, fontWeight: "bold" }}>Filter Posts</Text>
+                  <Pressable 
+                    onPress={() => {
+                      setSelectedLocation(tempLocation);
+                      setSelectedTime(tempTime);
+                      setShowFilter(false);
+                    }}>
+                    <Text style={{ fontSize: 18, color: "#007AFF" }}>Done</Text>
+                  </Pressable>
+                </View>
+                {/* Scrollable filter options */}
+                <ScrollView
+                  style={{ flex: 1, padding: 15 }}
+                  contentContainerStyle={{ paddingBottom: 50 }}
+                >
+                  <Filter
+                    selectedLocation={tempLocation}
+                    setSelectedLocation={setTempLocation}
+                    selectedTime={tempTime}
+                    setSelectedTime={setTempTime}
+                    selectedTag={tempTag}
+                    setSelectedTag={setTempTag}
+                  />
+                </ScrollView>
+              </View>
+            </Modal>
           </View>
         </View>
 
@@ -321,5 +408,15 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     zIndex: 1,
+  },
+  filterHeader: {
+    paddingTop: 60,
+    paddingHorizontal: 15,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderColor: "#ccc",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 });
