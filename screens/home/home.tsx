@@ -14,10 +14,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useEffect, useState, useRef } from "react";
 import Post from "./post";
 import Form from "./form";
+import ChatScreen from "../chat/chatScreen";
 import { supabase } from "../../lib/supabase";
 import { User } from "@supabase/supabase-js";
 
 type NavButton = "home" | "post" | "signout";
+type Screen = "feed" | "chat";
 
 export default function Home(data: { user: User | null }) {
   const [posts, setPosts] = React.useState<
@@ -29,6 +31,8 @@ export default function Home(data: { user: User | null }) {
   const [refreshing, setRefreshing] = React.useState(false);
   const [getPost, setGetPost] = React.useState(false);
   const [openPost, setOpenPost] = React.useState("");
+  const [screen, setScreen] = useState<Screen>("feed");
+  const [selectedPost, setSelectedPost] = useState<{ id: string; title: string } | null>(null);
 
   // Animation values for each button
   const homeAnim = useRef(new Animated.Value(1)).current;
@@ -105,7 +109,22 @@ export default function Home(data: { user: User | null }) {
       supabase.auth.signOut();
     }
   };
-
+  if (screen === "chat") {
+    return (
+      <View
+        style={{
+          paddingTop: insets.top,
+          paddingLeft: insets.left,
+          paddingBottom: insets.bottom,
+          paddingRight: insets.right,
+          backgroundColor: "#FFFFFF",
+          flex: 1,
+        }}
+      >
+        <ChatScreen goBack={() => setScreen("feed")}/>
+      </View>
+    );
+  }
   return (
     <View
       style={{
@@ -144,6 +163,10 @@ export default function Home(data: { user: User | null }) {
               name={post.name}
               openPost={openPost}
               setOpenPost={setOpenPost}
+              onOpen={() => {
+                  setSelectedPost({ id: post.id, title: post.title });
+                  setScreen("chat");
+                  }}
             />
           ))}
         </ScrollView>
@@ -232,7 +255,6 @@ export default function Home(data: { user: User | null }) {
             />
           </Pressable>
         </View>
-
         <StatusBar style="auto" />
       </View>
     </View>

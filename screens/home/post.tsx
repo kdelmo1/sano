@@ -9,6 +9,7 @@ export default function Post(data: {
   name: string;
   openPost: string;
   setOpenPost: React.Dispatch<React.SetStateAction<string>>;
+  onOpen: () => void;
 }) {
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -23,13 +24,7 @@ export default function Post(data: {
 
   return (
     <Pressable
-      onPress={() => {
-        if (isOpen) {
-          data.setOpenPost("");
-        } else {
-          data.setOpenPost(data.id);
-        }
-      }}
+      onPress={data.onOpen}
     >
       <View style={styles.post_container}>
         <View style={styles.post}>
