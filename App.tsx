@@ -5,6 +5,7 @@ import LoginScreen from "./screens/auth/loginScreen";
 import Home from "./screens/home/home";
 import { supabase } from "./lib/supabase";
 import { User } from "@supabase/supabase-js";
+import AuthContext from "./src/context/AuthContext";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -35,13 +36,15 @@ export default function App() {
   }, []);
 
   return (
-    <StrictMode>
-      <SafeAreaProvider>
-        <View style={styles.container}>
-          {isLoggedIn ? <Home user={user} /> : <LoginScreen onLoginSuccess={() => {}} />}
-        </View>
-      </SafeAreaProvider>
-    </StrictMode>
+    <AuthContext.Provider value={{ isLoggedIn, user }}>
+      <StrictMode>
+        <SafeAreaProvider>
+          <View style={styles.container}>
+            {isLoggedIn ? <Home user={user} /> : <LoginScreen onLoginSuccess={() => {}} />}
+          </View>
+        </SafeAreaProvider>
+      </StrictMode>
+    </AuthContext.Provider>
   );
 }
 

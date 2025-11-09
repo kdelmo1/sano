@@ -32,7 +32,7 @@ export default function Home(data: { user: User | null }) {
   const [getPost, setGetPost] = React.useState(false);
   const [openPost, setOpenPost] = React.useState("");
   const [screen, setScreen] = useState<Screen>("feed");
-  const [selectedPost, setSelectedPost] = useState<{ id: string; title: string } | null>(null);
+  const [selectedPost, setSelectedPost] = useState<{ id: string; title: string; name: string } | null>(null);
 
   // Animation values for each button
   const homeAnim = useRef(new Animated.Value(1)).current;
@@ -121,7 +121,9 @@ export default function Home(data: { user: User | null }) {
           flex: 1,
         }}
       >
-        <ChatScreen goBack={() => setScreen("feed")}/>
+        <ChatScreen 
+        goBack={() => setScreen("feed")}
+        postName={selectedPost?.name ?? ""}/>
       </View>
     );
   }
@@ -164,7 +166,7 @@ export default function Home(data: { user: User | null }) {
               openPost={openPost}
               setOpenPost={setOpenPost}
               onOpen={() => {
-                  setSelectedPost({ id: post.id, title: post.title });
+                  setSelectedPost({ id: post.id, title: post.title, name: post.name });
                   setScreen("chat");
                   }}
             />
