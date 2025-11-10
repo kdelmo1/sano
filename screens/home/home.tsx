@@ -23,7 +23,14 @@ type NavButton = "home" | "post" | "signout";
 
 export default function Home(data: { user: User | null }) {
   const [posts, setPosts] = React.useState<
-    { id: string; title: string; startTime: string; endTime: string; name: string; content: string }[]
+    {
+      id: string;
+      title: string;
+      startTime: string;
+      endTime: string;
+      name: string;
+      content: string;
+    }[]
   >([]);
 
   const [activeNav, setActiveNav] = useState<NavButton>("home");
@@ -51,7 +58,6 @@ export default function Home(data: { user: User | null }) {
     setShowFilter(true);
   };
 
-
   const onRefresh = () => {
     setGetPost(!getPost);
     setRefreshing(true);
@@ -64,7 +70,10 @@ export default function Home(data: { user: User | null }) {
 
   useEffect(() => {
     async function getFromDB() {
-      let query = supabase.from("Posts").select("*").order("startTime", { ascending: false });
+      let query = supabase
+        .from("Posts")
+        .select("*")
+        .order("startTime", { ascending: false });
 
       // Filter by location
       if (selectedLocation !== "all") {
@@ -84,7 +93,6 @@ export default function Home(data: { user: User | null }) {
       // Do smth for tags...cuz i see no tags on supabase
 
       const { data, error } = await query;
-
 
       setPosts([]);
       if (error) {
@@ -130,7 +138,7 @@ export default function Home(data: { user: User | null }) {
 
   const handleNavPress = (button: NavButton) => {
     animateNavButton(button);
-    
+
     if (button === "home") {
       onRefresh();
     } else if (button === "post") {
@@ -153,7 +161,6 @@ export default function Home(data: { user: User | null }) {
       <View style={styles.container}>
         <View style={styles.navbar}>
           <View style={styles.search_bar_container}>
-
             {/* Filter Open Button */}
             <Pressable
               style={{
@@ -164,51 +171,62 @@ export default function Home(data: { user: User | null }) {
                 borderRadius: 8,
                 alignItems: "center",
               }}
-              onPress={() => setShowFilter(!showFilter)}
+              onPress={() => setShowFilter(true)}
             >
               <Text style={{ fontSize: 16, fontWeight: "600" }}>
-                {showFilter ? "Hide Filters ▲" : "Show Filters ▼"}
+                {selectedLocation !== "all" ||
+                selectedTime !== "all" ||
+                selectedTag !== "all"
+                  ? "Hide Filters ▲"
+                  : "Show Filters ▼"}
               </Text>
             </Pressable>
             {/* Filter Screen */}
             <Modal
               visible={showFilter}
-              animationType="slide"
-              transparent={false} // false means it takes full screen
+              animationType="fade"
+              transparent={true} // true means it doesn't takes full screen. changed so it's similar to post form
               onRequestClose={() => setShowFilter(false)}
             >
-              <View style={{ flex: 1, backgroundColor: "#fff" }}>
+              <View style={styles.modalOverlay}>
                 {/* Header Title and Buttons */}
-                <View
-                 style={styles.filterHeader} 
-                >
-                  <Pressable onPress={() => setShowFilter(false)}>
-                    <Text style={{ fontSize: 18, color: "#007AFF" }}>Cancel</Text>
-                  </Pressable>
-                  <Text style={{ fontSize: 18, fontWeight: "bold" }}>Filter Posts</Text>
-                  <Pressable 
-                    onPress={() => {
-                      setSelectedLocation(tempLocation);
-                      setSelectedTime(tempTime);
-                      setShowFilter(false);
-                    }}>
-                    <Text style={{ fontSize: 18, color: "#007AFF" }}>Done</Text>
-                  </Pressable>
+                <View style={styles.modalContent}>
+                  <View style={styles.filterHeader}>
+                    <Pressable
+                      style={styles.closeButton}
+                      onPress={() => setShowFilter(false)}
+                    >
+                      <Text style={styles.closeButtonText}>x</Text>
+                    </Pressable>
+                    <Text style={styles.headerTitle}>Filter Posts</Text>
+                    <Pressable
+                      style={styles.applyButton}
+                      onPress={() => {
+                        setSelectedLocation(tempLocation);
+                        setSelectedTime(tempTime);
+                        //setSelectedTag(tempTag); // Tags not implemented yet
+                        setShowFilter(false);
+                      }}
+                    >
+                      <Text style={styles.applyButtonText}>Apply</Text>
+                    </Pressable>
+                  </View>
+
+                  {/* Scrollable filter options */}
+                  <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{ padding: 20, paddingBottom: 50 }}
+                  >
+                    <Filter
+                      selectedLocation={tempLocation}
+                      setSelectedLocation={setTempLocation}
+                      selectedTime={tempTime}
+                      setSelectedTime={setTempTime}
+                      selectedTag={tempTag}
+                      setSelectedTag={setTempTag}
+                    />
+                  </ScrollView>
                 </View>
-                {/* Scrollable filter options */}
-                <ScrollView
-                  style={{ flex: 1, padding: 15 }}
-                  contentContainerStyle={{ paddingBottom: 50 }}
-                >
-                  <Filter
-                    selectedLocation={tempLocation}
-                    setSelectedLocation={setTempLocation}
-                    selectedTime={tempTime}
-                    setSelectedTime={setTempTime}
-                    selectedTag={tempTag}
-                    setSelectedTag={setTempTag}
-                  />
-                </ScrollView>
               </View>
             </Modal>
           </View>
@@ -410,13 +428,53 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   filterHeader: {
-    paddingTop: 60,
-    paddingHorizontal: 15,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderColor: "#ccc",
+    backgroundColor: "#D4B75F",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalContent: {
+    width: "90%",
+    height: "80%",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#FFF",
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#FFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: "#D4B75F",
+    fontWeight: "600",
+  },
+  applyButton: {
+    backgroundColor: "#FFF",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 15,
+  },
+  applyButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#D4B75F",
   },
 });
