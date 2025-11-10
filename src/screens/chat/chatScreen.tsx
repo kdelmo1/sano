@@ -15,6 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 interface Message {
     message: string;
     id: string;
+    sender: string;
 }
 
 export default function chatScreen({ goBack, postName }: { goBack: () => void; postName: string }) {
@@ -56,7 +57,8 @@ export default function chatScreen({ goBack, postName }: { goBack: () => void; p
             event: "message",
             payload: {
                 message: newMessage,
-                id: user?.id
+                id: uuidv4,
+                sender: user?.id,
             },
         });
         setNewMessage("");
