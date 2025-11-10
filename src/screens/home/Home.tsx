@@ -34,7 +34,6 @@ export default function Home(data: { user: User | null }) {
   const [screen, setScreen] = useState<Screen>("feed");
   const [selectedPost, setSelectedPost] = useState<{ id: string; title: string; name: string } | null>(null);
 
-  // Animation values for each button
   const homeAnim = useRef(new Animated.Value(1)).current;
   const postAnim = useRef(new Animated.Value(0)).current;
   const signoutAnim = useRef(new Animated.Value(0)).current;
@@ -54,7 +53,7 @@ export default function Home(data: { user: User | null }) {
       const { data, error } = await supabase
         .from("Posts")
         .select(`*`)
-        .order("startTime", { ascending: false });
+        .order("startTime", { ascending: true });
 
       setPosts([]);
       if (error) {
@@ -77,7 +76,6 @@ export default function Home(data: { user: User | null }) {
     getFromDB();
   }, [getPost]);
 
-  // Animate nav button selection
   const animateNavButton = (button: NavButton) => {
     const animations = {
       home: homeAnim,
@@ -85,7 +83,6 @@ export default function Home(data: { user: User | null }) {
       signout: signoutAnim,
     };
 
-    // Animate all buttons
     Object.entries(animations).forEach(([key, anim]) => {
       Animated.spring(anim, {
         toValue: key === button ? 1 : 0,
@@ -100,7 +97,7 @@ export default function Home(data: { user: User | null }) {
 
   const handleNavPress = (button: NavButton) => {
     animateNavButton(button);
-    
+
     if (button === "home") {
       onRefresh();
     } else if (button === "post") {
@@ -121,9 +118,9 @@ export default function Home(data: { user: User | null }) {
           flex: 1,
         }}
       >
-        <ChatScreen 
-        goBack={() => setScreen("feed")}
-        postName={selectedPost?.name ?? ""}/>
+        <ChatScreen
+          goBack={() => setScreen("feed")}
+          postName={selectedPost?.name ?? ""} />
       </View>
     );
   }
@@ -138,14 +135,18 @@ export default function Home(data: { user: User | null }) {
       }}
     >
       <View style={styles.container}>
-        <View style={styles.navbar}>
-          <View style={styles.search_bar_container}>
-            <TextInput
-              style={styles.search_input}
-              placeholder="type something..."
-              placeholderTextColor="#999"
+        <View style={styles.floatingSearchBar}>
+          <TextInput
+            style={styles.search_input}
+            placeholder="type something..."
+            placeholderTextColor="#999"
+          />
+          <Pressable style={styles.searchButton}>
+            <Image
+              source={require("../../assets/images/icon-search.png")}
+              style={styles.searchIcon}
             />
-          </View>
+          </Pressable>
         </View>
 
         <ScrollView
@@ -166,9 +167,9 @@ export default function Home(data: { user: User | null }) {
               openPost={openPost}
               setOpenPost={setOpenPost}
               onOpen={() => {
-                  setSelectedPost({ id: post.id, title: post.title, name: post.name });
-                  setScreen("chat");
-                  }}
+                setSelectedPost({ id: post.id, title: post.title, name: post.name });
+                setScreen("chat");
+              }}
             />
           ))}
         </ScrollView>
@@ -178,11 +179,10 @@ export default function Home(data: { user: User | null }) {
           toPost={toPost}
           setToPost={setToPost}
           onPostSuccess={() => setGetPost((prev) => !prev)}
+          onClose={() => animateNavButton("home")}
         />
 
-        {/* Floating Navigation Bar */}
         <View style={styles.floatingNav}>
-          {/* Post Button */}
           <Pressable
             style={styles.nav_button}
             onPress={() => handleNavPress("post")}
@@ -207,7 +207,6 @@ export default function Home(data: { user: User | null }) {
             />
           </Pressable>
 
-          {/* Home Button */}
           <Pressable
             style={styles.nav_button}
             onPress={() => handleNavPress("home")}
@@ -232,7 +231,6 @@ export default function Home(data: { user: User | null }) {
             />
           </Pressable>
 
-          {/* Sign Out Button */}
           <Pressable
             style={styles.nav_button}
             onPress={() => handleNavPress("signout")}
@@ -266,47 +264,61 @@ export default function Home(data: { user: User | null }) {
 const styles = StyleSheet.create({
   container: {
     display: "flex",
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
     height: "100%",
   },
-  navbar: {
-    backgroundColor: "#F5F5F5",
+  floatingSearchBar: {
     position: "absolute" as const,
-    top: 0,
-    width: "100%",
-    paddingTop: 10,
+    top: 17,
+    width: 350,
+    height: 45,
+    backgroundColor: "#E8E8E8",
+    borderColor: "#cacaca",
+    borderWidth: 2,
+    borderRadius: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 5,
     zIndex: 10,
   },
-  search_bar_container: {
-    width: "100%",
-    paddingHorizontal: 20,
-    paddingBottom: 15,
-    paddingTop: 10,
+  search_input: {
+    flex: 1,
+    fontSize: 20,
+    color: "#333",
+    paddingLeft: 15,
+  },
+  searchButton: {
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
   },
-  search_input: {
-    width: "85%",
-    height: 45,
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    fontSize: 16,
-    color: "#333",
+  searchIcon: {
+    width: 24,
+    height: 24,
+    tintColor: "#999",
+    paddingRight: 5,
   },
   scroller: {
     backgroundColor: "#F5F5F5",
     position: "absolute" as const,
     width: "100%",
-    top: 80,
-    bottom: 100,
+    top: 75,
+    bottom: 0,
   },
   scrollContent: {
     paddingTop: 10,
-    paddingBottom: 20,
+    paddingBottom: 100,
   },
   floatingNav: {
     position: "absolute" as const,

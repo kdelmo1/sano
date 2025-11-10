@@ -7,8 +7,8 @@ type AuthContextType = {
 };
 
 const AuthContext = React.createContext<AuthContextType>({
-    isLoggedIn: false,
-    user: null,
+  isLoggedIn: false,
+  user: null,
 });
 
 export default AuthContext;
