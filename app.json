@@ -1,6 +1,8 @@
 {
   "expo": {
     "name": "sano",
+    "scheme": "sano",
+    "deepLinking": true,
     "slug": "sano",
     "scheme": "sano",
     "platforms": ["ios", "android", "web"],
@@ -12,7 +14,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#D4B75F"
     },
     "ios": {
       "supportsTablet": true,
@@ -29,6 +31,6 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
   }
 }
