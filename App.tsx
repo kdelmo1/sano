@@ -13,7 +13,9 @@ export default function App() {
 
   useEffect(() => {
     const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session?.user) {
         setIsLoggedIn(true);
         setUser(session.user);
@@ -22,15 +24,17 @@ export default function App() {
 
     initAuth();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setIsLoggedIn(true);
-        setUser(session.user);
-      } else {
-        setIsLoggedIn(false);
-        setUser(null);
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.user) {
+          setIsLoggedIn(true);
+          setUser(session.user);
+        } else {
+          setIsLoggedIn(false);
+          setUser(null);
+        }
       }
-    });
+    );
 
     return () => listener.subscription.unsubscribe();
   }, []);
@@ -40,7 +44,11 @@ export default function App() {
       <StrictMode>
         <SafeAreaProvider>
           <View style={styles.container}>
-            {isLoggedIn ? <Home user={user} /> : <LoginScreen onLoginSuccess={() => { }} />}
+            {isLoggedIn ? (
+              <Home user={user} />
+            ) : (
+              <LoginScreen onLoginSuccess={() => {}} />
+            )}
           </View>
         </SafeAreaProvider>
       </StrictMode>

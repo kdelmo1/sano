@@ -23,7 +23,14 @@ type Screen = "feed" | "chat";
 
 export default function Home(data: { user: User | null }) {
   const [posts, setPosts] = React.useState<
-    { id: string; title: string; startTime: string; endTime: string; name: string; content: string }[]
+    {
+      id: string;
+      title: string;
+      startTime: string;
+      endTime: string;
+      name: string;
+      content: string;
+    }[]
   >([]);
 
   const [activeNav, setActiveNav] = useState<NavButton>("home");
@@ -32,7 +39,11 @@ export default function Home(data: { user: User | null }) {
   const [getPost, setGetPost] = React.useState(false);
   const [openPost, setOpenPost] = React.useState("");
   const [screen, setScreen] = useState<Screen>("feed");
-  const [selectedPost, setSelectedPost] = useState<{ id: string; title: string; name: string } | null>(null);
+  const [selectedPost, setSelectedPost] = useState<{
+    id: string;
+    title: string;
+    name: string;
+  } | null>(null);
 
   const homeAnim = useRef(new Animated.Value(1)).current;
   const postAnim = useRef(new Animated.Value(0)).current;
@@ -120,7 +131,8 @@ export default function Home(data: { user: User | null }) {
       >
         <ChatScreen
           goBack={() => setScreen("feed")}
-          postName={selectedPost?.name ?? ""} />
+          postID={selectedPost?.id ?? ""}
+        />
       </View>
     );
   }
@@ -167,7 +179,11 @@ export default function Home(data: { user: User | null }) {
               openPost={openPost}
               setOpenPost={setOpenPost}
               onOpen={() => {
-                setSelectedPost({ id: post.id, title: post.title, name: post.name });
+                setSelectedPost({
+                  id: post.id,
+                  title: post.title,
+                  name: post.name,
+                });
                 setScreen("chat");
               }}
             />
