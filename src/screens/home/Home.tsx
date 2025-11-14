@@ -15,11 +15,13 @@ import React, { useEffect, useState, useRef } from "react";
 import Post from "./post";
 import Form from "./form";
 import ChatScreen from "../chat/chatScreen";
+import ProfileScreen from "../profile/ProfileScreen";
+import InboxScreen from "../profile/InboxScreen";
 import { supabase } from "../../lib/supabase";
 import { User } from "@supabase/supabase-js";
 
-type NavButton = "home" | "post" | "signout";
-type Screen = "feed" | "chat";
+type NavButton = "home" | "post" | "profile";
+type Screen = "feed" | "chat" | "profile" | "inbox";
 
 export default function Home(data: { user: User | null }) {
   const [posts, setPosts] = React.useState<
@@ -44,10 +46,11 @@ export default function Home(data: { user: User | null }) {
     title: string;
     name: string;
   } | null>(null);
+  const [chatFromScreen, setChatFromScreen] = useState<"feed" | "inbox">("feed");
 
   const homeAnim = useRef(new Animated.Value(1)).current;
   const postAnim = useRef(new Animated.Value(0)).current;
-  const signoutAnim = useRef(new Animated.Value(0)).current;
+  const profileAnim = useRef(new Animated.Value(0)).current;
 
   const onRefresh = () => {
     setGetPost(!getPost);
@@ -91,7 +94,7 @@ export default function Home(data: { user: User | null }) {
     const animations = {
       home: homeAnim,
       post: postAnim,
-      signout: signoutAnim,
+      profile: profileAnim,
     };
 
     Object.entries(animations).forEach(([key, anim]) => {
@@ -111,12 +114,14 @@ export default function Home(data: { user: User | null }) {
 
     if (button === "home") {
       onRefresh();
+      setScreen("feed");
     } else if (button === "post") {
       setToPost(true);
-    } else if (button === "signout") {
-      supabase.auth.signOut();
+    } else if (button === "profile") {
+      setScreen("profile");
     }
   };
+
   if (screen === "chat") {
     return (
       <View
@@ -130,13 +135,89 @@ export default function Home(data: { user: User | null }) {
         }}
       >
         <ChatScreen
-          goBack={() => setScreen("feed")}
+          goBack={() => {
+            if (chatFromScreen === "inbox") {
+              setScreen("inbox");
+            } else {
+              setScreen("feed");
+              animateNavButton("home");
+            }
+          }}
           postID={selectedPost?.id ?? ""}
           posterName={selectedPost?.name ?? ""}
+          fromScreen={chatFromScreen}
         />
       </View>
     );
   }
+
+  if (screen === "inbox") {
+    return (
+      <View
+        style={{
+          paddingTop: insets.top,
+          paddingLeft: insets.left,
+          paddingBottom: insets.bottom,
+          paddingRight: insets.right,
+          backgroundColor: "#F5F5F5",
+          flex: 1,
+        }}
+      >
+        <InboxScreen
+          user={data.user}
+          goBack={() => {
+            setScreen("profile");
+          }}
+          onChatSelect={(postID: string, posterName: string) => {
+            setSelectedPost({
+              id: postID,
+              title: "",
+              name: posterName,
+            });
+            setChatFromScreen("inbox");
+            setScreen("chat");
+          }}
+          homeAnim={homeAnim}
+          postAnim={postAnim}
+          profileAnim={profileAnim}
+          onNavPress={handleNavPress}
+          activeNav={activeNav}
+        />
+      </View>
+    );
+  }
+
+  if (screen === "profile") {
+    return (
+      <View
+        style={{
+          paddingTop: insets.top,
+          paddingLeft: insets.left,
+          paddingBottom: insets.bottom,
+          paddingRight: insets.right,
+          backgroundColor: "#F5F5F5",
+          flex: 1,
+        }}
+      >
+        <ProfileScreen
+          user={data.user}
+          goBack={() => {
+            setScreen("feed");
+            animateNavButton("home");
+          }}
+          onInboxPress={() => {
+            setScreen("inbox");
+          }}
+          homeAnim={homeAnim}
+          postAnim={postAnim}
+          profileAnim={profileAnim}
+          onNavPress={handleNavPress}
+          activeNav={activeNav}
+        />
+      </View>
+    );
+  }
+
   return (
     <View
       style={{
@@ -185,6 +266,7 @@ export default function Home(data: { user: User | null }) {
                   title: post.title,
                   name: post.name,
                 });
+                setChatFromScreen("feed");
                 setScreen("chat");
               }}
             />
@@ -250,23 +332,23 @@ export default function Home(data: { user: User | null }) {
 
           <Pressable
             style={styles.nav_button}
-            onPress={() => handleNavPress("signout")}
+            onPress={() => handleNavPress("profile")}
           >
             <Animated.View
               style={[
                 styles.navCircle,
                 {
-                  opacity: signoutAnim,
-                  transform: [{ scale: signoutAnim }],
+                  opacity: profileAnim,
+                  transform: [{ scale: profileAnim }],
                 },
               ]}
             />
             <Image
-              source={require("../../assets/images/icon-signout.png")}
+              source={require("../../assets/images/profile-icon.png")}
               style={[
                 styles.nav_icon_image,
                 {
-                  tintColor: activeNav === "signout" ? "#D4B75F" : "#FFF",
+                  tintColor: activeNav === "profile" ? "#D4B75F" : "#FFF",
                 },
               ]}
             />
