@@ -132,6 +132,7 @@ export default function Home(data: { user: User | null }) {
         <ChatScreen
           goBack={() => setScreen("feed")}
           postID={selectedPost?.id ?? ""}
+          posterName={selectedPost?.name ?? ""}
         />
       </View>
     );
