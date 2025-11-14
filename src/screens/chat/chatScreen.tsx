@@ -38,11 +38,15 @@ export default function chatScreen({
 
     useEffect(() => {
         const initChat = async () => {
+            // Get all messages for this post where user is involved
             const { data, error } = await supabase
                 .from("chat")
-                .select("id,poster,message")
-                .eq("postID", postID);
+                .select("id,poster,applicant,message")
+                .eq("postID", postID)
+                .or(`and(poster.eq.${posterName},applicant.eq.${applicantName}),and(poster.eq.${applicantName},applicant.eq.${posterName})`);
+            
             if (error) {
+                console.log("Error fetching messages:", error);
             } else {
                 setMessages(
                     data.map((val) => {
@@ -76,7 +80,12 @@ export default function chatScreen({
                 filter: `postID=eq.${postID}`,
             },
             (payload) => {
-                if (payload.new.poster === posterName && payload.new.applicant === applicantName) {
+                // Accept messages where the conversation involves both parties
+                const isRelevantMessage = 
+                    (payload.new.poster === posterName && payload.new.applicant === applicantName) ||
+                    (payload.new.poster === applicantName && payload.new.applicant === posterName);
+                
+                if (isRelevantMessage) {
                     console.log(payload);
                     setMessages((prev) => {
                         const newMess = {

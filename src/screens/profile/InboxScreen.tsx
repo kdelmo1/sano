@@ -59,14 +59,20 @@ export default function InboxScreen({
         return;
       }
 
-      // Group chats by postID and get the most recent message for each
+      // Group chats by postID and conversation pair (normalized)
       const chatMap = new Map<string, Chat>();
 
       data?.forEach((chat) => {
-        const key = `${chat.postID}-${chat.poster}-${chat.applicant}`;
         const otherParty = chat.poster === userName ? chat.applicant : chat.poster;
+        
+        // Create a normalized key that's the same regardless of who sent the message
+        // Sort the two parties alphabetically to ensure consistency
+        const parties = [chat.poster, chat.applicant].sort();
+        const key = `${chat.postID}-${parties[0]}-${parties[1]}`;
 
-        if (!chatMap.has(key)) {
+        // Only add if this conversation doesn't exist yet, or update if this message is newer
+        const existing = chatMap.get(key);
+        if (!existing || new Date(chat.created_at) > new Date(existing.timestamp)) {
           chatMap.set(key, {
             id: key,
             postID: chat.postID,
