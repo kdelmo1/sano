@@ -26,6 +26,8 @@ export default function Post({
   const { isLoggedIn, user } = useContext(AuthContext);
   const userName = user?.email?.split("@")[0];
 
+  const [openChat, setOpenChat] = useState(false);
+
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return date
@@ -56,9 +58,29 @@ export default function Post({
     return null;
   }
 
-  const [openChat, setOpenChat] = useState(false);
+  useEffect(() => {
+    const reserve = async (id: string, select: boolean) => {
+      const func = "append_array";
+      const { error } = await supabase.rpc(func, {
+        post_id: id,
+        applicant_name: userName,
+      });
+      // if (func === "decrement" && error) {
+      //   refresh or something...?
+      // }
+      return error ? false : true;
+    };
+    if (openChat && from === "feed") {
+      reserve(id, false);
+    }
+  }, [openChat]);
+
   return (
-    <Pressable onPress={() => setOpenChat(true)}>
+    <Pressable
+      onPress={() => {
+        setOpenChat(true);
+      }}
+    >
       {isPoster ? (
         <PosterView
           id={id}
