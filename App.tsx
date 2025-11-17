@@ -44,11 +44,7 @@ export default function App() {
       <StrictMode>
         <SafeAreaProvider>
           <View style={styles.container}>
-            {isLoggedIn ? (
-              <Home user={user} />
-            ) : (
-              <LoginScreen onLoginSuccess={() => {}} />
-            )}
+            {isLoggedIn ? <Home /> : <LoginScreen onLoginSuccess={() => {}} />}
           </View>
         </SafeAreaProvider>
       </StrictMode>

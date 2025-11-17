@@ -11,7 +11,7 @@ import {
   Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import Post from "./post";
 import Form from "./form";
 import ChatScreen from "../chat/chatScreen";
@@ -19,12 +19,15 @@ import ProfileScreen from "../profile/ProfileScreen";
 import InboxScreen from "../profile/InboxScreen";
 import { supabase } from "../../lib/supabase";
 import { User } from "@supabase/supabase-js";
+import AuthContext from "../../../src/context/AuthContext";
 
 type NavButton = "home" | "post" | "profile";
 type Screen = "feed" | "chat" | "profile" | "inbox";
 
-export default function Home(data: { user: User | null }) {
-  const [posts, setPosts] = React.useState<
+export default function Home() {
+  const { isLoggedIn, user } = useContext(AuthContext);
+
+  const [posts, setPosts] = useState<
     {
       id: string;
       title: string;
@@ -39,14 +42,7 @@ export default function Home(data: { user: User | null }) {
   const [toPost, setToPost] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const [getPost, setGetPost] = React.useState(false);
-  const [openPost, setOpenPost] = React.useState("");
   const [screen, setScreen] = useState<Screen>("feed");
-  const [selectedPost, setSelectedPost] = useState<{
-    id: string;
-    title: string;
-    name: string;
-  } | null>(null);
-  const [chatFromScreen, setChatFromScreen] = useState<"feed" | "inbox">("feed");
 
   const homeAnim = useRef(new Animated.Value(1)).current;
   const postAnim = useRef(new Animated.Value(0)).current;
@@ -122,35 +118,6 @@ export default function Home(data: { user: User | null }) {
     }
   };
 
-  if (screen === "chat") {
-    return (
-      <View
-        style={{
-          paddingTop: insets.top,
-          paddingLeft: insets.left,
-          paddingBottom: insets.bottom,
-          paddingRight: insets.right,
-          backgroundColor: "#FFFFFF",
-          flex: 1,
-        }}
-      >
-        <ChatScreen
-          goBack={() => {
-            if (chatFromScreen === "inbox") {
-              setScreen("inbox");
-            } else {
-              setScreen("feed");
-              animateNavButton("home");
-            }
-          }}
-          postID={selectedPost?.id ?? ""}
-          posterName={selectedPost?.name ?? ""}
-          fromScreen={chatFromScreen}
-        />
-      </View>
-    );
-  }
-
   if (screen === "inbox") {
     return (
       <View
@@ -164,18 +131,9 @@ export default function Home(data: { user: User | null }) {
         }}
       >
         <InboxScreen
-          user={data.user}
+          user={user}
           goBack={() => {
             setScreen("profile");
-          }}
-          onChatSelect={(postID: string, posterName: string) => {
-            setSelectedPost({
-              id: postID,
-              title: "",
-              name: posterName,
-            });
-            setChatFromScreen("inbox");
-            setScreen("chat");
           }}
           homeAnim={homeAnim}
           postAnim={postAnim}
@@ -200,7 +158,7 @@ export default function Home(data: { user: User | null }) {
         }}
       >
         <ProfileScreen
-          user={data.user}
+          user={user}
           goBack={() => {
             setScreen("feed");
             animateNavButton("home");
@@ -250,31 +208,24 @@ export default function Home(data: { user: User | null }) {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {posts.map((post) => (
-            <Post
-              key={post.id}
-              id={post.id}
-              title={post.title}
-              startTime={post.startTime}
-              endTime={post.endTime}
-              name={post.name}
-              openPost={openPost}
-              setOpenPost={setOpenPost}
-              onOpen={() => {
-                setSelectedPost({
-                  id: post.id,
-                  title: post.title,
-                  name: post.name,
-                });
-                setChatFromScreen("feed");
-                setScreen("chat");
-              }}
-            />
-          ))}
+          {posts.map((post) => {
+            return (
+              <Post
+                key={post.id}
+                id={post.id}
+                title={post.title}
+                startTime={post.startTime}
+                endTime={post.endTime}
+                name={post.name}
+                isPoster={false}
+                from={"feed"}
+              />
+            );
+          })}
         </ScrollView>
 
         <Form
-          user={data.user}
+          user={user}
           toPost={toPost}
           setToPost={setToPost}
           onPostSuccess={() => setGetPost((prev) => !prev)}
