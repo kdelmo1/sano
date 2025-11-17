@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from "react";
 import { StyleSheet, Text, View, Pressable, Image, Modal } from "react-native";
 import ChatScreen from "../chat/chatScreen";
+import PosterView from "../chat/posterView";
 import AuthContext from "../../../src/context/AuthContext";
 import { supabase } from "../../lib/supabase";
 
@@ -120,76 +121,6 @@ export default function Post({
         </View>
       </View>
     </Pressable>
-  );
-}
-
-function PosterView({
-  id,
-  showOpt,
-  goBack,
-}: {
-  id: string;
-  showOpt: boolean;
-  goBack: () => void;
-}) {
-  const { emailHandle } = useContext(AuthContext);
-
-  const [applicants, setApplicants] = useState<string[]>([]);
-  useEffect(() => {
-    const getFromDB = async () => {
-      const { error, data } = await supabase
-        .from("Posts")
-        .select("reservation")
-        .eq("postID", id)
-        .single();
-      if (error) {
-      } else {
-        setApplicants(data["reservation"] || []);
-      }
-    };
-    getFromDB();
-  }, []);
-
-  const RenderApplicant = ({ applicant }: { applicant: string }) => {
-    const [openChat, setOpenChat] = useState(false);
-    return (
-      <Pressable
-        onPress={() => {
-          setOpenChat(true);
-        }}
-      >
-        <View style={{ padding: 10 }}>
-          <Text>{applicant}</Text>
-        </View>
-        <ChatScreen
-          goBack={() => setOpenChat(false)}
-          openChat={openChat}
-          postID={id}
-          posterName={emailHandle}
-          applicantName={applicant}
-          isPoster={true}
-          fromScreen={"inbox"}
-        />
-      </Pressable>
-    );
-  };
-
-  return (
-    <Modal visible={showOpt}>
-      <View style={styles.screen}>
-        <View style={styles.container}>
-          <Pressable
-            onPress={goBack}
-            style={{ borderWidth: 1, borderColor: "#000" }}
-          >
-            <Text>Back</Text>
-          </Pressable>
-          {applicants.map((applicant) => (
-            <RenderApplicant key={applicant} applicant={applicant} />
-          ))}
-        </View>
-      </View>
-    </Modal>
   );
 }
 
