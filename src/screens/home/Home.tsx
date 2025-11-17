@@ -14,19 +14,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useEffect, useState, useRef, useContext } from "react";
 import Post from "./post";
 import Form from "./form";
-import ChatScreen from "../chat/chatScreen";
 import ProfileScreen from "../profile/ProfileScreen";
 import InboxScreen from "../profile/InboxScreen";
 import { supabase } from "../../lib/supabase";
-import { User } from "@supabase/supabase-js";
 import AuthContext from "../../../src/context/AuthContext";
 
 type NavButton = "home" | "post" | "profile";
 type Screen = "feed" | "chat" | "profile" | "inbox";
 
 export default function Home() {
-  const { isLoggedIn, user } = useContext(AuthContext);
-
   const [posts, setPosts] = useState<
     {
       id: string;
@@ -131,7 +127,6 @@ export default function Home() {
         }}
       >
         <InboxScreen
-          user={user}
           goBack={() => {
             setScreen("profile");
           }}
@@ -158,7 +153,6 @@ export default function Home() {
         }}
       >
         <ProfileScreen
-          user={user}
           goBack={() => {
             setScreen("feed");
             animateNavButton("home");
@@ -225,7 +219,6 @@ export default function Home() {
         </ScrollView>
 
         <Form
-          user={user}
           toPost={toPost}
           setToPost={setToPost}
           onPostSuccess={() => setGetPost((prev) => !prev)}

@@ -11,8 +11,6 @@ import {
 import { useContext, useEffect, useState } from "react";
 import AuthContext from "../../../src/context/AuthContext";
 import { supabase } from "../../lib/supabase";
-import { v4 as uuidv4 } from "uuid";
-import "react-native-get-random-values";
 
 interface Message {
   message: string;

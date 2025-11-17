@@ -23,8 +23,7 @@ export default function Post({
   isPoster,
   from,
 }: PostProps) {
-  const { isLoggedIn, user } = useContext(AuthContext);
-  const userName = user?.email?.split("@")[0];
+  const { emailHandle } = useContext(AuthContext);
 
   const [openChat, setOpenChat] = useState(false);
 
@@ -63,7 +62,7 @@ export default function Post({
       const func = "append_array";
       const { error } = await supabase.rpc(func, {
         post_id: id,
-        applicant_name: userName,
+        applicant_name: emailHandle,
       });
       // if (func === "decrement" && error) {
       //   refresh or something...?
@@ -84,7 +83,6 @@ export default function Post({
       {isPoster ? (
         <PosterView
           id={id}
-          userName={userName}
           showOpt={openChat}
           goBack={() => setOpenChat(false)}
         />
@@ -94,7 +92,7 @@ export default function Post({
           openChat={openChat}
           postID={id}
           posterName={name}
-          applicantName={userName}
+          applicantName={emailHandle}
           isPoster={false}
           fromScreen={from}
         />
@@ -131,15 +129,15 @@ export default function Post({
 
 function PosterView({
   id,
-  userName,
   showOpt,
   goBack,
 }: {
   id: string;
-  userName: string | undefined;
   showOpt: boolean;
   goBack: () => void;
 }) {
+  const { emailHandle } = useContext(AuthContext);
+
   const [applicants, setApplicants] = useState<string[]>([]);
   useEffect(() => {
     const getFromDB = async () => {
@@ -171,7 +169,7 @@ function PosterView({
           goBack={() => setOpenChat(false)}
           openChat={openChat}
           postID={id}
-          posterName={userName}
+          posterName={emailHandle}
           applicantName={applicant}
           isPoster={true}
           fromScreen={"inbox"}

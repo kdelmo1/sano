@@ -10,6 +10,7 @@ import AuthContext from "./src/context/AuthContext";
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [emailHandle, setEmailHandle] = useState("");
 
   useEffect(() => {
     const initAuth = async () => {
@@ -29,6 +30,8 @@ export default function App() {
         if (session?.user) {
           setIsLoggedIn(true);
           setUser(session.user);
+          if (session.user?.email)
+            setEmailHandle(session.user?.email?.split("@")[0]);
         } else {
           setIsLoggedIn(false);
           setUser(null);
@@ -40,7 +43,7 @@ export default function App() {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user }}>
+    <AuthContext.Provider value={{ isLoggedIn, user, emailHandle }}>
       <StrictMode>
         <SafeAreaProvider>
           <View style={styles.container}>

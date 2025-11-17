@@ -7,21 +7,26 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { supabase } from "../../lib/supabase";
 import { User } from "@supabase/supabase-js";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import AuthContext from "../../../src/context/AuthContext";
 
-export default function popup(data: {
-  user: User | null;
+interface PopupProps {
   toPost: boolean;
   setToPost: React.Dispatch<React.SetStateAction<boolean>>;
   onPostSuccess: () => void;
   onClose?: () => void;
-}) {
-  const toPost = data.toPost;
-  const setToPost = data.setToPost;
-  const onPostSuccess = data.onPostSuccess;
+}
+
+export default function Form({
+  toPost,
+  setToPost,
+  onPostSuccess,
+  onClose,
+}: PopupProps) {
+  const { isLoggedIn, user, emailHandle } = useContext(AuthContext);
 
   const [location, setLocation] = React.useState("");
   const [selectedDate, setSelectedDate] = React.useState(new Date());
@@ -129,8 +134,6 @@ export default function popup(data: {
       return;
     }
 
-    const userName = data.user?.email?.split("@")[0] || "Anonymous";
-
     const startDateTime = new Date(selectedDate);
     startDateTime.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
 
@@ -139,12 +142,11 @@ export default function popup(data: {
 
     const newPost = {
       title: location,
-      name: userName,
+      name: emailHandle,
       startTime: startDateTime.toISOString(),
       endTime: endDateTime.toISOString(),
       location: location,
-      studentEmail: data.user?.email,
-      studentID: 2,
+      studentEmail: user?.email,
     };
 
     const { error } = await supabase.from("Posts").insert(newPost);
@@ -180,7 +182,7 @@ export default function popup(data: {
               onPress={() => {
                 setToPost(false);
                 resetForm();
-                data.onClose?.();
+                onClose?.();
               }}
             >
               <Text style={styles.closeButtonText}>✕</Text>
@@ -197,10 +199,12 @@ export default function popup(data: {
                   style={styles.dropdownButton}
                   onPress={() => setShowLocationDropdown(!showLocationDropdown)}
                 >
-                  <Text style={[
-                    styles.dropdownButtonText,
-                    !location && styles.placeholderText
-                  ]}>
+                  <Text
+                    style={[
+                      styles.dropdownButtonText,
+                      !location && styles.placeholderText,
+                    ]}
+                  >
                     {location || "select location"}
                   </Text>
                   <Text style={styles.dropdownArrow}>
@@ -344,11 +348,7 @@ export default function popup(data: {
       )}
 
       {showEndPicker && (
-        <Modal
-          transparent={true}
-          visible={showEndPicker}
-          animationType="slide"
-        >
+        <Modal transparent={true} visible={showEndPicker} animationType="slide">
           <Pressable
             style={styles.timePickerModalOverlay}
             onPress={() => setShowEndPicker(false)}

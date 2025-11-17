@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import {
   View,
   Text,
@@ -11,8 +11,8 @@ import {
 } from "react-native";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import ChatScreen from "../chat/chatScreen";
 import Post from "../home/post";
+import AuthContext from "../../../src/context/AuthContext";
 
 interface PostProps {
   id: string;
@@ -24,7 +24,6 @@ interface PostProps {
 }
 
 interface InboxScreenProps {
-  user: User | null;
   goBack: () => void;
   homeAnim: Animated.Value;
   postAnim: Animated.Value;
@@ -34,7 +33,6 @@ interface InboxScreenProps {
 }
 
 export default function InboxScreen({
-  user,
   goBack,
   homeAnim,
   postAnim,
@@ -43,14 +41,14 @@ export default function InboxScreen({
   activeNav,
 }: InboxScreenProps) {
   const [posts, setPosts] = useState<PostProps[]>([]);
-  const userName = user?.email?.split("@")[0];
+  const { emailHandle } = useContext(AuthContext);
 
   useEffect(() => {
     const getFromDB = async () => {
       const { error, data } = await supabase
         .from("Posts")
         .select(`*`)
-        .or(`name.eq.${userName},reservation.cs.{${userName}}`)
+        .or(`name.eq.${emailHandle},reservation.cs.{${emailHandle}}`)
         .order("startTime", { ascending: true });
       setPosts([]);
       if (error) {
@@ -65,7 +63,7 @@ export default function InboxScreen({
               endTime: val["endTime"] || val["startTime"],
               name: val["name"],
               content: val["content"],
-              isPoster: val["name"] === userName,
+              isPoster: val["name"] === emailHandle,
             };
           })
         );

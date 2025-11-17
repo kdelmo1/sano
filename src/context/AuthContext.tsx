@@ -1,14 +1,16 @@
-import React from 'react';
+import React from "react";
 import { User } from "@supabase/supabase-js";
 
 type AuthContextType = {
   isLoggedIn: boolean;
   user: User | null;
+  emailHandle: string;
 };
 
 const AuthContext = React.createContext<AuthContextType>({
   isLoggedIn: false,
   user: null,
+  emailHandle: "",
 });
 
 export default AuthContext;
