@@ -41,22 +41,21 @@ export default function ChatScreen({
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
 
-  const channelName = `chat:${postID}:${posterName}:${applicantName}`;
-
-  const roomOne = supabase.channel(channelName, {
-    config: {
-      broadcast: {
-        self: true,
-      },
-      presence: {
-        key: user?.id,
-      },
-    },
-  });
-
   //const applicantName = user?.email?.split("@")[0];
 
   useEffect(() => {
+    const channelName = `chat:${postID}:${posterName}:${applicantName}`;
+
+    const roomOne = supabase.channel(channelName, {
+      config: {
+        broadcast: {
+          self: true,
+        },
+        presence: {
+          key: user?.id,
+        },
+      },
+    });
     if (openChat) {
       const initChat = async () => {
         // Get all messages for this post where user is involved
@@ -93,6 +92,7 @@ export default function ChatScreen({
           filter: `postID=eq.${postID}`,
         },
         (payload) => {
+          console.log(payload);
           // Accept messages where the conversation involves both parties
           const isRelevantMessage =
             payload.new.poster === posterName &&
@@ -112,14 +112,16 @@ export default function ChatScreen({
       );
 
       roomOne.subscribe(async (status) => {
+        console.log(status);
         if (status === "SUBSCRIBED") {
+          console.log(status);
           await roomOne.track({
             id: user?.id,
           });
         }
       });
     }
-
+    console.log(openChat);
     return () => {
       roomOne.unsubscribe();
     };
