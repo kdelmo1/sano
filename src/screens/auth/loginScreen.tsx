@@ -1,5 +1,14 @@
-import React, { useEffect } from "react";
-import { View, StyleSheet, Text, Pressable, Image, Platform } from "react-native";
+import React, { useEffect, useRef } from "react";
+import {
+  View,
+  StyleSheet,
+  Text,
+  Pressable,
+  Image,
+  Platform,
+  Dimensions,
+  Animated
+} from "react-native";
 import { supabase } from "../../lib/supabase";
 import * as WebBrowser from "expo-web-browser";
 
@@ -9,8 +18,47 @@ type LoginScreenProps = {
 
 WebBrowser.maybeCompleteAuthSession();
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const wp = (percentage: number) => (SCREEN_WIDTH * percentage) / 100;
+const hp = (percentage: number) => (SCREEN_HEIGHT * percentage) / 100;
+const responsiveFontSize = (size: number) => {
+  const scale = SCREEN_WIDTH / 375;
+  const newSize = size * scale;
+  return Math.round(newSize);
+};
+
 export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const redirectUrl = "sano://auth/callback";
+
+  const logoTranslateY = useRef(new Animated.Value(0)).current;
+  const buttonOpacity = useRef(new Animated.Value(0)).current;
+  const buttonTranslateY = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(500),
+      Animated.timing(logoTranslateY, {
+        toValue: -hp(10),
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    Animated.timing(buttonOpacity, {
+      toValue: 1,
+      duration: 500,
+      delay: 1100,
+      useNativeDriver: true,
+    }).start();
+
+    Animated.timing(buttonTranslateY, {
+      toValue: 0,
+      duration: 500,
+      delay: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange(
@@ -68,23 +116,40 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        {/* Logo */}
-        <Image 
-          source={require('../../assets/images/sano-logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-        
-        {/* Google Sign-In Button - Native Component */}
-        <Pressable 
-          style={({ pressed }) => [
-            styles.button,
-            pressed && styles.buttonPressed
-          ]} 
-          onPress={signInWithGoogle}
+        <Animated.View
+          style={[
+            styles.logoContainer,
+            {
+              transform: [{ translateY: logoTranslateY }],
+            },
+          ]}
         >
-          <Text style={styles.buttonText}>sign-in with google</Text>
-        </Pressable>
+          <Image
+            source={require('../../assets/images/sano-logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            styles.buttonContainer,
+            {
+              opacity: buttonOpacity,
+              transform: [{ translateY: buttonTranslateY }],
+            },
+          ]}
+        >
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              pressed && styles.buttonPressed
+            ]}
+            onPress={signInWithGoogle}
+          >
+            <Text style={styles.buttonText}>sign-in with google</Text>
+          </Pressable>
+        </Animated.View>
       </View>
     </View>
   );
@@ -101,22 +166,35 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 40,
+    paddingHorizontal: wp(10),
     width: "100%",
   },
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: hp(-12),
+    marginTop: hp(5)
+  },
   logo: {
-    width: 190,
-    height: 80,
-    marginBottom: 0,
+    width: wp(50),
+    height: hp(10),
+    maxWidth: 190,
+    maxHeight: 80,
+  },
+  buttonContainer: {
+    width: "100%",
+    alignItems: "center",
+    marginTop: hp(2),
   },
   button: {
     backgroundColor: "#DDBE45",
     width: "85%",
-    height: 65,
+    maxWidth: 400,
+    height: hp(8),
+    minHeight: 60,
+    maxHeight: 70,
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    // iOS shadow
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -124,7 +202,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 6,
-    // Android shadow
     elevation: 8,
   },
   buttonPressed: {
@@ -133,7 +210,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#FFFFFF",
-    fontSize: 30,
+    fontSize: responsiveFontSize(25),
     fontWeight: "600",
     fontFamily: 'System',
     letterSpacing: 0.3,
