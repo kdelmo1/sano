@@ -144,7 +144,6 @@ export default function popup(data: {
       endTime: endDateTime.toISOString(),
       location: location,
       studentEmail: data.user?.email,
-      studentID: 2,
     };
 
     const { error } = await supabase.from("Posts").insert(newPost);
