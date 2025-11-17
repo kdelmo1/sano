@@ -50,9 +50,8 @@ export default function ChatScreen({
         .from("chat")
         .select("id,poster,applicant,message")
         .eq("postID", postID)
-        .or(
-          `and(poster.eq.${posterName},applicant.eq.${applicantName}),and(poster.eq.${applicantName},applicant.eq.${posterName})`
-        );
+        .eq("poster", posterName)
+        .eq("applicant", applicantName);
 
       if (error) {
         console.log("Error fetching messages:", error);
@@ -68,9 +67,12 @@ export default function ChatScreen({
         );
       }
     };
+
     initChat();
 
-    const roomOne = supabase.channel("room_one", {
+    const channelName = `chat:${postID}:${posterName}:${applicantName}`;
+
+    const roomOne = supabase.channel(channelName, {
       config: {
         broadcast: {
           self: true,
@@ -80,6 +82,7 @@ export default function ChatScreen({
         },
       },
     });
+
     roomOne.on(
       "postgres_changes",
       {
@@ -91,13 +94,10 @@ export default function ChatScreen({
       (payload) => {
         // Accept messages where the conversation involves both parties
         const isRelevantMessage =
-          (payload.new.poster === posterName &&
-            payload.new.applicant === applicantName) ||
-          (payload.new.poster === applicantName &&
-            payload.new.applicant === posterName);
+          payload.new.poster === posterName &&
+          payload.new.applicant === applicantName;
 
         if (isRelevantMessage) {
-          console.log(payload);
           setMessages((prev) => {
             const newMess = {
               message: payload.new["message"],
@@ -111,6 +111,7 @@ export default function ChatScreen({
     );
 
     roomOne.subscribe(async (status) => {
+      console.log(status);
       if (status === "SUBSCRIBED") {
         await roomOne.track({
           id: user?.id,
@@ -121,9 +122,15 @@ export default function ChatScreen({
     return () => {
       roomOne.unsubscribe();
     };
-  }, [isLoggedIn]);
+  }, []);
 
   const sendMessage = async () => {
+    console.log({
+      postID: postID,
+      poster: posterName,
+      applicant: applicantName,
+      message: newMessage,
+    });
     const { error } = await supabase.from("chat").insert({
       postID: postID,
       poster: posterName,

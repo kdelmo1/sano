@@ -4,7 +4,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import LoginScreen from "./src/screens/auth/loginScreen";
 import Home from "./src/screens/home/Home";
 import { supabase } from "./src/lib/supabase";
-import { User } from "@supabase/supabase-js";
+import { User, RealtimeChannel } from "@supabase/supabase-js";
 import AuthContext from "./src/context/AuthContext";
 
 export default function App() {

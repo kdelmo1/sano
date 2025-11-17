@@ -1,5 +1,5 @@
 import React from "react";
-import { User } from "@supabase/supabase-js";
+import { User, RealtimeChannel } from "@supabase/supabase-js";
 
 type AuthContextType = {
   isLoggedIn: boolean;

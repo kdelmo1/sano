@@ -53,10 +53,6 @@ export default function Post({
 
   const isCurrentlyActive = now >= startDataTime && now <= endDataTime;
 
-  if (now > endDataTime) {
-    return null;
-  }
-
   useEffect(() => {
     const reserve = async (id: string, select: boolean) => {
       const func = "append_array";
@@ -64,6 +60,7 @@ export default function Post({
         post_id: id,
         applicant_name: emailHandle,
       });
+      console.log(error);
       // if (func === "decrement" && error) {
       //   refresh or something...?
       // }
