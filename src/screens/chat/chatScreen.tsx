@@ -41,96 +41,91 @@ export default function ChatScreen({
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
 
+  const channelName = `chat:${postID}:${posterName}:${applicantName}`;
+
+  const roomOne = supabase.channel(channelName, {
+    config: {
+      broadcast: {
+        self: true,
+      },
+      presence: {
+        key: user?.id,
+      },
+    },
+  });
+
   //const applicantName = user?.email?.split("@")[0];
 
   useEffect(() => {
-    const initChat = async () => {
-      // Get all messages for this post where user is involved
-      const { data, error } = await supabase
-        .from("chat")
-        .select("id,poster,applicant,message")
-        .eq("postID", postID)
-        .eq("poster", posterName)
-        .eq("applicant", applicantName);
+    if (openChat) {
+      const initChat = async () => {
+        // Get all messages for this post where user is involved
+        const { data, error } = await supabase
+          .from("chat")
+          .select("id,poster,applicant,message")
+          .eq("postID", postID)
+          .eq("poster", posterName)
+          .eq("applicant", applicantName);
 
-      if (error) {
-        console.log("Error fetching messages:", error);
-      } else {
-        setMessages(
-          data.map((val) => {
-            return {
-              message: val["message"],
-              id: val["id"],
-              sender: val["poster"],
-            };
-          })
-        );
-      }
-    };
+        if (error) {
+          console.log("Error fetching messages:", error);
+        } else {
+          setMessages(
+            data.map((val) => {
+              return {
+                message: val["message"],
+                id: val["id"],
+                sender: val["poster"],
+              };
+            })
+          );
+        }
+      };
 
-    initChat();
+      initChat();
 
-    const channelName = `chat:${postID}:${posterName}:${applicantName}`;
-
-    const roomOne = supabase.channel(channelName, {
-      config: {
-        broadcast: {
-          self: true,
+      roomOne.on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat",
+          filter: `postID=eq.${postID}`,
         },
-        presence: {
-          key: user?.id,
-        },
-      },
-    });
+        (payload) => {
+          // Accept messages where the conversation involves both parties
+          const isRelevantMessage =
+            payload.new.poster === posterName &&
+            payload.new.applicant === applicantName;
 
-    roomOne.on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "chat",
-        filter: `postID=eq.${postID}`,
-      },
-      (payload) => {
-        // Accept messages where the conversation involves both parties
-        const isRelevantMessage =
-          payload.new.poster === posterName &&
-          payload.new.applicant === applicantName;
+          if (isRelevantMessage) {
+            setMessages((prev) => {
+              const newMess = {
+                message: payload.new["message"],
+                id: payload.new["id"],
+                sender: payload.new["poster"],
+              };
+              return [...prev, newMess];
+            });
+          }
+        }
+      );
 
-        if (isRelevantMessage) {
-          setMessages((prev) => {
-            const newMess = {
-              message: payload.new["message"],
-              id: payload.new["id"],
-              sender: payload.new["poster"],
-            };
-            return [...prev, newMess];
+      roomOne.subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await roomOne.track({
+            id: user?.id,
           });
         }
-      }
-    );
-
-    roomOne.subscribe(async (status) => {
-      console.log(status);
-      if (status === "SUBSCRIBED") {
-        await roomOne.track({
-          id: user?.id,
-        });
-      }
-    });
+      });
+    }
 
     return () => {
       roomOne.unsubscribe();
     };
-  }, []);
+  }, [openChat]);
 
   const sendMessage = async () => {
-    console.log({
-      postID: postID,
-      poster: posterName,
-      applicant: applicantName,
-      message: newMessage,
-    });
     const { error } = await supabase.from("chat").insert({
       postID: postID,
       poster: posterName,

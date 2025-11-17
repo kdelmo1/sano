@@ -60,7 +60,6 @@ export default function Post({
         post_id: id,
         applicant_name: emailHandle,
       });
-      console.log(error);
       // if (func === "decrement" && error) {
       //   refresh or something...?
       // }
