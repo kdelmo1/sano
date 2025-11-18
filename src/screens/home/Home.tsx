@@ -64,7 +64,7 @@ export default function Home(data: { user: User | null }) {
 
   useEffect(() => {
     async function getFromDB() {
-      const { data, error } = await supabase
+      const { data: rows, error } = await supabase
         .from("Posts")
         .select(`*`)
         .order("startTime", { ascending: true });
@@ -72,9 +72,14 @@ export default function Home(data: { user: User | null }) {
       setPosts([]);
       if (error) {
         console.log("err", error);
-      } else {
+      } else if (rows) {
+        // Filter out posts created by the current user so they don't appear in the main feed
+        const filtered = rows.filter(
+          (val) => val["studentEmail"] !== data.user?.email
+        );
+
         setPosts(
-          data.map((val) => {
+          filtered.map((val) => {
             return {
               id: val["postID"],
               title: val["title"] || "Untitled Post",
