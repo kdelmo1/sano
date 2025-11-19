@@ -35,7 +35,7 @@ export default function Home(data: { user: User | null }) {
       name: string;
       //content: string;
       is_food_giveaway: boolean;
-      photo_url: string | null;
+      photo_urls: string[];
     }[]
   >([]);
 
@@ -86,9 +86,7 @@ export default function Home(data: { user: User | null }) {
     async function getFromDB() {
       let query = supabase
         .from("Posts")
-        .select(
-          "postID, title, startTime, endTime, name, is_food_giveaway, photo_url"
-        )
+        .select("*")
         .order("startTime", { ascending: false });
 
       // Filter by location
@@ -110,12 +108,23 @@ export default function Home(data: { user: User | null }) {
 
       const { data, error } = await query;
 
-      setPosts([]);
       if (error) {
         console.log("err", error);
+        setPosts([]);
       } else {
         setPosts(
           data.map((val) => {
+            let photoUrls: string[] = [];
+            if (val["photo_url"]) {
+              try {
+                photoUrls = JSON.parse(val["photo_url"]);
+                if (!Array.isArray(photoUrls)) {
+                  photoUrls = [];
+                }
+              } catch (e) {
+                photoUrls = [];
+              }
+            }
             return {
               id: val["postID"],
               title: val["title"] || "Untitled Post",
@@ -124,7 +133,7 @@ export default function Home(data: { user: User | null }) {
               name: val["name"],
               //content: val["content"],
               is_food_giveaway: val["is_food_giveaway"] || false,
-              photo_url: val["photo_url"],
+              photo_urls: photoUrls,
             };
           })
         );
@@ -353,7 +362,7 @@ export default function Home(data: { user: User | null }) {
               endTime={post.endTime}
               name={post.name}
               isFoodGiveaway={post.is_food_giveaway}
-              photoUrl={post.photo_url}
+              photoUrls={post.photo_urls}
               openPost={openPost}
               setOpenPost={setOpenPost}
               onOpen={() => {

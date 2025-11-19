@@ -127,13 +127,18 @@ export default function popup(data: {
 
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [4, 3],
+      allowsEditing: false,
       quality: 1,
+      selectionLimit: MAX_PHOTOS,
     });
 
     if (!result.canceled) {
-      setImageUris((prev) => [...prev, result.assets[0].uri]);
+      const newUris = result.assets.map((asset) => asset.uri);
+      setImageUris((prev) => {
+        const combined = [...prev, ...newUris];
+        // Limit to MAX_PHOTOS
+        return combined.slice(0, MAX_PHOTOS);
+      });
     }
   };
 
@@ -167,7 +172,7 @@ export default function popup(data: {
     const endDateTime = new Date(selectedDate);
     endDateTime.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
 
-    let photoUrl: string[] = [];
+    let photoUrls: string[] = [];
     if (imageUris.length > 0) {
       if (!data.user?.id) {
         alert("User not authenticated for upload.");
@@ -200,7 +205,7 @@ export default function popup(data: {
             .from("post-photos")
             .getPublicUrl(filePath);
 
-          photoUrl.push(urlData.publicUrl);
+          photoUrls.push(urlData.publicUrl);
         } catch (err) {
           alert("Failed to upload image");
           return;
@@ -216,7 +221,7 @@ export default function popup(data: {
       location: location,
       studentEmail: data.user?.email,
       is_food_giveaway: isFoodGiveaway,
-      photo_url: isFoodGiveaway ? photoUrl : [],
+      photo_url: isFoodGiveaway ? JSON.stringify(photoUrls) : null,
     };
 
     const { error } = await supabase.from("Posts").insert(newPost);
@@ -284,7 +289,12 @@ export default function popup(data: {
 
                 {showLocationDropdown && (
                   <View style={styles.dropdownMenu}>
-                    <ScrollView style={styles.dropdownScroll}>
+                    <ScrollView
+                      style={styles.dropdownScroll}
+                      nestedScrollEnabled={true}
+                      scrollEventThrottle={16}
+                      showsVerticalScrollIndicator={false}
+                    >
                       {locationOptions.map((option, index) => (
                         <Pressable
                           key={index}
@@ -360,47 +370,52 @@ export default function popup(data: {
           {/* Image Selector (only if Food Giveaway True) */}
           {isFoodGiveaway && (
             <View style={styles.photoUploadContainer}>
-              <Pressable style={styles.photoUploadButton} onPress={pickImage}>
+              <Pressable
+                style={[
+                  styles.photoUploadButton,
+                  imageUris.length >= MAX_PHOTOS &&
+                    styles.photoUploadButtonDisabled,
+                ]}
+                onPress={pickImage}
+                disabled={imageUris.length >= MAX_PHOTOS}
+              >
                 <Text style={styles.photoUploadButtonText}>
-                  {imageUris ? "Change Photo" : "Upload Photo"}
+                  {imageUris.length === 0
+                    ? "Upload Photos"
+                    : `Add Photos (${imageUris.length}/${MAX_PHOTOS})`}
                 </Text>
               </Pressable>
-              {/* {imageUri && (
-                <>
-                  <Image
-                    source={{ uri: imageUri }}
-                    style={styles.imagePreview}
-                  />
-                  <Pressable
-                    onPress={() => setImageUri(null)}
-                    style={styles.removeImageButton}
-                  >
-                    <Text style={styles.removeImageButtonText}>Remove</Text>
-                  </Pressable>
-                </>
-              )} */}
               {imageUris.length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {imageUris.map((uri, index) => (
-                    <View key={index} style={{ marginRight: 10 }}>
-                      <Image source={{ uri }} style={styles.imagePreview} />
-                      <Pressable
-                        onPress={() =>
-                          setImageUris((prev) =>
-                            prev.filter((_, i) => i !== index)
-                          )
-                        }
-                        style={styles.removeImageButton}
-                      >
-                        <Text style={styles.removeImageButtonText}>Remove</Text>
-                      </Pressable>
-                    </View>
-                  ))}
-                </ScrollView>
+                <View style={styles.photoScrollContainer}>
+                  <ScrollView
+                    horizontal={true}
+                    nestedScrollEnabled={true}
+                    showsHorizontalScrollIndicator={false}
+                    scrollEventThrottle={16}
+                    style={styles.photoScrollView}
+                    contentContainerStyle={styles.photoScrollContent}
+                  >
+                    {imageUris.map((uri, index) => (
+                      <View key={index} style={styles.photoWrapper}>
+                        <Image source={{ uri }} style={styles.imagePreview} />
+                        <Pressable
+                          onPress={() =>
+                            setImageUris((prev) =>
+                              prev.filter((_, i) => i !== index)
+                            )
+                          }
+                          style={styles.removeImageButton}
+                        >
+                          <Text style={styles.removeImageButtonText}>✕</Text>
+                        </Pressable>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
               )}
             </View>
           )}
-
+          
           <View style={styles.postButtonContainer}>
             <Pressable style={styles.postButton} onPress={handlePost}>
               <Text style={styles.postButtonText}>post ✓</Text>
@@ -519,7 +534,8 @@ const styles = StyleSheet.create({
     width: "90%",
     backgroundColor: "#FFF",
     borderRadius: 10,
-    overflow: "visible",
+    overflow: "hidden",
+    maxHeight: "90%",
   },
   header: {
     backgroundColor: "#D4B75F",
@@ -731,35 +747,63 @@ const styles = StyleSheet.create({
     color: "#FFF",
   },
   photoUploadContainer: {
-    alignItems: "center",
     paddingVertical: 10,
+    paddingHorizontal: 20,
+    width: "100%",
   },
   photoUploadButton: {
     backgroundColor: "#D4B75F",
     paddingVertical: 10,
-    borderRadius: 8,
-    marginBottom: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    marginBottom: 15,
+    width: "50%",
+    alignItems: "center",
+    alignSelf: "center",
+  },
+  photoUploadButtonDisabled: {
+    backgroundColor: "#ccc",
+    opacity: 0.6,
   },
   photoUploadButtonText: {
     color: "#FFF",
     fontWeight: "600",
+    fontSize: 16,
+  },
+  photoScrollContainer: {
+    marginBottom: 15,
+    width: "100%",
+    maxHeight: 220,
+  },
+  photoScrollContent: {
+    flexDirection: "row",
+    paddingHorizontal: 5,
+  },
+  photoWrapper: {
+    marginRight: 10,
+    alignItems: "center",
+  },
+  photoScrollView: {
+    width: "100%",
   },
   imagePreview: {
-    width: "100%",
-    height: 200,
+    width: 150,
+    height: 150,
     borderRadius: 12,
     resizeMode: "cover",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   removeImageButton: {
     backgroundColor: "#FF4D4D",
-    paddingVertical: 5,
+    paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 5,
+    alignSelf: "center",
   },
   removeImageButtonText: {
     color: "#FFF",
     fontSize: 14,
+    fontWeight: "600",
   },
   switchContainer: {
     flexDirection: "row",

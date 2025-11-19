@@ -1,5 +1,12 @@
 import React from "react";
-import { StyleSheet, Text, View, Pressable, Image } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  Image,
+  ScrollView,
+} from "react-native";
 
 export default function Post(data: {
   id: string;
@@ -8,7 +15,7 @@ export default function Post(data: {
   endTime: string;
   name: string;
   isFoodGiveaway: boolean;
-  photoUrl: string | null;
+  photoUrls: string[];
   openPost: string;
   setOpenPost: React.Dispatch<React.SetStateAction<string>>;
   onOpen: () => void;
@@ -46,8 +53,8 @@ export default function Post(data: {
   }
 
   return (
-    <Pressable onPress={data.onOpen}>
-      <View style={styles.post_container}>
+    <View style={styles.post_container}>
+      <Pressable onPress={data.onOpen}>
         <View style={styles.post}>
           <Text style={styles.title}>{data.title}</Text>
 
@@ -59,10 +66,6 @@ export default function Post(data: {
               <Text style={styles.nowIndicator}> (now)</Text>
             )}
           </Text>
-
-          {data.isFoodGiveaway && data.photoUrl && (
-            <Image source={{ uri: data.photoUrl }} style={styles.postImage} />
-          )}
 
           <View style={styles.userBadgeContainer}>
             <View style={styles.userBadge}>
@@ -76,8 +79,26 @@ export default function Post(data: {
             </View>
           </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+      {data.isFoodGiveaway && data.photoUrls.length > 0 && (
+        <View style={styles.photoContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            scrollEventThrottle={16}
+            style={styles.photoScrollContainer}
+          >
+            {data.photoUrls.map((photoUrl, index) => (
+              <Image
+                key={index}
+                source={{ uri: photoUrl }}
+                style={styles.postImage}
+              />
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -167,11 +188,18 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   postImage: {
-    width: "100%",
-    height: 200,
+    width: 200,
+    height: 150,
     borderRadius: 8,
     resizeMode: "cover",
-    marginTop: 0,
+    marginRight: 10,
+  },
+  photoContainer: {
+    width: "100%",
     marginBottom: 30,
+    overflow: "hidden",
+  },
+  photoScrollContainer: {
+    height: 170,
   },
 });
