@@ -7,17 +7,21 @@ export default function Post(data: {
   startTime: string;
   endTime: string;
   name: string;
+  isFoodGiveaway: boolean;
+  photoUrl: string | null;
   openPost: string;
   setOpenPost: React.Dispatch<React.SetStateAction<string>>;
   onOpen: () => void;
 }) {
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    }).toLowerCase();
+    return date
+      .toLocaleTimeString(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })
+      .toLowerCase();
   };
 
   const formatDate = (dateString: string) => {
@@ -51,8 +55,14 @@ export default function Post(data: {
 
           <Text style={styles.timeRange}>
             @ {formatTime(data.startTime)} - {formatTime(data.endTime)}
-            {isCurrentlyActive && <Text style={styles.nowIndicator}> (now)</Text>}
+            {isCurrentlyActive && (
+              <Text style={styles.nowIndicator}> (now)</Text>
+            )}
           </Text>
+
+          {data.isFoodGiveaway && data.photoUrl && (
+            <Image source={{ uri: data.photoUrl }} style={styles.postImage} />
+          )}
 
           <View style={styles.userBadgeContainer}>
             <View style={styles.userBadge}>
@@ -155,5 +165,13 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontFamily: "System",
     color: "#666",
+  },
+  postImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: 8,
+    resizeMode: "cover",
+    marginTop: 0,
+    marginBottom: 30,
   },
 });

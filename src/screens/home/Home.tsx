@@ -33,7 +33,9 @@ export default function Home(data: { user: User | null }) {
       startTime: string;
       endTime: string;
       name: string;
-      content: string;
+      //content: string;
+      is_food_giveaway: boolean;
+      photo_url: string | null;
     }[]
   >([]);
 
@@ -48,7 +50,9 @@ export default function Home(data: { user: User | null }) {
     title: string;
     name: string;
   } | null>(null);
-  const [chatFromScreen, setChatFromScreen] = useState<"feed" | "inbox">("feed");
+  const [chatFromScreen, setChatFromScreen] = useState<"feed" | "inbox">(
+    "feed"
+  );
 
   const homeAnim = useRef(new Animated.Value(1)).current;
   const postAnim = useRef(new Animated.Value(0)).current;
@@ -68,7 +72,6 @@ export default function Home(data: { user: User | null }) {
     setShowFilter(true);
   };
 
-
   const onRefresh = () => {
     setGetPost(!getPost);
     setRefreshing(true);
@@ -81,7 +84,12 @@ export default function Home(data: { user: User | null }) {
 
   useEffect(() => {
     async function getFromDB() {
-      let query = supabase.from("Posts").select("*").order("startTime", { ascending: false });
+      let query = supabase
+        .from("Posts")
+        .select(
+          "postID, title, startTime, endTime, name, is_food_giveaway, photo_url"
+        )
+        .order("startTime", { ascending: false });
 
       // Filter by location
       if (selectedLocation !== "all") {
@@ -102,7 +110,6 @@ export default function Home(data: { user: User | null }) {
 
       const { data, error } = await query;
 
-
       setPosts([]);
       if (error) {
         console.log("err", error);
@@ -115,7 +122,9 @@ export default function Home(data: { user: User | null }) {
               startTime: val["startTime"],
               endTime: val["endTime"] || val["startTime"],
               name: val["name"],
-              content: val["content"],
+              //content: val["content"],
+              is_food_giveaway: val["is_food_giveaway"] || false,
+              photo_url: val["photo_url"],
             };
           })
         );
@@ -265,7 +274,6 @@ export default function Home(data: { user: User | null }) {
       <View style={styles.container}>
         <View style={styles.navbar}>
           <View style={styles.search_bar_container}>
-
             {/* Filter Open Button */}
             <Pressable
               style={{
@@ -291,19 +299,22 @@ export default function Home(data: { user: User | null }) {
             >
               <View style={{ flex: 1, backgroundColor: "#fff" }}>
                 {/* Header Title and Buttons */}
-                <View
-                 style={styles.filterHeader} 
-                >
+                <View style={styles.filterHeader}>
                   <Pressable onPress={() => setShowFilter(false)}>
-                    <Text style={{ fontSize: 18, color: "#007AFF" }}>Cancel</Text>
+                    <Text style={{ fontSize: 18, color: "#007AFF" }}>
+                      Cancel
+                    </Text>
                   </Pressable>
-                  <Text style={{ fontSize: 18, fontWeight: "bold" }}>Filter Posts</Text>
-                  <Pressable 
+                  <Text style={{ fontSize: 18, fontWeight: "bold" }}>
+                    Filter Posts
+                  </Text>
+                  <Pressable
                     onPress={() => {
                       setSelectedLocation(tempLocation);
                       setSelectedTime(tempTime);
                       setShowFilter(false);
-                    }}>
+                    }}
+                  >
                     <Text style={{ fontSize: 18, color: "#007AFF" }}>Done</Text>
                   </Pressable>
                 </View>
@@ -341,6 +352,8 @@ export default function Home(data: { user: User | null }) {
               startTime={post.startTime}
               endTime={post.endTime}
               name={post.name}
+              isFoodGiveaway={post.is_food_giveaway}
+              photoUrl={post.photo_url}
               openPost={openPost}
               setOpenPost={setOpenPost}
               onOpen={() => {

@@ -6,11 +6,16 @@ import {
   Modal,
   Platform,
   ScrollView,
+  Image,
+  Switch,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { User } from "@supabase/supabase-js";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import * as ImagePicker from "expo-image-picker";
+
+const MAX_PHOTOS = 5;
 
 export default function popup(data: {
   user: User | null;
@@ -31,6 +36,9 @@ export default function popup(data: {
   const [showStartPicker, setShowStartPicker] = React.useState(false);
   const [showEndPicker, setShowEndPicker] = React.useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = React.useState(false);
+  const [isFoodGiveaway, setIsFoodGiveaway] = React.useState(false);
+  const [imageUris, setImageUris] = React.useState<string[]>([]);
+  const [isPosting, setIsPosting] = React.useState(false);
 
   const locationOptions = [
     "JRL/C9 DH",
@@ -51,6 +59,8 @@ export default function popup(data: {
     setStartTime(now);
     const thirtyMinsLater = new Date(now.getTime() + 30 * 60000);
     setEndTime(thirtyMinsLater);
+    setIsFoodGiveaway(false);
+    setImageUris([]);
   };
 
   useEffect(() => {
@@ -107,6 +117,26 @@ export default function popup(data: {
     });
   };
 
+  // Image Picker Function
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      alert("Permission to access media library is required!");
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImageUris((prev) => [...prev, result.assets[0].uri]);
+    }
+  };
+
   const handleLocationSelect = (selectedLocation: string) => {
     setLocation(selectedLocation);
     setShowLocationDropdown(false);
@@ -137,6 +167,47 @@ export default function popup(data: {
     const endDateTime = new Date(selectedDate);
     endDateTime.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
 
+    let photoUrl: string[] = [];
+    if (imageUris.length > 0) {
+      if (!data.user?.id) {
+        alert("User not authenticated for upload.");
+        return;
+      }
+
+      for (const uri of imageUris) {
+        try {
+          const userFolder = data.user.id;
+          const fileId = Date.now() + "-" + Math.random();
+          const fileName = `${fileId}.jpg`;
+          const filePath = `${userFolder}/${fileName}`;
+
+          const response = await fetch(uri);
+          const arrayBuffer = await response.arrayBuffer();
+
+          const { error: uploadError } = await supabase.storage
+            .from("post-photos")
+            .upload(filePath, new Uint8Array(arrayBuffer), {
+              contentType: "image/jpeg",
+              upsert: false,
+            });
+
+          if (uploadError) {
+            alert("Failed to upload image: " + uploadError.message);
+            return;
+          }
+
+          const { data: urlData } = supabase.storage
+            .from("post-photos")
+            .getPublicUrl(filePath);
+
+          photoUrl.push(urlData.publicUrl);
+        } catch (err) {
+          alert("Failed to upload image");
+          return;
+        }
+      }
+    }
+
     const newPost = {
       title: location,
       name: userName,
@@ -144,6 +215,8 @@ export default function popup(data: {
       endTime: endDateTime.toISOString(),
       location: location,
       studentEmail: data.user?.email,
+      is_food_giveaway: isFoodGiveaway,
+      photo_url: isFoodGiveaway ? photoUrl : [],
     };
 
     const { error } = await supabase.from("Posts").insert(newPost);
@@ -196,10 +269,12 @@ export default function popup(data: {
                   style={styles.dropdownButton}
                   onPress={() => setShowLocationDropdown(!showLocationDropdown)}
                 >
-                  <Text style={[
-                    styles.dropdownButtonText,
-                    !location && styles.placeholderText
-                  ]}>
+                  <Text
+                    style={[
+                      styles.dropdownButtonText,
+                      !location && styles.placeholderText,
+                    ]}
+                  >
                     {location || "select location"}
                   </Text>
                   <Text style={styles.dropdownArrow}>
@@ -266,6 +341,65 @@ export default function popup(data: {
               </View>
             </View>
           </View>
+
+          {/* Food Giveaway Field */}
+          <View style={styles.switchContainer}>
+            <Text style={styles.switchLabel}>Food Giveaway?</Text>
+            <Switch
+              value={isFoodGiveaway}
+              onValueChange={(value) => {
+                setIsFoodGiveaway(value);
+                if (!value) {
+                  setImageUris([]);
+                }
+              }}
+              trackColor={{ false: "#ccc", true: "#D4B75F" }}
+              thumbColor={isFoodGiveaway ? "#fff" : "#fff"}
+            />
+          </View>
+          {/* Image Selector (only if Food Giveaway True) */}
+          {isFoodGiveaway && (
+            <View style={styles.photoUploadContainer}>
+              <Pressable style={styles.photoUploadButton} onPress={pickImage}>
+                <Text style={styles.photoUploadButtonText}>
+                  {imageUris ? "Change Photo" : "Upload Photo"}
+                </Text>
+              </Pressable>
+              {/* {imageUri && (
+                <>
+                  <Image
+                    source={{ uri: imageUri }}
+                    style={styles.imagePreview}
+                  />
+                  <Pressable
+                    onPress={() => setImageUri(null)}
+                    style={styles.removeImageButton}
+                  >
+                    <Text style={styles.removeImageButtonText}>Remove</Text>
+                  </Pressable>
+                </>
+              )} */}
+              {imageUris.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {imageUris.map((uri, index) => (
+                    <View key={index} style={{ marginRight: 10 }}>
+                      <Image source={{ uri }} style={styles.imagePreview} />
+                      <Pressable
+                        onPress={() =>
+                          setImageUris((prev) =>
+                            prev.filter((_, i) => i !== index)
+                          )
+                        }
+                        style={styles.removeImageButton}
+                      >
+                        <Text style={styles.removeImageButtonText}>Remove</Text>
+                      </Pressable>
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+          )}
 
           <View style={styles.postButtonContainer}>
             <Pressable style={styles.postButton} onPress={handlePost}>
@@ -343,11 +477,7 @@ export default function popup(data: {
       )}
 
       {showEndPicker && (
-        <Modal
-          transparent={true}
-          visible={showEndPicker}
-          animationType="slide"
-        >
+        <Modal transparent={true} visible={showEndPicker} animationType="slide">
           <Pressable
             style={styles.timePickerModalOverlay}
             onPress={() => setShowEndPicker(false)}
@@ -591,5 +721,60 @@ const styles = StyleSheet.create({
   },
   timePicker: {
     height: 200,
+  },
+  giveawayText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  giveawayTextSelected: {
+    color: "#FFF",
+  },
+  photoUploadContainer: {
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  photoUploadButton: {
+    backgroundColor: "#D4B75F",
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  photoUploadButtonText: {
+    color: "#FFF",
+    fontWeight: "600",
+  },
+  imagePreview: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
+    resizeMode: "cover",
+    marginBottom: 10,
+  },
+  removeImageButton: {
+    backgroundColor: "#FF4D4D",
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+  removeImageButtonText: {
+    color: "#FFF",
+    fontSize: 14,
+  },
+  switchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 15,
+    marginHorizontal: 20,
+    backgroundColor: "#F0F0F0",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 12,
+  },
+  switchLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
   },
 });
