@@ -81,12 +81,15 @@ export default function ProfileScreen({
               },
             ]}
           />
-          <Image
+          <Animated.Image
             source={require("../../assets/images/icon-post.png")}
             style={[
               styles.nav_icon_image,
               {
-                tintColor: activeNav === "post" ? "#D4B75F" : "#FFF",
+                tintColor: postAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['#FFF', '#D4B75F']
+                }),
               },
             ]}
           />
@@ -105,12 +108,15 @@ export default function ProfileScreen({
               },
             ]}
           />
-          <Image
+          <Animated.Image
             source={require("../../assets/images/icon-home.png")}
             style={[
               styles.nav_icon_image,
               {
-                tintColor: activeNav === "home" ? "#D4B75F" : "#FFF",
+                tintColor: homeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['#FFF', '#D4B75F']
+                }),
               },
             ]}
           />
@@ -129,12 +135,15 @@ export default function ProfileScreen({
               },
             ]}
           />
-          <Image
+          <Animated.Image
             source={require("../../assets/images/profile-icon.png")}
             style={[
               styles.nav_icon_image,
               {
-                tintColor: activeNav === "profile" ? "#D4B75F" : "#FFF",
+                tintColor: profileAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['#FFF', '#D4B75F']
+                }),
               },
             ]}
           />

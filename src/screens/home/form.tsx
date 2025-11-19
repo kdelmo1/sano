@@ -6,6 +6,8 @@ import {
   Modal,
   Platform,
   ScrollView,
+  Animated,
+  Image,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
@@ -18,6 +20,11 @@ export default function popup(data: {
   setToPost: React.Dispatch<React.SetStateAction<boolean>>;
   onPostSuccess: () => void;
   onClose?: () => void;
+  homeAnim: any;
+  postAnim: any;
+  profileAnim: any;
+  onNavPress: (button: "home" | "post" | "profile") => void;
+  activeNav: "home" | "post" | "profile";
 }) {
   const toPost = data.toPost;
   const setToPost = data.setToPost;
@@ -124,18 +131,24 @@ export default function popup(data: {
       return;
     }
 
-    if (endTime <= startTime) {
-      alert("End time must be after start time.");
-      return;
-    }
-
-    const userName = data.user?.email?.split("@")[0] || "Anonymous";
-
     const startDateTime = new Date(selectedDate);
     startDateTime.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
 
     const endDateTime = new Date(selectedDate);
     endDateTime.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
+
+    if (endDateTime <= startDateTime) {
+      alert("End time must be after start time.");
+      return;
+    }
+
+    const currentTime = new Date();
+    if (endDateTime <= currentTime) {
+      alert("Cannot post an expired post.");
+      return;
+    }
+
+    const userName = data.user?.email?.split("@")[0] || "Anonymous";
 
     const newPost = {
       title: location,
@@ -156,21 +169,16 @@ export default function popup(data: {
       resetForm();
       setToPost(false);
       onPostSuccess();
+      data.onClose?.();
     }
   }
 
+  if (!toPost) return null;
+
   return (
-    <Modal transparent={true} visible={toPost} animationType="fade">
-      <Pressable
-        style={styles.modalOverlay}
-        onPress={() => {
-          setShowLocationDropdown(false);
-        }}
-      >
-        <Pressable
-          style={styles.modalContent}
-          onPress={(e) => e.stopPropagation()}
-        >
+    <View style={styles.fullScreenContainer}>
+      <View style={styles.screenOverlay}>
+        <View style={styles.screenContent}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>new post</Text>
@@ -272,8 +280,92 @@ export default function popup(data: {
               <Text style={styles.postButtonText}>post ✓</Text>
             </Pressable>
           </View>
+        </View>
+      </View>
+
+      {/* Navigation Bar - Now always rendered with passed props */}
+      <View style={styles.floatingNav}>
+        <Pressable
+          style={styles.nav_button}
+          onPress={() => data.onNavPress("post")}
+        >
+          <Animated.View
+            style={[
+              styles.navCircle,
+              {
+                opacity: data.postAnim,
+                transform: [{ scale: data.postAnim }],
+              },
+            ]}
+          />
+          <Animated.Image
+            source={require("../../assets/images/icon-post.png")}
+            style={[
+              styles.nav_icon_image,
+              {
+                tintColor: data.postAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['#FFF', '#D4B75F']
+                }),
+              },
+            ]}
+          />
         </Pressable>
-      </Pressable>
+
+        <Pressable
+          style={styles.nav_button}
+          onPress={() => data.onNavPress("home")}
+        >
+          <Animated.View
+            style={[
+              styles.navCircle,
+              {
+                opacity: data.homeAnim,
+                transform: [{ scale: data.homeAnim }],
+              },
+            ]}
+          />
+          <Animated.Image
+            source={require("../../assets/images/icon-home.png")}
+            style={[
+              styles.nav_icon_image,
+              {
+                tintColor: data.homeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['#FFF', '#D4B75F']
+                }),
+              },
+            ]}
+          />
+        </Pressable>
+
+        <Pressable
+          style={styles.nav_button}
+          onPress={() => data.onNavPress("profile")}
+        >
+          <Animated.View
+            style={[
+              styles.navCircle,
+              {
+                opacity: data.profileAnim,
+                transform: [{ scale: data.profileAnim }],
+              },
+            ]}
+          />
+          <Animated.Image
+            source={require("../../assets/images/profile-icon.png")}
+            style={[
+              styles.nav_icon_image,
+              {
+                tintColor: data.profileAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['#FFF', '#D4B75F']
+                }),
+              },
+            ]}
+          />
+        </Pressable>
+      </View>
 
       {showDatePicker && (
         <Modal
@@ -374,18 +466,23 @@ export default function popup(data: {
           </Pressable>
         </Modal>
       )}
-    </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  fullScreenContainer: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "#F5F5F5",
+  },
+  screenOverlay: {
+    flex: 1,
+    backgroundColor: "#F5F5F5",
     alignItems: "center",
     justifyContent: "center",
+    paddingBottom: 80,
   },
-  modalContent: {
+  screenContent: {
     width: "90%",
     backgroundColor: "#FFF",
     borderRadius: 10,
@@ -515,7 +612,6 @@ const styles = StyleSheet.create({
   timeRowContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    // marginBottom: 5,
     gap: 10,
   },
   timeFieldContainer: {
@@ -591,5 +687,45 @@ const styles = StyleSheet.create({
   },
   timePicker: {
     height: 200,
+  },
+  floatingNav: {
+    position: "absolute" as const,
+    bottom: 10,
+    alignSelf: "center",
+    height: 70,
+    width: 390,
+    backgroundColor: "#D4B75F",
+    borderRadius: 20,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 10,
+    zIndex: 1000,
+  },
+  nav_button: {
+    width: 60,
+    height: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  navCircle: {
+    position: "absolute",
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#FFF",
+  },
+  nav_icon_image: {
+    width: 32,
+    height: 32,
+    zIndex: 1,
   },
 });

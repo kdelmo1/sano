@@ -23,7 +23,7 @@ import Filter from "./filter";
 import { Modal } from "react-native";
 
 type NavButton = "home" | "post" | "profile";
-type Screen = "feed" | "chat" | "profile" | "inbox";
+type Screen = "feed" | "chat" | "profile" | "inbox" | "form";
 
 export default function Home(data: { user: User | null }) {
   const [posts, setPosts] = React.useState<
@@ -81,7 +81,7 @@ export default function Home(data: { user: User | null }) {
 
   useEffect(() => {
     async function getFromDB() {
-      let query = supabase.from("Posts").select("*").order("startTime", { ascending: false });
+      let query = supabase.from("Posts").select("*").order("startTime", { ascending: true });
 
       // Filter by location
       if (selectedLocation !== "all") {
@@ -131,17 +131,17 @@ export default function Home(data: { user: User | null }) {
       profile: profileAnim,
     };
 
+    setActiveNav(button);
+
     Object.entries(animations).forEach(([key, anim]) => {
-      Animated.spring(anim, {
+      Animated.timing(anim, {
         toValue: key === button ? 1 : 0,
+        duration: 200,
         useNativeDriver: true,
-        tension: 50,
-        friction: 7,
       }).start();
     });
-
-    setActiveNav(button);
   };
+
 
   const handleNavPress = (button: NavButton) => {
     animateNavButton(button);
@@ -151,10 +151,47 @@ export default function Home(data: { user: User | null }) {
       setScreen("feed");
     } else if (button === "post") {
       setToPost(true);
+      setScreen("form");
     } else if (button === "profile") {
       setScreen("profile");
     }
   };
+
+  if (screen === "form") {
+    return (
+      <View
+        style={{
+          paddingTop: insets.top,
+          paddingLeft: insets.left,
+          paddingBottom: insets.bottom,
+          paddingRight: insets.right,
+          backgroundColor: "#F5F5F5",
+          flex: 1,
+        }}
+      >
+        <Form
+          user={data.user}
+          toPost={toPost}
+          setToPost={setToPost}
+          onPostSuccess={() => {
+            setGetPost((prev) => !prev);
+            setScreen("feed");
+            animateNavButton("home");
+          }}
+          onClose={() => {
+            setToPost(false);
+            setScreen("feed");
+            animateNavButton("home");
+          }}
+          homeAnim={homeAnim}
+          postAnim={postAnim}
+          profileAnim={profileAnim}
+          onNavPress={handleNavPress}
+          activeNav={activeNav}
+        />
+      </View>
+    );
+  }
 
   if (screen === "chat") {
     return (
@@ -292,13 +329,13 @@ export default function Home(data: { user: User | null }) {
               <View style={{ flex: 1, backgroundColor: "#fff" }}>
                 {/* Header Title and Buttons */}
                 <View
-                 style={styles.filterHeader} 
+                  style={styles.filterHeader}
                 >
                   <Pressable onPress={() => setShowFilter(false)}>
                     <Text style={{ fontSize: 18, color: "#007AFF" }}>Cancel</Text>
                   </Pressable>
                   <Text style={{ fontSize: 18, fontWeight: "bold" }}>Filter Posts</Text>
-                  <Pressable 
+                  <Pressable
                     onPress={() => {
                       setSelectedLocation(tempLocation);
                       setSelectedTime(tempTime);
@@ -356,14 +393,6 @@ export default function Home(data: { user: User | null }) {
           ))}
         </ScrollView>
 
-        <Form
-          user={data.user}
-          toPost={toPost}
-          setToPost={setToPost}
-          onPostSuccess={() => setGetPost((prev) => !prev)}
-          onClose={() => animateNavButton("home")}
-        />
-
         <View style={styles.floatingNav}>
           <Pressable
             style={styles.nav_button}
@@ -378,12 +407,15 @@ export default function Home(data: { user: User | null }) {
                 },
               ]}
             />
-            <Image
+            <Animated.Image
               source={require("../../assets/images/icon-post.png")}
               style={[
                 styles.nav_icon_image,
                 {
-                  tintColor: activeNav === "post" ? "#D4B75F" : "#FFF",
+                  tintColor: postAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['#FFF', '#D4B75F']
+                  }),
                 },
               ]}
             />
@@ -402,12 +434,15 @@ export default function Home(data: { user: User | null }) {
                 },
               ]}
             />
-            <Image
+            <Animated.Image
               source={require("../../assets/images/icon-home.png")}
               style={[
                 styles.nav_icon_image,
                 {
-                  tintColor: activeNav === "home" ? "#D4B75F" : "#FFF",
+                  tintColor: homeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['#FFF', '#D4B75F']
+                  }),
                 },
               ]}
             />
@@ -426,12 +461,15 @@ export default function Home(data: { user: User | null }) {
                 },
               ]}
             />
-            <Image
+            <Animated.Image
               source={require("../../assets/images/profile-icon.png")}
               style={[
                 styles.nav_icon_image,
                 {
-                  tintColor: activeNav === "profile" ? "#D4B75F" : "#FFF",
+                  tintColor: profileAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['#FFF', '#D4B75F']
+                  }),
                 },
               ]}
             />
