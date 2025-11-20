@@ -96,9 +96,14 @@ export default function Home() {
       setPosts([]);
       if (error) {
         console.log("err", error);
-      } else {
+      } else if (rows) {
+        // Filter out posts created by the current user so they don't appear in the main feed
+        const filtered = rows.filter(
+          (val) => val["studentEmail"] !== data.user?.email
+        );
+
         setPosts(
-          data.map((val) => {
+          filtered.map((val) => {
             return {
               id: val["postID"],
               title: val["title"] || "Untitled Post",

@@ -6,7 +6,9 @@ import {
   Pressable,
   Image,
   Animated,
+  ScrollView,
 } from "react-native";
+import Post from "../home/post";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import AuthContext from "../../context/AuthContext";
@@ -34,6 +36,49 @@ export default function ProfileScreen({
     await supabase.auth.signOut();
   };
 
+  const [yourPosts, setYourPosts] = React.useState<
+    {
+      id: string;
+      title: string;
+      startTime: string;
+      endTime: string;
+      name: string;
+      content?: string;
+    }[]
+  >([]);
+
+  const [openPost, setOpenPost] = React.useState("");
+
+  React.useEffect(() => {
+    async function fetchYourPosts() {
+      if (!user?.email) return;
+
+      const { data: rows, error } = await supabase
+        .from("Posts")
+        .select(`*`)
+        .eq("studentEmail", user.email)
+        .order("startTime", { ascending: true });
+
+      if (error) {
+        console.log("Failed to fetch your posts:", error);
+        setYourPosts([]);
+      } else if (rows) {
+        setYourPosts(
+          rows.map((val) => ({
+            id: val["postID"],
+            title: val["title"] || "Untitled Post",
+            startTime: val["startTime"],
+            endTime: val["endTime"] || val["startTime"],
+            name: val["name"],
+            content: val["content"],
+          }))
+        );
+      }
+    }
+
+    fetchYourPosts();
+  }, [user]);
+
   // Extract user's name or email
   const { isLoggedIn, user } = useContext(AuthContext);
 
@@ -55,6 +100,30 @@ export default function ProfileScreen({
 
         {/* User Name */}
         <Text style={styles.userName}>{displayName}</Text>
+      </View>
+
+      {/* Your Posts Section */}
+      <View style={styles.yourPostsContainer}>
+        <Text style={styles.sectionTitle}>Your posts</Text>
+        <ScrollView style={styles.yourPostsList}>
+          {yourPosts.length === 0 ? (
+            <Text style={styles.noPostsText}>You have no posts</Text>
+          ) : (
+            yourPosts.map((p) => (
+              <Post
+                key={p.id}
+                id={p.id}
+                title={p.title}
+                startTime={p.startTime}
+                endTime={p.endTime}
+                name={p.name}
+                openPost={openPost}
+                setOpenPost={setOpenPost}
+                onOpen={() => setOpenPost(p.id)}
+              />
+            ))
+          )}
+        </ScrollView>
       </View>
 
       {/* Inbox Button */}
@@ -276,5 +345,24 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     zIndex: 1,
+  },
+  yourPostsContainer: {
+    width: "90%",
+    maxWidth: 360,
+    marginTop: 10,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 8,
+    color: "#333",
+  },
+  yourPostsList: {
+    maxHeight: 260,
+  },
+  noPostsText: {
+    color: "#888",
+    fontSize: 16,
   },
 });
