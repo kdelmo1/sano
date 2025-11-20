@@ -9,26 +9,26 @@ import {
   Animated,
   Image,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { supabase } from "../../lib/supabase";
 import { User } from "@supabase/supabase-js";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import AuthContext from "../../../src/context/AuthContext";
 
-export default function popup(data: {
-  user: User | null;
+interface PopupProps {
   toPost: boolean;
   setToPost: React.Dispatch<React.SetStateAction<boolean>>;
   onPostSuccess: () => void;
   onClose?: () => void;
-  homeAnim: any;
-  postAnim: any;
-  profileAnim: any;
-  onNavPress: (button: "home" | "post" | "profile") => void;
-  activeNav: "home" | "post" | "profile";
-}) {
-  const toPost = data.toPost;
-  const setToPost = data.setToPost;
-  const onPostSuccess = data.onPostSuccess;
+}
+
+export default function Form({
+  toPost,
+  setToPost,
+  onPostSuccess,
+  onClose,
+}: PopupProps) {
+  const { isLoggedIn, user, emailHandle } = useContext(AuthContext);
 
   const [location, setLocation] = React.useState("");
   const [selectedDate, setSelectedDate] = React.useState(new Date());
@@ -131,6 +131,11 @@ export default function popup(data: {
       return;
     }
 
+    if (endTime <= startTime) {
+      alert("End time must be after start time.");
+      return;
+    }
+
     const startDateTime = new Date(selectedDate);
     startDateTime.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
 
@@ -152,11 +157,11 @@ export default function popup(data: {
 
     const newPost = {
       title: location,
-      name: userName,
+      name: emailHandle,
       startTime: startDateTime.toISOString(),
       endTime: endDateTime.toISOString(),
       location: location,
-      studentEmail: data.user?.email,
+      studentEmail: user?.email,
     };
 
     const { error } = await supabase.from("Posts").insert(newPost);
@@ -187,7 +192,7 @@ export default function popup(data: {
               onPress={() => {
                 setToPost(false);
                 resetForm();
-                data.onClose?.();
+                onClose?.();
               }}
             >
               <Text style={styles.closeButtonText}>✕</Text>
@@ -204,10 +209,12 @@ export default function popup(data: {
                   style={styles.dropdownButton}
                   onPress={() => setShowLocationDropdown(!showLocationDropdown)}
                 >
-                  <Text style={[
-                    styles.dropdownButtonText,
-                    !location && styles.placeholderText
-                  ]}>
+                  <Text
+                    style={[
+                      styles.dropdownButtonText,
+                      !location && styles.placeholderText,
+                    ]}
+                  >
                     {location || "select location"}
                   </Text>
                   <Text style={styles.dropdownArrow}>
@@ -435,11 +442,7 @@ export default function popup(data: {
       )}
 
       {showEndPicker && (
-        <Modal
-          transparent={true}
-          visible={showEndPicker}
-          animationType="slide"
-        >
+        <Modal transparent={true} visible={showEndPicker} animationType="slide">
           <Pressable
             style={styles.timePickerModalOverlay}
             onPress={() => setShowEndPicker(false)}
@@ -687,45 +690,5 @@ const styles = StyleSheet.create({
   },
   timePicker: {
     height: 200,
-  },
-  floatingNav: {
-    position: "absolute" as const,
-    bottom: 10,
-    alignSelf: "center",
-    height: 70,
-    width: 390,
-    backgroundColor: "#D4B75F",
-    borderRadius: 20,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 10,
-    zIndex: 1000,
-  },
-  nav_button: {
-    width: 60,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  navCircle: {
-    position: "absolute",
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "#FFF",
-  },
-  nav_icon_image: {
-    width: 32,
-    height: 32,
-    zIndex: 1,
   },
 });

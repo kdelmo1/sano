@@ -1,23 +1,42 @@
-import React from "react";
-import { StyleSheet, Text, View, Pressable, Image } from "react-native";
+import React, { useState, useContext, useEffect } from "react";
+import { StyleSheet, Text, View, Pressable, Image, Modal } from "react-native";
+import ChatScreen from "../chat/chatScreen";
+import PosterView from "../chat/posterView";
+import AuthContext from "../../../src/context/AuthContext";
+import { supabase } from "../../lib/supabase";
 
-export default function Post(data: {
+interface PostProps {
   id: string;
   title: string;
   startTime: string;
   endTime: string;
   name: string;
-  openPost: string;
-  setOpenPost: React.Dispatch<React.SetStateAction<string>>;
-  onOpen: () => void;
-}) {
+  isPoster: boolean;
+  from: "feed" | "inbox";
+}
+
+export default function Post({
+  id,
+  title,
+  startTime,
+  endTime,
+  name,
+  isPoster,
+  from,
+}: PostProps) {
+  const { emailHandle } = useContext(AuthContext);
+
+  const [openChat, setOpenChat] = useState(false);
+
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    }).toLowerCase();
+    return date
+      .toLocaleTimeString(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })
+      .toLowerCase();
   };
 
   const formatDate = (dateString: string) => {
@@ -29,29 +48,63 @@ export default function Post(data: {
     });
   };
 
-  const isOpen = data.openPost === data.id;
-
   const now = new Date();
-  const startTime = new Date(data.startTime);
-  const endTime = new Date(data.endTime);
+  const startDataTime = new Date(startTime);
+  const endDataTime = new Date(endTime);
 
-  const isCurrentlyActive = now >= startTime && now <= endTime;
+  const isCurrentlyActive = now >= startDataTime && now <= endDataTime;
 
-  if (now > endTime) {
-    return null;
-  }
+  useEffect(() => {
+    const reserve = async (id: string, select: boolean) => {
+      const func = "append_array";
+      const { error } = await supabase.rpc(func, {
+        post_id: id,
+        applicant_name: emailHandle,
+      });
+      // if (func === "decrement" && error) {
+      //   refresh or something...?
+      // }
+      return error ? false : true;
+    };
+    if (openChat && from === "feed") {
+      reserve(id, false);
+    }
+  }, [openChat]);
 
   return (
-    <Pressable onPress={data.onOpen}>
+    <Pressable
+      onPress={() => {
+        setOpenChat(true);
+      }}
+    >
+      {isPoster ? (
+        <PosterView
+          id={id}
+          showOpt={openChat}
+          goBack={() => setOpenChat(false)}
+        />
+      ) : (
+        <ChatScreen
+          goBack={() => setOpenChat(false)}
+          openChat={openChat}
+          postID={id}
+          posterName={name}
+          applicantName={emailHandle}
+          isPoster={false}
+          fromScreen={from}
+        />
+      )}
       <View style={styles.post_container}>
         <View style={styles.post}>
-          <Text style={styles.title}>{data.title}</Text>
+          <Text style={styles.title}>{title}</Text>
 
-          <Text style={styles.date}>{formatDate(data.startTime)}</Text>
+          <Text style={styles.date}>{formatDate(startTime)}</Text>
 
           <Text style={styles.timeRange}>
-            @ {formatTime(data.startTime)} - {formatTime(data.endTime)}
-            {isCurrentlyActive && <Text style={styles.nowIndicator}> (now)</Text>}
+            @ {formatTime(startTime)} - {formatTime(endTime)}
+            {isCurrentlyActive && (
+              <Text style={styles.nowIndicator}> (now)</Text>
+            )}
           </Text>
 
           <View style={styles.userBadgeContainer}>
@@ -62,7 +115,7 @@ export default function Post(data: {
                   style={styles.profileIconImage}
                 />
               </View>
-              <Text style={styles.username}>{data.name}</Text>
+              <Text style={styles.username}>{name}</Text>
             </View>
           </View>
         </View>
@@ -72,6 +125,27 @@ export default function Post(data: {
 }
 
 const styles = StyleSheet.create({
+  // will delete later
+  screen: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  container: {
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    maxWidth: 1152,
+    width: "100%",
+    minHeight: 600,
+    borderRadius: 12,
+    backgroundColor: "#FFF",
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  // stops here
   post_container: {
     paddingHorizontal: 16,
     paddingVertical: 8,

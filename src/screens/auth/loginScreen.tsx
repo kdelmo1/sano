@@ -7,7 +7,7 @@ import {
   Image,
   Platform,
   Dimensions,
-  Animated
+  Animated,
 } from "react-native";
 import { supabase } from "../../lib/supabase";
 import * as WebBrowser from "expo-web-browser";
@@ -18,7 +18,7 @@ type LoginScreenProps = {
 
 WebBrowser.maybeCompleteAuthSession();
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const wp = (percentage: number) => (SCREEN_WIDTH * percentage) / 100;
 const hp = (percentage: number) => (SCREEN_HEIGHT * percentage) / 100;
@@ -125,7 +125,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           ]}
         >
           <Image
-            source={require('../../assets/images/sano-logo.png')}
+            source={require("../../assets/images/sano-logo.png")}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -143,7 +143,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           <Pressable
             style={({ pressed }) => [
               styles.button,
-              pressed && styles.buttonPressed
+              pressed && styles.buttonPressed,
             ]}
             onPress={signInWithGoogle}
           >
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "center",
     marginBottom: hp(-12),
-    marginTop: hp(5)
+    marginTop: hp(5),
   },
   logo: {
     width: wp(50),
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: responsiveFontSize(25),
     fontWeight: "600",
-    fontFamily: 'System',
+    fontFamily: "System",
     letterSpacing: 0.3,
   },
 });
