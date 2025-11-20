@@ -20,7 +20,7 @@ import { supabase } from "../../lib/supabase";
 import AuthContext from "../../../src/context/AuthContext";
 
 type NavButton = "home" | "post" | "profile";
-type Screen = "feed" | "chat" | "profile" | "inbox";
+type Screen = "feed" | "chat" | "profile" | "inbox" | "form";
 
 export default function Home() {
   const [posts, setPosts] = useState<
@@ -44,6 +44,21 @@ export default function Home() {
   const postAnim = useRef(new Animated.Value(0)).current;
   const profileAnim = useRef(new Animated.Value(0)).current;
 
+  // Filter values
+  const [showFilter, setShowFilter] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [selectedTime, setSelectedTime] = useState("all");
+  const [selectedTag, setSelectedTag] = useState("all");
+  const [tempLocation, setTempLocation] = useState(selectedLocation);
+  const [tempTime, setTempTime] = useState(selectedTime);
+  const [tempTag, setTempTag] = useState(selectedTag);
+  const openFilterModal = () => {
+    setTempLocation(selectedLocation);
+    setTempTime(selectedTime);
+    setShowFilter(true);
+  };
+
+
   const onRefresh = () => {
     setGetPost(!getPost);
     setRefreshing(true);
@@ -56,10 +71,27 @@ export default function Home() {
 
   useEffect(() => {
     async function getFromDB() {
-      const { data, error } = await supabase
-        .from("Posts")
-        .select(`*`)
-        .order("startTime", { ascending: true });
+      let query = supabase.from("Posts").select("*").order("startTime", { ascending: true });
+
+      // Filter by location
+      if (selectedLocation !== "all") {
+        query = query.eq("location", selectedLocation);
+      }
+
+      // Filter by time
+      if (selectedTime !== "all") {
+        const now = new Date();
+        let since = new Date();
+        if (selectedTime === "24h") since.setDate(now.getDate() - 1);
+        if (selectedTime === "7d") since.setDate(now.getDate() - 7);
+        if (selectedTime === "30d") since.setDate(now.getDate() - 30);
+        query = query.gte("startTime", since.toISOString());
+      }
+
+      // Do smth for tags...cuz i see no tags on supabase
+
+      const { data, error } = await query;
+
 
       setPosts([]);
       if (error) {
@@ -80,7 +112,7 @@ export default function Home() {
       }
     }
     getFromDB();
-  }, [getPost]);
+  }, [getPost, selectedLocation, selectedTime]);
 
   const animateNavButton = (button: NavButton) => {
     const animations = {
@@ -89,17 +121,17 @@ export default function Home() {
       profile: profileAnim,
     };
 
+    setActiveNav(button);
+
     Object.entries(animations).forEach(([key, anim]) => {
-      Animated.spring(anim, {
+      Animated.timing(anim, {
         toValue: key === button ? 1 : 0,
+        duration: 200,
         useNativeDriver: true,
-        tension: 50,
-        friction: 7,
       }).start();
     });
-
-    setActiveNav(button);
   };
+
 
   const handleNavPress = (button: NavButton) => {
     animateNavButton(button);
@@ -109,6 +141,7 @@ export default function Home() {
       setScreen("feed");
     } else if (button === "post") {
       setToPost(true);
+      setScreen("form");
     } else if (button === "profile") {
       setScreen("profile");
     }
@@ -181,18 +214,67 @@ export default function Home() {
       }}
     >
       <View style={styles.container}>
-        <View style={styles.floatingSearchBar}>
-          <TextInput
-            style={styles.search_input}
-            placeholder="type something..."
-            placeholderTextColor="#999"
-          />
-          <Pressable style={styles.searchButton}>
-            <Image
-              source={require("../../assets/images/icon-search.png")}
-              style={styles.searchIcon}
-            />
-          </Pressable>
+        <View style={styles.navbar}>
+          <View style={styles.search_bar_container}>
+
+            {/* Filter Open Button */}
+            <Pressable
+              style={{
+                backgroundColor: "#E8E8E8",
+                padding: 10,
+                marginTop: 10,
+                marginHorizontal: 15,
+                borderRadius: 8,
+                alignItems: "center",
+              }}
+              onPress={() => setShowFilter(!showFilter)}
+            >
+              <Text style={{ fontSize: 16, fontWeight: "600" }}>
+                {showFilter ? "Hide Filters ▲" : "Show Filters ▼"}
+              </Text>
+            </Pressable>
+            {/* Filter Screen */}
+            <Modal
+              visible={showFilter}
+              animationType="slide"
+              transparent={false} // false means it takes full screen
+              onRequestClose={() => setShowFilter(false)}
+            >
+              <View style={{ flex: 1, backgroundColor: "#fff" }}>
+                {/* Header Title and Buttons */}
+                <View
+                  style={styles.filterHeader}
+                >
+                  <Pressable onPress={() => setShowFilter(false)}>
+                    <Text style={{ fontSize: 18, color: "#007AFF" }}>Cancel</Text>
+                  </Pressable>
+                  <Text style={{ fontSize: 18, fontWeight: "bold" }}>Filter Posts</Text>
+                  <Pressable
+                    onPress={() => {
+                      setSelectedLocation(tempLocation);
+                      setSelectedTime(tempTime);
+                      setShowFilter(false);
+                    }}>
+                    <Text style={{ fontSize: 18, color: "#007AFF" }}>Done</Text>
+                  </Pressable>
+                </View>
+                {/* Scrollable filter options */}
+                <ScrollView
+                  style={{ flex: 1, padding: 15 }}
+                  contentContainerStyle={{ paddingBottom: 50 }}
+                >
+                  <Filter
+                    selectedLocation={tempLocation}
+                    setSelectedLocation={setTempLocation}
+                    selectedTime={tempTime}
+                    setSelectedTime={setTempTime}
+                    selectedTag={tempTag}
+                    setSelectedTag={setTempTag}
+                  />
+                </ScrollView>
+              </View>
+            </Modal>
+          </View>
         </View>
 
         <ScrollView
@@ -239,12 +321,15 @@ export default function Home() {
                 },
               ]}
             />
-            <Image
+            <Animated.Image
               source={require("../../assets/images/icon-post.png")}
               style={[
                 styles.nav_icon_image,
                 {
-                  tintColor: activeNav === "post" ? "#D4B75F" : "#FFF",
+                  tintColor: postAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['#FFF', '#D4B75F']
+                  }),
                 },
               ]}
             />
@@ -263,12 +348,15 @@ export default function Home() {
                 },
               ]}
             />
-            <Image
+            <Animated.Image
               source={require("../../assets/images/icon-home.png")}
               style={[
                 styles.nav_icon_image,
                 {
-                  tintColor: activeNav === "home" ? "#D4B75F" : "#FFF",
+                  tintColor: homeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['#FFF', '#D4B75F']
+                  }),
                 },
               ]}
             />
@@ -287,12 +375,15 @@ export default function Home() {
                 },
               ]}
             />
-            <Image
+            <Animated.Image
               source={require("../../assets/images/profile-icon.png")}
               style={[
                 styles.nav_icon_image,
                 {
-                  tintColor: activeNav === "profile" ? "#D4B75F" : "#FFF",
+                  tintColor: profileAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['#FFF', '#D4B75F']
+                  }),
                 },
               ]}
             />
