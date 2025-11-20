@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,9 +11,9 @@ import {
 import Post from "../home/post";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
+import AuthContext from "../../context/AuthContext";
 
 interface ProfileScreenProps {
-  user: User | null;
   goBack: () => void;
   onInboxPress: () => void; // New prop
   homeAnim: Animated.Value;
@@ -24,7 +24,6 @@ interface ProfileScreenProps {
 }
 
 export default function ProfileScreen({
-  user,
   goBack,
   onInboxPress,
   homeAnim,
@@ -81,7 +80,9 @@ export default function ProfileScreen({
   }, [user]);
 
   // Extract user's name or email
-  const displayName = user?.email?.split("@")[0] || user?.user_metadata?.name;
+  const { isLoggedIn, user } = useContext(AuthContext);
+
+  const displayName = user?.user_metadata?.name;
 
   return (
     <View style={styles.container}>
@@ -137,10 +138,7 @@ export default function ProfileScreen({
 
       {/* Navigation Bar */}
       <View style={styles.floatingNav}>
-        <Pressable
-          style={styles.nav_button}
-          onPress={() => onNavPress("post")}
-        >
+        <Pressable style={styles.nav_button} onPress={() => onNavPress("post")}>
           <Animated.View
             style={[
               styles.navCircle,
@@ -150,21 +148,21 @@ export default function ProfileScreen({
               },
             ]}
           />
-          <Image
+          <Animated.Image
             source={require("../../assets/images/icon-post.png")}
             style={[
               styles.nav_icon_image,
               {
-                tintColor: activeNav === "post" ? "#D4B75F" : "#FFF",
+                tintColor: postAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['#FFF', '#D4B75F']
+                }),
               },
             ]}
           />
         </Pressable>
 
-        <Pressable
-          style={styles.nav_button}
-          onPress={() => onNavPress("home")}
-        >
+        <Pressable style={styles.nav_button} onPress={() => onNavPress("home")}>
           <Animated.View
             style={[
               styles.navCircle,
@@ -174,12 +172,15 @@ export default function ProfileScreen({
               },
             ]}
           />
-          <Image
+          <Animated.Image
             source={require("../../assets/images/icon-home.png")}
             style={[
               styles.nav_icon_image,
               {
-                tintColor: activeNav === "home" ? "#D4B75F" : "#FFF",
+                tintColor: homeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['#FFF', '#D4B75F']
+                }),
               },
             ]}
           />
@@ -198,12 +199,15 @@ export default function ProfileScreen({
               },
             ]}
           />
-          <Image
+          <Animated.Image
             source={require("../../assets/images/profile-icon.png")}
             style={[
               styles.nav_icon_image,
               {
-                tintColor: activeNav === "profile" ? "#D4B75F" : "#FFF",
+                tintColor: profileAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['#FFF', '#D4B75F']
+                }),
               },
             ]}
           />

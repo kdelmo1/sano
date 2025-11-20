@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import {
   View,
   Text,
@@ -7,22 +7,24 @@ import {
   Pressable,
   Image,
   Animated,
+  Modal,
 } from "react-native";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
+import Post from "../home/post";
+import AuthContext from "../../../src/context/AuthContext";
 
-interface Chat {
+interface PostProps {
   id: string;
-  postID: string;
-  otherParty: string;
-  lastMessage: string;
-  timestamp: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  name: string;
+  isPoster: boolean;
 }
 
 interface InboxScreenProps {
-  user: User | null;
   goBack: () => void;
-  onChatSelect: (postID: string, posterName: string) => void;
   homeAnim: Animated.Value;
   postAnim: Animated.Value;
   profileAnim: Animated.Value;
@@ -31,109 +33,44 @@ interface InboxScreenProps {
 }
 
 export default function InboxScreen({
-  user,
   goBack,
-  onChatSelect,
   homeAnim,
   postAnim,
   profileAnim,
   onNavPress,
   activeNav,
 }: InboxScreenProps) {
-  const [chats, setChats] = useState<Chat[]>([]);
-  const userName = user?.email?.split("@")[0];
+  const [posts, setPosts] = useState<PostProps[]>([]);
+  const { emailHandle } = useContext(AuthContext);
 
   useEffect(() => {
-    const fetchChats = async () => {
-      if (!userName) return;
-
-      // Get all chats where user is either poster or applicant
-      const { data, error } = await supabase
-        .from("chat")
-        .select("*")
-        .or(`poster.eq.${userName},applicant.eq.${userName}`)
-        .order("created_at", { ascending: false });
-
+    const getFromDB = async () => {
+      const { error, data } = await supabase
+        .from("Posts")
+        .select(`*`)
+        .or(`name.eq.${emailHandle},reservation.cs.{${emailHandle}}`)
+        .order("startTime", { ascending: true });
+      setPosts([]);
       if (error) {
-        console.log("Error fetching chats:", error);
-        return;
+        console.log(error);
+      } else {
+        setPosts(
+          data.map((val) => {
+            return {
+              id: val["postID"],
+              title: val["title"] || "Untitled Post",
+              startTime: val["startTime"],
+              endTime: val["endTime"] || val["startTime"],
+              name: val["name"],
+              content: val["content"],
+              isPoster: val["name"] === emailHandle,
+            };
+          })
+        );
       }
-
-      // Group chats by postID and conversation pair (normalized)
-      const chatMap = new Map<string, Chat>();
-
-      data?.forEach((chat) => {
-        const otherParty = chat.poster === userName ? chat.applicant : chat.poster;
-        
-        // Create a normalized key that's the same regardless of who sent the message
-        // Sort the two parties alphabetically to ensure consistency
-        const parties = [chat.poster, chat.applicant].sort();
-        const key = `${chat.postID}-${parties[0]}-${parties[1]}`;
-
-        // Only add if this conversation doesn't exist yet, or update if this message is newer
-        const existing = chatMap.get(key);
-        if (!existing || new Date(chat.created_at) > new Date(existing.timestamp)) {
-          chatMap.set(key, {
-            id: key,
-            postID: chat.postID,
-            otherParty: otherParty,
-            lastMessage: chat.message,
-            timestamp: chat.created_at || "",
-          });
-        }
-      });
-
-      setChats(Array.from(chatMap.values()));
     };
-
-    fetchChats();
-
-    // Subscribe to new messages
-    const channel = supabase
-      .channel("inbox_updates")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat",
-        },
-        (payload) => {
-          if (
-            payload.new.poster === userName ||
-            payload.new.applicant === userName
-          ) {
-            fetchChats();
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [userName]);
-
-  const renderChat = ({ item }: { item: Chat }) => (
-    <Pressable
-      style={styles.chatItem}
-      onPress={() => onChatSelect(item.postID, item.otherParty)}
-    >
-      <View style={styles.avatarContainer}>
-        <Image
-          source={require("../../assets/images/profile-icon.png")}
-          style={styles.avatar}
-        />
-      </View>
-      <View style={styles.chatInfo}>
-        <Text style={styles.chatName}>{item.otherParty}</Text>
-        <Text style={styles.lastMessage} numberOfLines={1}>
-          {item.lastMessage}
-        </Text>
-      </View>
-      <Text style={styles.chevron}>›</Text>
-    </Pressable>
-  );
+    getFromDB();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -145,24 +82,23 @@ export default function InboxScreen({
         <View style={styles.placeholder} />
       </View>
 
-      <FlatList
-        data={chats}
-        renderItem={renderChat}
-        keyExtractor={(item) => item.id}
-        style={styles.chatList}
-        contentContainerStyle={styles.chatListContent}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No messages yet</Text>
-          </View>
-        }
-      />
+      {posts.map((post) => {
+        return (
+          <Post
+            key={post.id}
+            id={post.id}
+            title={post.title}
+            startTime={post.startTime}
+            endTime={post.endTime}
+            name={post.name}
+            isPoster={post.isPoster}
+            from={"inbox"}
+          ></Post>
+        );
+      })}
 
       <View style={styles.floatingNav}>
-        <Pressable
-          style={styles.nav_button}
-          onPress={() => onNavPress("post")}
-        >
+        <Pressable style={styles.nav_button} onPress={() => onNavPress("post")}>
           <Animated.View
             style={[
               styles.navCircle,
@@ -183,10 +119,7 @@ export default function InboxScreen({
           />
         </Pressable>
 
-        <Pressable
-          style={styles.nav_button}
-          onPress={() => onNavPress("home")}
-        >
+        <Pressable style={styles.nav_button} onPress={() => onNavPress("home")}>
           <Animated.View
             style={[
               styles.navCircle,

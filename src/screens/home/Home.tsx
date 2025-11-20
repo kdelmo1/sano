@@ -11,20 +11,19 @@ import {
   Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import Post from "./post";
 import Form from "./form";
-import ChatScreen from "../chat/chatScreen";
 import ProfileScreen from "../profile/ProfileScreen";
 import InboxScreen from "../profile/InboxScreen";
 import { supabase } from "../../lib/supabase";
-import { User } from "@supabase/supabase-js";
+import AuthContext from "../../../src/context/AuthContext";
 
 type NavButton = "home" | "post" | "profile";
-type Screen = "feed" | "chat" | "profile" | "inbox";
+type Screen = "feed" | "chat" | "profile" | "inbox" | "form";
 
-export default function Home(data: { user: User | null }) {
-  const [posts, setPosts] = React.useState<
+export default function Home() {
+  const [posts, setPosts] = useState<
     {
       id: string;
       title: string;
@@ -39,18 +38,26 @@ export default function Home(data: { user: User | null }) {
   const [toPost, setToPost] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const [getPost, setGetPost] = React.useState(false);
-  const [openPost, setOpenPost] = React.useState("");
   const [screen, setScreen] = useState<Screen>("feed");
-  const [selectedPost, setSelectedPost] = useState<{
-    id: string;
-    title: string;
-    name: string;
-  } | null>(null);
-  const [chatFromScreen, setChatFromScreen] = useState<"feed" | "inbox">("feed");
 
   const homeAnim = useRef(new Animated.Value(1)).current;
   const postAnim = useRef(new Animated.Value(0)).current;
   const profileAnim = useRef(new Animated.Value(0)).current;
+
+  // Filter values
+  const [showFilter, setShowFilter] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [selectedTime, setSelectedTime] = useState("all");
+  const [selectedTag, setSelectedTag] = useState("all");
+  const [tempLocation, setTempLocation] = useState(selectedLocation);
+  const [tempTime, setTempTime] = useState(selectedTime);
+  const [tempTag, setTempTag] = useState(selectedTag);
+  const openFilterModal = () => {
+    setTempLocation(selectedLocation);
+    setTempTime(selectedTime);
+    setShowFilter(true);
+  };
+
 
   const onRefresh = () => {
     setGetPost(!getPost);
@@ -64,10 +71,27 @@ export default function Home(data: { user: User | null }) {
 
   useEffect(() => {
     async function getFromDB() {
-      const { data: rows, error } = await supabase
-        .from("Posts")
-        .select(`*`)
-        .order("startTime", { ascending: true });
+      let query = supabase.from("Posts").select("*").order("startTime", { ascending: true });
+
+      // Filter by location
+      if (selectedLocation !== "all") {
+        query = query.eq("location", selectedLocation);
+      }
+
+      // Filter by time
+      if (selectedTime !== "all") {
+        const now = new Date();
+        let since = new Date();
+        if (selectedTime === "24h") since.setDate(now.getDate() - 1);
+        if (selectedTime === "7d") since.setDate(now.getDate() - 7);
+        if (selectedTime === "30d") since.setDate(now.getDate() - 30);
+        query = query.gte("startTime", since.toISOString());
+      }
+
+      // Do smth for tags...cuz i see no tags on supabase
+
+      const { data, error } = await query;
+
 
       setPosts([]);
       if (error) {
@@ -93,7 +117,7 @@ export default function Home(data: { user: User | null }) {
       }
     }
     getFromDB();
-  }, [getPost]);
+  }, [getPost, selectedLocation, selectedTime]);
 
   const animateNavButton = (button: NavButton) => {
     const animations = {
@@ -102,17 +126,17 @@ export default function Home(data: { user: User | null }) {
       profile: profileAnim,
     };
 
+    setActiveNav(button);
+
     Object.entries(animations).forEach(([key, anim]) => {
-      Animated.spring(anim, {
+      Animated.timing(anim, {
         toValue: key === button ? 1 : 0,
+        duration: 200,
         useNativeDriver: true,
-        tension: 50,
-        friction: 7,
       }).start();
     });
-
-    setActiveNav(button);
   };
+
 
   const handleNavPress = (button: NavButton) => {
     animateNavButton(button);
@@ -122,39 +146,11 @@ export default function Home(data: { user: User | null }) {
       setScreen("feed");
     } else if (button === "post") {
       setToPost(true);
+      setScreen("form");
     } else if (button === "profile") {
       setScreen("profile");
     }
   };
-
-  if (screen === "chat") {
-    return (
-      <View
-        style={{
-          paddingTop: insets.top,
-          paddingLeft: insets.left,
-          paddingBottom: insets.bottom,
-          paddingRight: insets.right,
-          backgroundColor: "#FFFFFF",
-          flex: 1,
-        }}
-      >
-        <ChatScreen
-          goBack={() => {
-            if (chatFromScreen === "inbox") {
-              setScreen("inbox");
-            } else {
-              setScreen("feed");
-              animateNavButton("home");
-            }
-          }}
-          postID={selectedPost?.id ?? ""}
-          posterName={selectedPost?.name ?? ""}
-          fromScreen={chatFromScreen}
-        />
-      </View>
-    );
-  }
 
   if (screen === "inbox") {
     return (
@@ -169,18 +165,8 @@ export default function Home(data: { user: User | null }) {
         }}
       >
         <InboxScreen
-          user={data.user}
           goBack={() => {
             setScreen("profile");
-          }}
-          onChatSelect={(postID: string, posterName: string) => {
-            setSelectedPost({
-              id: postID,
-              title: "",
-              name: posterName,
-            });
-            setChatFromScreen("inbox");
-            setScreen("chat");
           }}
           homeAnim={homeAnim}
           postAnim={postAnim}
@@ -205,7 +191,6 @@ export default function Home(data: { user: User | null }) {
         }}
       >
         <ProfileScreen
-          user={data.user}
           goBack={() => {
             setScreen("feed");
             animateNavButton("home");
@@ -234,18 +219,67 @@ export default function Home(data: { user: User | null }) {
       }}
     >
       <View style={styles.container}>
-        <View style={styles.floatingSearchBar}>
-          <TextInput
-            style={styles.search_input}
-            placeholder="type something..."
-            placeholderTextColor="#999"
-          />
-          <Pressable style={styles.searchButton}>
-            <Image
-              source={require("../../assets/images/icon-search.png")}
-              style={styles.searchIcon}
-            />
-          </Pressable>
+        <View style={styles.navbar}>
+          <View style={styles.search_bar_container}>
+
+            {/* Filter Open Button */}
+            <Pressable
+              style={{
+                backgroundColor: "#E8E8E8",
+                padding: 10,
+                marginTop: 10,
+                marginHorizontal: 15,
+                borderRadius: 8,
+                alignItems: "center",
+              }}
+              onPress={() => setShowFilter(!showFilter)}
+            >
+              <Text style={{ fontSize: 16, fontWeight: "600" }}>
+                {showFilter ? "Hide Filters ▲" : "Show Filters ▼"}
+              </Text>
+            </Pressable>
+            {/* Filter Screen */}
+            <Modal
+              visible={showFilter}
+              animationType="slide"
+              transparent={false} // false means it takes full screen
+              onRequestClose={() => setShowFilter(false)}
+            >
+              <View style={{ flex: 1, backgroundColor: "#fff" }}>
+                {/* Header Title and Buttons */}
+                <View
+                  style={styles.filterHeader}
+                >
+                  <Pressable onPress={() => setShowFilter(false)}>
+                    <Text style={{ fontSize: 18, color: "#007AFF" }}>Cancel</Text>
+                  </Pressable>
+                  <Text style={{ fontSize: 18, fontWeight: "bold" }}>Filter Posts</Text>
+                  <Pressable
+                    onPress={() => {
+                      setSelectedLocation(tempLocation);
+                      setSelectedTime(tempTime);
+                      setShowFilter(false);
+                    }}>
+                    <Text style={{ fontSize: 18, color: "#007AFF" }}>Done</Text>
+                  </Pressable>
+                </View>
+                {/* Scrollable filter options */}
+                <ScrollView
+                  style={{ flex: 1, padding: 15 }}
+                  contentContainerStyle={{ paddingBottom: 50 }}
+                >
+                  <Filter
+                    selectedLocation={tempLocation}
+                    setSelectedLocation={setTempLocation}
+                    selectedTime={tempTime}
+                    setSelectedTime={setTempTime}
+                    selectedTag={tempTag}
+                    setSelectedTag={setTempTag}
+                  />
+                </ScrollView>
+              </View>
+            </Modal>
+          </View>
         </View>
 
         <ScrollView
@@ -255,31 +289,23 @@ export default function Home(data: { user: User | null }) {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {posts.map((post) => (
-            <Post
-              key={post.id}
-              id={post.id}
-              title={post.title}
-              startTime={post.startTime}
-              endTime={post.endTime}
-              name={post.name}
-              openPost={openPost}
-              setOpenPost={setOpenPost}
-              onOpen={() => {
-                setSelectedPost({
-                  id: post.id,
-                  title: post.title,
-                  name: post.name,
-                });
-                setChatFromScreen("feed");
-                setScreen("chat");
-              }}
-            />
-          ))}
+          {posts.map((post) => {
+            return (
+              <Post
+                key={post.id}
+                id={post.id}
+                title={post.title}
+                startTime={post.startTime}
+                endTime={post.endTime}
+                name={post.name}
+                isPoster={false}
+                from={"feed"}
+              />
+            );
+          })}
         </ScrollView>
 
         <Form
-          user={data.user}
           toPost={toPost}
           setToPost={setToPost}
           onPostSuccess={() => setGetPost((prev) => !prev)}
@@ -300,12 +326,15 @@ export default function Home(data: { user: User | null }) {
                 },
               ]}
             />
-            <Image
+            <Animated.Image
               source={require("../../assets/images/icon-post.png")}
               style={[
                 styles.nav_icon_image,
                 {
-                  tintColor: activeNav === "post" ? "#D4B75F" : "#FFF",
+                  tintColor: postAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['#FFF', '#D4B75F']
+                  }),
                 },
               ]}
             />
@@ -324,12 +353,15 @@ export default function Home(data: { user: User | null }) {
                 },
               ]}
             />
-            <Image
+            <Animated.Image
               source={require("../../assets/images/icon-home.png")}
               style={[
                 styles.nav_icon_image,
                 {
-                  tintColor: activeNav === "home" ? "#D4B75F" : "#FFF",
+                  tintColor: homeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['#FFF', '#D4B75F']
+                  }),
                 },
               ]}
             />
@@ -348,12 +380,15 @@ export default function Home(data: { user: User | null }) {
                 },
               ]}
             />
-            <Image
+            <Animated.Image
               source={require("../../assets/images/profile-icon.png")}
               style={[
                 styles.nav_icon_image,
                 {
-                  tintColor: activeNav === "profile" ? "#D4B75F" : "#FFF",
+                  tintColor: profileAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['#FFF', '#D4B75F']
+                  }),
                 },
               ]}
             />
