@@ -12,7 +12,7 @@ interface PostProps {
   endTime: string;
   name: string;
   isPoster: boolean;
-  from: "feed" | "inbox";
+  from: "feed" | "inbox" | "profile";
 }
 
 export default function Post({

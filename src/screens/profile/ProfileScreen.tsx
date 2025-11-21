@@ -77,7 +77,7 @@ export default function ProfileScreen({
     }
 
     fetchYourPosts();
-  }, [user]);
+  }, []);
 
   // Extract user's name or email
   const { isLoggedIn, user } = useContext(AuthContext);
@@ -117,9 +117,8 @@ export default function ProfileScreen({
                 startTime={p.startTime}
                 endTime={p.endTime}
                 name={p.name}
-                openPost={openPost}
-                setOpenPost={setOpenPost}
-                onOpen={() => setOpenPost(p.id)}
+                isPoster={true}
+                from={"profile"}
               />
             ))
           )}
@@ -155,7 +154,7 @@ export default function ProfileScreen({
               {
                 tintColor: postAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: ['#FFF', '#D4B75F']
+                  outputRange: ["#FFF", "#D4B75F"],
                 }),
               },
             ]}
@@ -179,7 +178,7 @@ export default function ProfileScreen({
               {
                 tintColor: homeAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: ['#FFF', '#D4B75F']
+                  outputRange: ["#FFF", "#D4B75F"],
                 }),
               },
             ]}
@@ -206,7 +205,7 @@ export default function ProfileScreen({
               {
                 tintColor: profileAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: ['#FFF', '#D4B75F']
+                  outputRange: ["#FFF", "#D4B75F"],
                 }),
               },
             ]}

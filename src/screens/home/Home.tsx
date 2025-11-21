@@ -9,11 +9,13 @@ import {
   TextInput,
   Animated,
   Image,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useEffect, useState, useRef, useContext } from "react";
 import Post from "./post";
 import Form from "./form";
+import Filter from "./filter";
 import ProfileScreen from "../profile/ProfileScreen";
 import InboxScreen from "../profile/InboxScreen";
 import { supabase } from "../../lib/supabase";
@@ -23,6 +25,8 @@ type NavButton = "home" | "post" | "profile";
 type Screen = "feed" | "chat" | "profile" | "inbox" | "form";
 
 export default function Home() {
+  const { isLoggedIn, user, emailHandle } = useContext(AuthContext);
+
   const [posts, setPosts] = useState<
     {
       id: string;
@@ -58,7 +62,6 @@ export default function Home() {
     setShowFilter(true);
   };
 
-
   const onRefresh = () => {
     setGetPost(!getPost);
     setRefreshing(true);
@@ -71,7 +74,10 @@ export default function Home() {
 
   useEffect(() => {
     async function getFromDB() {
-      let query = supabase.from("Posts").select("*").order("startTime", { ascending: true });
+      let query = supabase
+        .from("Posts")
+        .select("*")
+        .order("startTime", { ascending: true });
 
       // Filter by location
       if (selectedLocation !== "all") {
@@ -92,14 +98,13 @@ export default function Home() {
 
       const { data, error } = await query;
 
-
       setPosts([]);
       if (error) {
         console.log("err", error);
-      } else if (rows) {
+      } else if (data) {
         // Filter out posts created by the current user so they don't appear in the main feed
-        const filtered = rows.filter(
-          (val) => val["studentEmail"] !== data.user?.email
+        const filtered = data.filter(
+          (val) => val["studentEmail"] !== user?.email
         );
 
         setPosts(
@@ -137,7 +142,6 @@ export default function Home() {
     });
   };
 
-
   const handleNavPress = (button: NavButton) => {
     animateNavButton(button);
 
@@ -151,6 +155,41 @@ export default function Home() {
       setScreen("profile");
     }
   };
+
+  if (screen === "form") {
+    return (
+      <View
+        style={{
+          paddingTop: insets.top,
+          paddingLeft: insets.left,
+          paddingBottom: insets.bottom,
+          paddingRight: insets.right,
+          backgroundColor: "#F5F5F5",
+          flex: 1,
+        }}
+      >
+        <Form
+          toPost={toPost}
+          setToPost={setToPost}
+          onPostSuccess={() => {
+            setGetPost((prev) => !prev);
+            setScreen("feed");
+            animateNavButton("home");
+          }}
+          onClose={() => {
+            setToPost(false);
+            setScreen("feed");
+            animateNavButton("home");
+          }}
+          homeAnim={homeAnim}
+          postAnim={postAnim}
+          profileAnim={profileAnim}
+          onNavPress={handleNavPress}
+          activeNav={activeNav}
+        />
+      </View>
+    );
+  }
 
   if (screen === "inbox") {
     return (
@@ -221,7 +260,6 @@ export default function Home() {
       <View style={styles.container}>
         <View style={styles.navbar}>
           <View style={styles.search_bar_container}>
-
             {/* Filter Open Button */}
             <Pressable
               style={{
@@ -247,19 +285,22 @@ export default function Home() {
             >
               <View style={{ flex: 1, backgroundColor: "#fff" }}>
                 {/* Header Title and Buttons */}
-                <View
-                  style={styles.filterHeader}
-                >
+                <View style={styles.filterHeader}>
                   <Pressable onPress={() => setShowFilter(false)}>
-                    <Text style={{ fontSize: 18, color: "#007AFF" }}>Cancel</Text>
+                    <Text style={{ fontSize: 18, color: "#007AFF" }}>
+                      Cancel
+                    </Text>
                   </Pressable>
-                  <Text style={{ fontSize: 18, fontWeight: "bold" }}>Filter Posts</Text>
+                  <Text style={{ fontSize: 18, fontWeight: "bold" }}>
+                    Filter Posts
+                  </Text>
                   <Pressable
                     onPress={() => {
                       setSelectedLocation(tempLocation);
                       setSelectedTime(tempTime);
                       setShowFilter(false);
-                    }}>
+                    }}
+                  >
                     <Text style={{ fontSize: 18, color: "#007AFF" }}>Done</Text>
                   </Pressable>
                 </View>
@@ -305,13 +346,6 @@ export default function Home() {
           })}
         </ScrollView>
 
-        <Form
-          toPost={toPost}
-          setToPost={setToPost}
-          onPostSuccess={() => setGetPost((prev) => !prev)}
-          onClose={() => animateNavButton("home")}
-        />
-
         <View style={styles.floatingNav}>
           <Pressable
             style={styles.nav_button}
@@ -333,7 +367,7 @@ export default function Home() {
                 {
                   tintColor: postAnim.interpolate({
                     inputRange: [0, 1],
-                    outputRange: ['#FFF', '#D4B75F']
+                    outputRange: ["#FFF", "#D4B75F"],
                   }),
                 },
               ]}
@@ -360,7 +394,7 @@ export default function Home() {
                 {
                   tintColor: homeAnim.interpolate({
                     inputRange: [0, 1],
-                    outputRange: ['#FFF', '#D4B75F']
+                    outputRange: ["#FFF", "#D4B75F"],
                   }),
                 },
               ]}
@@ -387,7 +421,7 @@ export default function Home() {
                 {
                   tintColor: profileAnim.interpolate({
                     inputRange: [0, 1],
-                    outputRange: ['#FFF', '#D4B75F']
+                    outputRange: ["#FFF", "#D4B75F"],
                   }),
                 },
               ]}
@@ -408,6 +442,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: "100%",
     height: "100%",
+  },
+  navbar: {
+    backgroundColor: "#F5F5F5",
+    position: "absolute" as const,
+    top: 0,
+    width: "100%",
+    paddingTop: 10,
+    zIndex: 10,
+  },
+  search_bar_container: {
+    width: "100%",
+    paddingHorizontal: 20,
+    paddingBottom: 15,
+    paddingTop: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
   floatingSearchBar: {
     position: "absolute" as const,
@@ -496,5 +546,15 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     zIndex: 1,
+  },
+  filterHeader: {
+    paddingTop: 60,
+    paddingHorizontal: 15,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderColor: "#ccc",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 });

@@ -25,7 +25,7 @@ interface ChatScreenProps {
   posterName: string | undefined;
   applicantName: string | undefined;
   isPoster: boolean;
-  fromScreen?: "feed" | "inbox";
+  fromScreen?: "feed" | "inbox" | "profile";
 }
 
 export default function ChatScreen({
@@ -92,7 +92,6 @@ export default function ChatScreen({
           filter: `postID=eq.${postID}`,
         },
         (payload) => {
-          console.log(payload);
           // Accept messages where the conversation involves both parties
           const isRelevantMessage =
             payload.new.poster === posterName &&
@@ -112,16 +111,13 @@ export default function ChatScreen({
       );
 
       roomOne.subscribe(async (status) => {
-        console.log(status);
         if (status === "SUBSCRIBED") {
-          console.log(status);
           await roomOne.track({
             id: user?.id,
           });
         }
       });
     }
-    console.log(openChat);
     return () => {
       roomOne.unsubscribe();
     };
@@ -145,8 +141,7 @@ export default function ChatScreen({
   );
 
   // Determine back button text based on where user came from
-  const backButtonText =
-    fromScreen === "inbox" ? "Back to Inbox" : "Back to Feed";
+  const backButtonText = `Back to ${fromScreen}`;
 
   return (
     <Modal visible={openChat}>

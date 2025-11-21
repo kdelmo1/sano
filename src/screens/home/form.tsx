@@ -20,6 +20,11 @@ interface PopupProps {
   setToPost: React.Dispatch<React.SetStateAction<boolean>>;
   onPostSuccess: () => void;
   onClose?: () => void;
+  homeAnim: any;
+  postAnim: any;
+  profileAnim: any;
+  onNavPress: (button: "home" | "post" | "profile") => void;
+  activeNav: "home" | "post" | "profile";
 }
 
 export default function Form({
@@ -27,6 +32,11 @@ export default function Form({
   setToPost,
   onPostSuccess,
   onClose,
+  homeAnim,
+  postAnim,
+  profileAnim,
+  onNavPress,
+  activeNav,
 }: PopupProps) {
   const { isLoggedIn, user, emailHandle } = useContext(AuthContext);
 
@@ -131,11 +141,6 @@ export default function Form({
       return;
     }
 
-    if (endTime <= startTime) {
-      alert("End time must be after start time.");
-      return;
-    }
-
     const startDateTime = new Date(selectedDate);
     startDateTime.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
 
@@ -152,8 +157,6 @@ export default function Form({
       alert("Cannot post an expired post.");
       return;
     }
-
-    const userName = data.user?.email?.split("@")[0] || "Anonymous";
 
     const newPost = {
       title: location,
@@ -174,7 +177,7 @@ export default function Form({
       resetForm();
       setToPost(false);
       onPostSuccess();
-      data.onClose?.();
+      onClose?.();
     }
   }
 
@@ -292,16 +295,13 @@ export default function Form({
 
       {/* Navigation Bar - Now always rendered with passed props */}
       <View style={styles.floatingNav}>
-        <Pressable
-          style={styles.nav_button}
-          onPress={() => data.onNavPress("post")}
-        >
+        <Pressable style={styles.nav_button} onPress={() => onNavPress("post")}>
           <Animated.View
             style={[
               styles.navCircle,
               {
-                opacity: data.postAnim,
-                transform: [{ scale: data.postAnim }],
+                opacity: postAnim,
+                transform: [{ scale: postAnim }],
               },
             ]}
           />
@@ -310,25 +310,22 @@ export default function Form({
             style={[
               styles.nav_icon_image,
               {
-                tintColor: data.postAnim.interpolate({
+                tintColor: postAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: ['#FFF', '#D4B75F']
+                  outputRange: ["#FFF", "#D4B75F"],
                 }),
               },
             ]}
           />
         </Pressable>
 
-        <Pressable
-          style={styles.nav_button}
-          onPress={() => data.onNavPress("home")}
-        >
+        <Pressable style={styles.nav_button} onPress={() => onNavPress("home")}>
           <Animated.View
             style={[
               styles.navCircle,
               {
-                opacity: data.homeAnim,
-                transform: [{ scale: data.homeAnim }],
+                opacity: homeAnim,
+                transform: [{ scale: homeAnim }],
               },
             ]}
           />
@@ -337,9 +334,9 @@ export default function Form({
             style={[
               styles.nav_icon_image,
               {
-                tintColor: data.homeAnim.interpolate({
+                tintColor: homeAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: ['#FFF', '#D4B75F']
+                  outputRange: ["#FFF", "#D4B75F"],
                 }),
               },
             ]}
@@ -348,14 +345,14 @@ export default function Form({
 
         <Pressable
           style={styles.nav_button}
-          onPress={() => data.onNavPress("profile")}
+          onPress={() => onNavPress("profile")}
         >
           <Animated.View
             style={[
               styles.navCircle,
               {
-                opacity: data.profileAnim,
-                transform: [{ scale: data.profileAnim }],
+                opacity: profileAnim,
+                transform: [{ scale: profileAnim }],
               },
             ]}
           />
@@ -364,9 +361,9 @@ export default function Form({
             style={[
               styles.nav_icon_image,
               {
-                tintColor: data.profileAnim.interpolate({
+                tintColor: profileAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: ['#FFF', '#D4B75F']
+                  outputRange: ["#FFF", "#D4B75F"],
                 }),
               },
             ]}
@@ -690,5 +687,45 @@ const styles = StyleSheet.create({
   },
   timePicker: {
     height: 200,
+  },
+  floatingNav: {
+    position: "absolute" as const,
+    bottom: 10,
+    alignSelf: "center",
+    height: 70,
+    width: 390,
+    backgroundColor: "#D4B75F",
+    borderRadius: 20,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 10,
+    zIndex: 1000,
+  },
+  nav_button: {
+    width: 60,
+    height: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  navCircle: {
+    position: "absolute",
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#FFF",
+  },
+  nav_icon_image: {
+    width: 32,
+    height: 32,
+    zIndex: 1,
   },
 });
