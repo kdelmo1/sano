@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from "react";
 import { StyleSheet, Text, View, Pressable, Image } from "react-native";
-import ChatScreen from "../chat/ChatScreen";
-import PosterView from "../chat/PosterView";
+import ChatScreen from "../chat/chatScreen";
+import PosterView from "../chat/posterView";
 import AuthContext from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 

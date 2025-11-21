@@ -1,7 +1,7 @@
 import { StrictMode, useEffect, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import LoginScreen from "./src/screens/auth/LoginScreen";
+import LoginScreen from "./src/screens/auth/loginScreen";
 import Home from "./src/screens/home/Home";
 import { supabase } from "./src/lib/supabase";
 import { User, RealtimeChannel } from "@supabase/supabase-js";

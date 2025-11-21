@@ -9,7 +9,7 @@ import {
   ScrollView,
 } from "react-native";
 import { supabase } from "../../lib/supabase";
-import Post from "../home/Post";
+import Post from "../home/post";
 import getFromDB from "../GetFromDB";
 import AuthContext from "../../../src/context/AuthContext";
 

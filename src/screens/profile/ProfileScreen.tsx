@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { supabase } from "../../lib/supabase";
 import AuthContext from "../../context/AuthContext";
-import Post from "../home/Post";
+import Post from "../home/post";
 import getFromDB from "../GetFromDB";
 
 interface ProfileScreenProps {
