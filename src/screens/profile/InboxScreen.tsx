@@ -6,19 +6,12 @@ import {
   Pressable,
   Image,
   Animated,
+  ScrollView,
 } from "react-native";
 import { supabase } from "../../lib/supabase";
-import Post from "../home/post";
+import Post from "../home/Post";
+import getFromDB from "../GetFromDB";
 import AuthContext from "../../../src/context/AuthContext";
-
-interface PostProps {
-  id: string;
-  title: string;
-  startTime: string;
-  endTime: string;
-  name: string;
-  isPoster: boolean;
-}
 
 interface InboxScreenProps {
   goBack: () => void;
@@ -41,32 +34,7 @@ export default function InboxScreen({
   const { emailHandle } = useContext(AuthContext);
 
   useEffect(() => {
-    const getFromDB = async () => {
-      const { error, data } = await supabase
-        .from("Posts")
-        .select(`*`)
-        .or(`name.eq.${emailHandle},reservation.cs.{${emailHandle}}`)
-        .order("startTime", { ascending: true });
-      setPosts([]);
-      if (error) {
-        console.log(error);
-      } else {
-        setPosts(
-          data.map((val) => {
-            return {
-              id: val["postID"],
-              title: val["title"] || "Untitled Post",
-              startTime: val["startTime"],
-              endTime: val["endTime"] || val["startTime"],
-              name: val["name"],
-              content: val["content"],
-              isPoster: val["name"] === emailHandle,
-            };
-          })
-        );
-      }
-    };
-    getFromDB();
+    getFromDB("inbox", emailHandle, "", "", setPosts);
   }, []);
 
   return (
@@ -79,20 +47,25 @@ export default function InboxScreen({
         <View style={styles.placeholder} />
       </View>
 
-      {posts.map((post) => {
-        return (
-          <Post
-            key={post.id}
-            id={post.id}
-            title={post.title}
-            startTime={post.startTime}
-            endTime={post.endTime}
-            name={post.name}
-            isPoster={post.isPoster}
-            from={"inbox"}
-          ></Post>
-        );
-      })}
+      <ScrollView
+        style={styles.scroller}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {posts.map((post) => {
+          return (
+            <Post
+              key={post.id}
+              id={post.id}
+              location={post.location}
+              startTime={post.startTime}
+              endTime={post.endTime}
+              name={post.name}
+              isPoster={post.isPoster}
+              fromScreen={"inbox"}
+            ></Post>
+          );
+        })}
+      </ScrollView>
 
       <View style={styles.floatingNav}>
         <Pressable style={styles.nav_button} onPress={() => onNavPress("post")}>
@@ -193,6 +166,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#000",
   },
+
   placeholder: {
     width: 50,
   },
@@ -299,5 +273,16 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     zIndex: 1,
+  },
+  scroller: {
+    backgroundColor: "#F5F5F5",
+    position: "absolute" as const,
+    width: "100%",
+    top: 75,
+    bottom: 0,
+  },
+  scrollContent: {
+    paddingTop: 10,
+    paddingBottom: 100,
   },
 });

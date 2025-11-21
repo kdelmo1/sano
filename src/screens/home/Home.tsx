@@ -11,29 +11,22 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useEffect, useState, useRef, useContext } from "react";
-import Post from "./post";
-import Form from "./form";
-import Filter from "./filter";
-import ProfileScreen from "../profile/ProfileScreen";
-import InboxScreen from "../profile/InboxScreen";
 import { supabase } from "../../lib/supabase";
 import AuthContext from "../../../src/context/AuthContext";
+import Post from "./Post";
+import Form from "./Form";
+import Filter from "./Filter";
+import getFromDB from "../GetFromDB";
+import ProfileScreen from "../profile/ProfileScreen";
+import InboxScreen from "../profile/InboxScreen";
 
 type NavButton = "home" | "post" | "profile";
 type Screen = "feed" | "chat" | "profile" | "inbox" | "form";
 
 export default function Home() {
-  const { user } = useContext(AuthContext);
+  const { user, emailHandle } = useContext(AuthContext);
 
-  const [posts, setPosts] = useState<
-    {
-      id: string;
-      location: string;
-      startTime: string;
-      endTime: string;
-      name: string;
-    }[]
-  >([]);
+  const [posts, setPosts] = useState<PostProps[]>([]);
 
   const [activeNav, setActiveNav] = useState<NavButton>("home");
   const [toPost, setToPost] = useState(false);
@@ -64,60 +57,13 @@ export default function Home() {
     setRefreshing(true);
     setTimeout(() => {
       setRefreshing(false);
-    }, 100);
+    }, 1000);
   };
 
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    async function getFromDB() {
-      let query = supabase
-        .from("Posts")
-        .select("*")
-        .order("startTime", { ascending: true });
-
-      // Filter by location
-      if (selectedLocation !== "all") {
-        query = query.eq("location", selectedLocation);
-      }
-
-      // Filter by time
-      if (selectedTime !== "all") {
-        const now = new Date();
-        let since = new Date();
-        if (selectedTime === "24h") since.setDate(now.getDate() - 1);
-        if (selectedTime === "7d") since.setDate(now.getDate() - 7);
-        if (selectedTime === "30d") since.setDate(now.getDate() - 30);
-        query = query.gte("startTime", since.toISOString());
-      }
-
-      // Do smth for tags...cuz i see no tags on supabase
-
-      const { data, error } = await query;
-
-      setPosts([]);
-      if (error) {
-        console.log("err", error);
-      } else if (data) {
-        // Filter out posts created by the current user so they don't appear in the main feed
-        const filtered = data.filter(
-          (val) => val["studentEmail"] !== user?.email
-        );
-
-        setPosts(
-          filtered.map((val) => {
-            return {
-              id: val["postID"],
-              location: val["location"],
-              startTime: val["startTime"],
-              endTime: val["endTime"] || val["startTime"],
-              name: val["name"],
-            };
-          })
-        );
-      }
-    }
-    getFromDB();
+    getFromDB("feed", emailHandle, selectedLocation, selectedTime, setPosts);
   }, [getPost, selectedLocation, selectedTime]);
 
   const animateNavButton = (button: NavButton) => {
@@ -328,12 +274,12 @@ export default function Home() {
               <Post
                 key={post.id}
                 id={post.id}
-                title={post.location}
+                location={post.location}
                 startTime={post.startTime}
                 endTime={post.endTime}
                 name={post.name}
                 isPoster={false}
-                from={"feed"}
+                fromScreen={"feed"}
               />
             );
           })}

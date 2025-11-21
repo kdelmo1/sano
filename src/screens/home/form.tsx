@@ -12,7 +12,7 @@ import {
 import React, { useEffect, useState, useContext } from "react";
 import { supabase } from "../../lib/supabase";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import AuthContext from "../../../src/context/AuthContext";
+import AuthContext from "../../context/AuthContext";
 
 interface FormProps {
   toPost: boolean;
@@ -38,25 +38,32 @@ export default function Form({
   const { user, emailHandle } = useContext(AuthContext);
 
   const [location, setLocation] = useState("");
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [locationOptions, setLocationOptions] = useState<string[]>([]);
+
+  const [slots, setSlots] = useState(1);
+  const [showSlotsDropdown, setShowSlotsDropdown] = useState(false);
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
-  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
 
-  const locationOptions = [
-    "JRL/C9 DH",
-    "Cowell/Stevenson DH",
-    "Crown/Merrill DH",
-    "Porter/Kresge DH",
-    "RCC/Oakes DH",
-    "GVC",
-    "Slug Stop",
-    "Porter Market",
-    "Merill Market",
-  ];
+  const slotsOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+  useEffect(() => {
+    async function getLocationFromDB() {
+      const { data, error } = await supabase.from("location").select("*");
+
+      if (error) {
+      } else {
+        setLocationOptions(data.map((loc) => loc["location"]));
+      }
+    }
+    getLocationFromDB();
+  }, []);
 
   const resetForm = () => {
     setLocation("");
@@ -67,35 +74,19 @@ export default function Form({
     setEndTime(thirtyMinsLater);
   };
 
-  const handlePost = () => {
-    insertToDB();
-  };
-
-  const onDateChange = (event: any, selectedDateValue?: Date) => {
-    if (Platform.OS === "android") {
-      setShowDatePicker(false);
-    }
-    if (selectedDateValue) {
-      setSelectedDate(selectedDateValue);
-    }
-  };
-
-  const onStartTimeChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === "android") {
-      setShowStartPicker(false);
-    }
-    if (selectedDate) {
-      setStartTime(selectedDate);
-    }
-  };
-
-  const onEndTimeChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === "android") {
-      setShowEndPicker(false);
-    }
-    if (selectedDate) {
-      setEndTime(selectedDate);
-    }
+  const onTimeChange = (
+    setTime: React.Dispatch<React.SetStateAction<Date>>,
+    setShowTime: React.Dispatch<React.SetStateAction<boolean>>
+  ) => {
+    const onDateChange = (event: any, selectedDateValue?: Date) => {
+      if (Platform.OS === "android") {
+        setShowTime(false);
+      }
+      if (selectedDateValue) {
+        setTime(selectedDateValue);
+      }
+    };
+    return onDateChange;
   };
 
   const formatDate = (date: Date) => {
@@ -118,6 +109,11 @@ export default function Form({
   const handleLocationSelect = (selectedLocation: string) => {
     setLocation(selectedLocation);
     setShowLocationDropdown(false);
+  };
+
+  const handleSlotsSelect = (selectedSlot: number) => {
+    setSlots(selectedSlot);
+    setShowSlotsDropdown(false);
   };
 
   const getTodayMidnight = () => {
@@ -155,6 +151,7 @@ export default function Form({
       startTime: startDateTime.toISOString(),
       endTime: endDateTime.toISOString(),
       studentEmail: user?.email,
+      slots: slots,
     };
 
     const { error } = await supabase.from("Posts").insert(newPost);
@@ -232,6 +229,47 @@ export default function Form({
               </View>
             </View>
 
+            {/* reservation slots */}
+            <View style={styles.fieldContainer}>
+              <View style={styles.iconContainer}>
+                <Text style={styles.iconText}>#</Text>
+              </View>
+              <View style={[styles.dropdownWrapper, { zIndex: 998 }]}>
+                <Pressable
+                  style={styles.dropdownButton}
+                  onPress={() => setShowSlotsDropdown(!showSlotsDropdown)}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownButtonText,
+                      !slots && styles.placeholderText,
+                    ]}
+                  >
+                    {slots || "select number"}
+                  </Text>
+                  <Text style={styles.dropdownArrow}>
+                    {showSlotsDropdown ? "▲" : "▼"}
+                  </Text>
+                </Pressable>
+
+                {showSlotsDropdown && (
+                  <View style={styles.dropdownMenu}>
+                    <ScrollView style={styles.dropdownScroll}>
+                      {slotsOptions.map((option, index) => (
+                        <Pressable
+                          key={index}
+                          style={styles.dropdownItem}
+                          onPress={() => handleSlotsSelect(option)}
+                        >
+                          <Text style={styles.dropdownItemText}>{option}</Text>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
+            </View>
+
             <View style={styles.fieldContainer}>
               <View style={styles.iconContainer}>
                 <Text style={styles.iconText}>📅</Text>
@@ -275,7 +313,7 @@ export default function Form({
           </View>
 
           <View style={styles.postButtonContainer}>
-            <Pressable style={styles.postButton} onPress={handlePost}>
+            <Pressable style={styles.postButton} onPress={insertToDB}>
               <Text style={styles.postButtonText}>post ✓</Text>
             </Pressable>
           </View>
@@ -392,7 +430,7 @@ export default function Form({
                 value={selectedDate}
                 mode="date"
                 display="spinner"
-                onChange={onDateChange}
+                onChange={onTimeChange(setSelectedDate, setShowDatePicker)}
                 style={styles.timePicker}
                 textColor="#000000"
                 themeVariant="light"
@@ -426,7 +464,7 @@ export default function Form({
                 value={startTime}
                 mode="time"
                 display="spinner"
-                onChange={onStartTimeChange}
+                onChange={onTimeChange(setStartTime, setShowStartPicker)}
                 style={styles.timePicker}
                 textColor="#000000"
                 themeVariant="light"
@@ -455,7 +493,7 @@ export default function Form({
                 value={endTime}
                 mode="time"
                 display="spinner"
-                onChange={onEndTimeChange}
+                onChange={onTimeChange(setEndTime, setShowEndPicker)}
                 style={styles.timePicker}
                 textColor="#000000"
                 themeVariant="light"

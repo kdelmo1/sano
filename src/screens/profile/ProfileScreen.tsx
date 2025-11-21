@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   StyleSheet,
   Text,
@@ -8,9 +8,10 @@ import {
   Animated,
   ScrollView,
 } from "react-native";
-import Post from "../home/post";
 import { supabase } from "../../lib/supabase";
 import AuthContext from "../../context/AuthContext";
+import Post from "../home/Post";
+import getFromDB from "../GetFromDB";
 
 interface ProfileScreenProps {
   goBack: () => void;
@@ -31,55 +32,19 @@ export default function ProfileScreen({
   onNavPress,
   activeNav,
 }: ProfileScreenProps) {
+  const { isLoggedIn, user, emailHandle } = useContext(AuthContext);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
 
-  const [yourPosts, setYourPosts] = React.useState<
-    {
-      id: string;
-      title: string;
-      startTime: string;
-      endTime: string;
-      name: string;
-      content?: string;
-    }[]
-  >([]);
+  const [yourPosts, setYourPosts] = useState<PostProps[]>([]);
 
-  const [openPost, setOpenPost] = React.useState("");
-
-  React.useEffect(() => {
-    async function fetchYourPosts() {
-      if (!user?.email) return;
-
-      const { data: rows, error } = await supabase
-        .from("Posts")
-        .select(`*`)
-        .eq("studentEmail", user.email)
-        .order("startTime", { ascending: true });
-
-      if (error) {
-        console.log("Failed to fetch your posts:", error);
-        setYourPosts([]);
-      } else if (rows) {
-        setYourPosts(
-          rows.map((val) => ({
-            id: val["postID"],
-            title: val["title"] || "Untitled Post",
-            startTime: val["startTime"],
-            endTime: val["endTime"] || val["startTime"],
-            name: val["name"],
-            content: val["content"],
-          }))
-        );
-      }
-    }
-
-    fetchYourPosts();
+  useEffect(() => {
+    getFromDB("profile", emailHandle, "", "", setYourPosts);
   }, []);
 
   // Extract user's name or email
-  const { isLoggedIn, user } = useContext(AuthContext);
 
   const displayName = user?.user_metadata?.name;
 
@@ -112,12 +77,12 @@ export default function ProfileScreen({
               <Post
                 key={p.id}
                 id={p.id}
-                title={p.title}
+                location={p.location}
                 startTime={p.startTime}
                 endTime={p.endTime}
                 name={p.name}
                 isPoster={true}
-                from={"profile"}
+                fromScreen={"profile"}
               />
             ))
           )}

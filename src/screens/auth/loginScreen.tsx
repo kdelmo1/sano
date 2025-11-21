@@ -5,7 +5,6 @@ import {
   Text,
   Pressable,
   Image,
-  Platform,
   Dimensions,
   Animated,
 } from "react-native";

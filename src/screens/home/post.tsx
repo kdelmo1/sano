@@ -1,32 +1,35 @@
 import React, { useState, useContext, useEffect } from "react";
-import { StyleSheet, Text, View, Pressable, Image, Modal } from "react-native";
-import ChatScreen from "../chat/chatScreen";
-import PosterView from "../chat/posterView";
-import AuthContext from "../../../src/context/AuthContext";
+import { StyleSheet, Text, View, Pressable, Image } from "react-native";
+import ChatScreen from "../chat/ChatScreen";
+import PosterView from "../chat/PosterView";
+import AuthContext from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 
-interface PostProps {
-  id: string;
-  title: string;
-  startTime: string;
-  endTime: string;
-  name: string;
-  isPoster: boolean;
-  from: "feed" | "inbox" | "profile";
+declare global {
+  interface PostProps {
+    id: string;
+    location: string;
+    startTime: string;
+    endTime: string;
+    name: string;
+    isPoster: boolean;
+    fromScreen: "feed" | "inbox" | "profile";
+  }
 }
 
 export default function Post({
   id,
-  title,
+  location,
   startTime,
   endTime,
   name,
   isPoster,
-  from,
+  fromScreen,
 }: PostProps) {
   const { emailHandle } = useContext(AuthContext);
 
   const [openChat, setOpenChat] = useState(false);
+  const [reservePost, setReservePost] = useState(false);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -66,10 +69,10 @@ export default function Post({
       // }
       return error ? false : true;
     };
-    if (openChat && from === "feed") {
+    if (reservePost && fromScreen === "feed") {
       reserve(id, false);
     }
-  }, [openChat]);
+  }, [reservePost]);
 
   return (
     <Pressable
@@ -91,12 +94,33 @@ export default function Post({
           posterName={name}
           applicantName={emailHandle}
           isPoster={false}
-          fromScreen={from}
+          fromScreen={fromScreen}
         />
       )}
       <View style={styles.post_container}>
         <View style={styles.post}>
-          <Text style={styles.title}>{title}</Text>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Text style={styles.title}>{location}</Text>
+
+            {fromScreen === "feed" && (
+              <Pressable
+                style={{ justifyContent: "center", alignItems: "center" }}
+                onPress={() => setReservePost(true)}
+              >
+                {reservePost ? (
+                  <Text style={{ fontSize: 30 }}>✔️</Text>
+                ) : (
+                  <Text style={{ fontSize: 30 }}>➕</Text>
+                )}
+              </Pressable>
+            )}
+          </View>
 
           <Text style={styles.date}>{formatDate(startTime)}</Text>
 
