@@ -1,5 +1,12 @@
 import React, { useState, useContext, useEffect } from "react";
-import { StyleSheet, Text, View, Pressable, Image } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  Image,
+  ScrollView,
+} from "react-native";
 import ChatScreen from "../chat/chatScreen";
 import PosterView from "../chat/posterView";
 import AuthContext from "../../context/AuthContext";
@@ -14,6 +21,8 @@ declare global {
     name: string;
     isPoster: boolean;
     fromScreen: "feed" | "inbox" | "profile";
+    isFoodGiveaway: boolean;
+    photoUrls: string[];
   }
 }
 
@@ -25,6 +34,8 @@ export default function Post({
   name,
   isPoster,
   fromScreen,
+  isFoodGiveaway,
+  photoUrls,
 }: PostProps) {
   const { emailHandle } = useContext(AuthContext);
 
@@ -143,6 +154,24 @@ export default function Post({
             </View>
           </View>
         </View>
+        {isFoodGiveaway && photoUrls.length > 0 && (
+          <View style={styles.photoContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              scrollEventThrottle={16}
+              style={styles.photoScrollContainer}
+            >
+              {photoUrls.map((photoUrl, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: photoUrl }}
+                  style={styles.postImage}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
       </View>
     </Pressable>
   );
@@ -253,5 +282,20 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontFamily: "System",
     color: "#666",
+  },
+  postImage: {
+    width: 200,
+    height: 150,
+    borderRadius: 8,
+    resizeMode: "cover",
+    marginRight: 10,
+  },
+  photoContainer: {
+    width: "100%",
+    marginBottom: 30,
+    overflow: "hidden",
+  },
+  photoScrollContainer: {
+    height: 170,
   },
 });

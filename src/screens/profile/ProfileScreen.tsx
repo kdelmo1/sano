@@ -83,6 +83,8 @@ export default function ProfileScreen({
                 name={p.name}
                 isPoster={true}
                 fromScreen={"profile"}
+                isFoodGiveaway={p.isFoodGiveaway}
+                photoUrls={p.photoUrls}
               />
             ))
           )}
