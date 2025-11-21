@@ -6,9 +6,7 @@ import {
   ScrollView,
   Pressable,
   RefreshControl,
-  TextInput,
   Animated,
-  Image,
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,23 +23,22 @@ type NavButton = "home" | "post" | "profile";
 type Screen = "feed" | "chat" | "profile" | "inbox" | "form";
 
 export default function Home() {
-  const { isLoggedIn, user, emailHandle } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
   const [posts, setPosts] = useState<
     {
       id: string;
-      title: string;
+      location: string;
       startTime: string;
       endTime: string;
       name: string;
-      content: string;
     }[]
   >([]);
 
   const [activeNav, setActiveNav] = useState<NavButton>("home");
-  const [toPost, setToPost] = React.useState(false);
-  const [refreshing, setRefreshing] = React.useState(false);
-  const [getPost, setGetPost] = React.useState(false);
+  const [toPost, setToPost] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [getPost, setGetPost] = useState(false);
   const [screen, setScreen] = useState<Screen>("feed");
 
   const homeAnim = useRef(new Animated.Value(1)).current;
@@ -67,7 +64,7 @@ export default function Home() {
     setRefreshing(true);
     setTimeout(() => {
       setRefreshing(false);
-    }, 2000);
+    }, 100);
   };
 
   const insets = useSafeAreaInsets();
@@ -111,11 +108,10 @@ export default function Home() {
           filtered.map((val) => {
             return {
               id: val["postID"],
-              title: val["title"] || "Untitled Post",
+              location: val["location"],
               startTime: val["startTime"],
               endTime: val["endTime"] || val["startTime"],
               name: val["name"],
-              content: val["content"],
             };
           })
         );
@@ -173,8 +169,6 @@ export default function Home() {
           setToPost={setToPost}
           onPostSuccess={() => {
             setGetPost((prev) => !prev);
-            setScreen("feed");
-            animateNavButton("home");
           }}
           onClose={() => {
             setToPost(false);
@@ -185,7 +179,6 @@ export default function Home() {
           postAnim={postAnim}
           profileAnim={profileAnim}
           onNavPress={handleNavPress}
-          activeNav={activeNav}
         />
       </View>
     );
@@ -335,7 +328,7 @@ export default function Home() {
               <Post
                 key={post.id}
                 id={post.id}
-                title={post.title}
+                title={post.location}
                 startTime={post.startTime}
                 endTime={post.endTime}
                 name={post.name}

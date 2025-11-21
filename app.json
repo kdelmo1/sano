@@ -4,8 +4,11 @@
     "scheme": "sano",
     "deepLinking": true,
     "slug": "sano",
-    "scheme": "sano",
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -32,5 +35,8 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }

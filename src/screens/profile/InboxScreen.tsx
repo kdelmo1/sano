@@ -3,13 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   Pressable,
   Image,
   Animated,
-  Modal,
 } from "react-native";
-import { User } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import Post from "../home/post";
 import AuthContext from "../../../src/context/AuthContext";

@@ -11,20 +11,18 @@ import {
 } from "react-native";
 import React, { useEffect, useState, useContext } from "react";
 import { supabase } from "../../lib/supabase";
-import { User } from "@supabase/supabase-js";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AuthContext from "../../../src/context/AuthContext";
 
-interface PopupProps {
+interface FormProps {
   toPost: boolean;
   setToPost: React.Dispatch<React.SetStateAction<boolean>>;
   onPostSuccess: () => void;
-  onClose?: () => void;
+  onClose: () => void;
   homeAnim: any;
   postAnim: any;
   profileAnim: any;
   onNavPress: (button: "home" | "post" | "profile") => void;
-  activeNav: "home" | "post" | "profile";
 }
 
 export default function Form({
@@ -36,18 +34,17 @@ export default function Form({
   postAnim,
   profileAnim,
   onNavPress,
-  activeNav,
-}: PopupProps) {
-  const { isLoggedIn, user, emailHandle } = useContext(AuthContext);
+}: FormProps) {
+  const { user, emailHandle } = useContext(AuthContext);
 
-  const [location, setLocation] = React.useState("");
-  const [selectedDate, setSelectedDate] = React.useState(new Date());
-  const [startTime, setStartTime] = React.useState(new Date());
-  const [endTime, setEndTime] = React.useState(new Date());
-  const [showDatePicker, setShowDatePicker] = React.useState(false);
-  const [showStartPicker, setShowStartPicker] = React.useState(false);
-  const [showEndPicker, setShowEndPicker] = React.useState(false);
-  const [showLocationDropdown, setShowLocationDropdown] = React.useState(false);
+  const [location, setLocation] = useState("");
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [startTime, setStartTime] = useState(new Date());
+  const [endTime, setEndTime] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
 
   const locationOptions = [
     "JRL/C9 DH",
@@ -69,12 +66,6 @@ export default function Form({
     const thirtyMinsLater = new Date(now.getTime() + 30 * 60000);
     setEndTime(thirtyMinsLater);
   };
-
-  useEffect(() => {
-    if (toPost) {
-      resetForm();
-    }
-  }, [toPost]);
 
   const handlePost = () => {
     insertToDB();
@@ -159,11 +150,10 @@ export default function Form({
     }
 
     const newPost = {
-      title: location,
+      location: location,
       name: emailHandle,
       startTime: startDateTime.toISOString(),
       endTime: endDateTime.toISOString(),
-      location: location,
       studentEmail: user?.email,
     };
 
@@ -177,7 +167,7 @@ export default function Form({
       resetForm();
       setToPost(false);
       onPostSuccess();
-      onClose?.();
+      onClose();
     }
   }
 
@@ -193,9 +183,8 @@ export default function Form({
             <Pressable
               style={styles.closeButton}
               onPress={() => {
-                setToPost(false);
                 resetForm();
-                onClose?.();
+                onClose();
               }}
             >
               <Text style={styles.closeButtonText}>✕</Text>
@@ -319,7 +308,13 @@ export default function Form({
           />
         </Pressable>
 
-        <Pressable style={styles.nav_button} onPress={() => onNavPress("home")}>
+        <Pressable
+          style={styles.nav_button}
+          onPress={() => {
+            setToPost(false);
+            onNavPress("home");
+          }}
+        >
           <Animated.View
             style={[
               styles.navCircle,
@@ -345,7 +340,10 @@ export default function Form({
 
         <Pressable
           style={styles.nav_button}
-          onPress={() => onNavPress("profile")}
+          onPress={() => {
+            onNavPress("profile");
+            setToPost(false);
+          }}
         >
           <Animated.View
             style={[

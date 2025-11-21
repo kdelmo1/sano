@@ -9,7 +9,6 @@ import {
   ScrollView,
 } from "react-native";
 import Post from "../home/post";
-import { User } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import AuthContext from "../../context/AuthContext";
 
