@@ -182,7 +182,7 @@ export default function Form({
 
     let photoUrls: string[] = [];
     if (imageUris.length > 0) {
-      if (user?.id) {
+      if (!user?.id) {
         alert("User not authenticated for upload.");
         return;
       }
