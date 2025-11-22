@@ -9,10 +9,13 @@ export default async function getFromDB(
 ) {
   const email = emailHandle + "@ucsc.edu";
 
+  const now = new Date().toISOString();
+  
   let query = supabase
     .from("Posts")
     .select()
-    .order("startTime", { ascending: true });
+    .order("startTime", { ascending: true })
+    .gt("endTime", now);
 
   if (fromScreen === "feed") {
     query = query.neq("studentEmail", email);
