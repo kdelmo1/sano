@@ -1,5 +1,4 @@
 import { supabase } from "../lib/supabase";
-import React from "react";
 
 export default async function getFromDB(
   fromScreen: "feed" | "inbox" | "profile",
@@ -10,10 +9,13 @@ export default async function getFromDB(
 ) {
   const email = emailHandle + "@ucsc.edu";
 
+  const now = new Date().toISOString();
+  
   let query = supabase
     .from("Posts")
     .select()
-    .order("startTime", { ascending: true });
+    .order("startTime", { ascending: true })
+    .gt("endTime", now);
 
   if (fromScreen === "feed") {
     query = query.neq("studentEmail", email);
@@ -46,6 +48,17 @@ export default async function getFromDB(
 
     setPosts(
       data.map((val) => {
+        let photoUrls: string[] = [];
+        if (val["photo_url"]) {
+          try {
+            photoUrls = JSON.parse(val["photo_url"]);
+            if (!Array.isArray(photoUrls)) {
+              photoUrls = [];
+            }
+          } catch (e) {
+            photoUrls = [];
+          }
+        }
         return {
           id: val["postID"],
           location: val["location"],
@@ -54,6 +67,8 @@ export default async function getFromDB(
           name: val["name"],
           isPoster: fromScreen === "profile",
           fromScreen: fromScreen,
+          isFoodGiveaway: val["is_food_giveaway"] || false,
+          photoUrls: photoUrls,
         };
       })
     );

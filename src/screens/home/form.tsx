@@ -8,11 +8,15 @@ import {
   ScrollView,
   Animated,
   Image,
+  Switch,
 } from "react-native";
 import React, { useEffect, useState, useContext } from "react";
 import { supabase } from "../../lib/supabase";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AuthContext from "../../context/AuthContext";
+import * as ImagePicker from "expo-image-picker";
+
+const MAX_PHOTOS = 5;
 
 interface FormProps {
   toPost: boolean;
@@ -51,6 +55,10 @@ export default function Form({
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
+  const [isFoodGiveaway, setIsFoodGiveaway] = useState(false);
+  const [imageUris, setImageUris] = useState<string[]>([]);
+  const [isPosting, setIsPosting] = useState(false);
+
   const slotsOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   useEffect(() => {
@@ -72,6 +80,8 @@ export default function Form({
     setStartTime(now);
     const thirtyMinsLater = new Date(now.getTime() + 30 * 60000);
     setEndTime(thirtyMinsLater);
+    setIsFoodGiveaway(false);
+    setImageUris([]);
   };
 
   const onTimeChange = (
@@ -104,6 +114,31 @@ export default function Form({
       minute: "2-digit",
       hour12: true,
     });
+  };
+
+  // Image Picker Function
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      alert("Permission to access media library is required!");
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: false,
+      quality: 1,
+      selectionLimit: MAX_PHOTOS,
+    });
+
+    if (!result.canceled) {
+      const newUris = result.assets.map((asset) => asset.uri);
+      setImageUris((prev) => {
+        const combined = [...prev, ...newUris];
+        // Limit to MAX_PHOTOS
+        return combined.slice(0, MAX_PHOTOS);
+      });
+    }
   };
 
   const handleLocationSelect = (selectedLocation: string) => {
@@ -145,6 +180,47 @@ export default function Form({
       return;
     }
 
+    let photoUrls: string[] = [];
+    if (imageUris.length > 0) {
+      if (!user?.id) {
+        alert("User not authenticated for upload.");
+        return;
+      }
+
+      for (const uri of imageUris) {
+        try {
+          const userFolder = user?.id;
+          const fileId = Date.now() + "-" + Math.random();
+          const fileName = `${fileId}.jpg`;
+          const filePath = `${userFolder}/${fileName}`;
+
+          const response = await fetch(uri);
+          const arrayBuffer = await response.arrayBuffer();
+
+          const { error: uploadError } = await supabase.storage
+            .from("post-photos")
+            .upload(filePath, new Uint8Array(arrayBuffer), {
+              contentType: "image/jpeg",
+              upsert: false,
+            });
+
+          if (uploadError) {
+            alert("Failed to upload image: " + uploadError.message);
+            return;
+          }
+
+          const { data: urlData } = supabase.storage
+            .from("post-photos")
+            .getPublicUrl(filePath);
+
+          photoUrls.push(urlData.publicUrl);
+        } catch (err) {
+          alert("Failed to upload image");
+          return;
+        }
+      }
+    }
+
     const newPost = {
       location: location,
       name: emailHandle,
@@ -152,6 +228,8 @@ export default function Form({
       endTime: endDateTime.toISOString(),
       studentEmail: user?.email,
       slots: slots,
+      is_food_giveaway: isFoodGiveaway,
+      photo_url: isFoodGiveaway ? JSON.stringify(photoUrls) : null,
     };
 
     const { error } = await supabase.from("Posts").insert(newPost);
@@ -187,136 +265,216 @@ export default function Form({
               <Text style={styles.closeButtonText}>✕</Text>
             </Pressable>
           </View>
-
-          <View style={styles.formContent}>
-            <View style={styles.fieldContainer}>
-              <View style={styles.iconContainer}>
-                <Text style={styles.iconText}>📍</Text>
-              </View>
-              <View style={styles.dropdownWrapper}>
-                <Pressable
-                  style={styles.dropdownButton}
-                  onPress={() => setShowLocationDropdown(!showLocationDropdown)}
-                >
-                  <Text
-                    style={[
-                      styles.dropdownButtonText,
-                      !location && styles.placeholderText,
-                    ]}
+          <ScrollView>
+            <View style={styles.formContent}>
+              <View style={styles.fieldContainer}>
+                <View style={styles.iconContainer}>
+                  <Text style={styles.iconText}>📍</Text>
+                </View>
+                <View style={styles.dropdownWrapper}>
+                  <Pressable
+                    style={styles.dropdownButton}
+                    onPress={() =>
+                      setShowLocationDropdown(!showLocationDropdown)
+                    }
                   >
-                    {location || "select location"}
-                  </Text>
-                  <Text style={styles.dropdownArrow}>
-                    {showLocationDropdown ? "▲" : "▼"}
+                    <Text
+                      style={[
+                        styles.dropdownButtonText,
+                        !location && styles.placeholderText,
+                      ]}
+                    >
+                      {location || "select location"}
+                    </Text>
+                    <Text style={styles.dropdownArrow}>
+                      {showLocationDropdown ? "▲" : "▼"}
+                    </Text>
+                  </Pressable>
+
+                  {showLocationDropdown && (
+                    <View style={styles.dropdownMenu}>
+                      <ScrollView
+                        style={styles.dropdownScroll}
+                        nestedScrollEnabled={true}
+                        scrollEventThrottle={16}
+                        showsVerticalScrollIndicator={false}
+                      >
+                        {locationOptions.map((option, index) => (
+                          <Pressable
+                            key={index}
+                            style={styles.dropdownItem}
+                            onPress={() => handleLocationSelect(option)}
+                          >
+                            <Text style={styles.dropdownItemText}>
+                              {option}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* reservation slots */}
+              <View style={styles.fieldContainer}>
+                <View style={styles.iconContainer}>
+                  <Text style={styles.iconText}>#</Text>
+                </View>
+                <View style={[styles.dropdownWrapper, { zIndex: 998 }]}>
+                  <Pressable
+                    style={styles.dropdownButton}
+                    onPress={() => setShowSlotsDropdown(!showSlotsDropdown)}
+                  >
+                    <Text
+                      style={[
+                        styles.dropdownButtonText,
+                        !slots && styles.placeholderText,
+                      ]}
+                    >
+                      {slots || "select number"}
+                    </Text>
+                    <Text style={styles.dropdownArrow}>
+                      {showSlotsDropdown ? "▲" : "▼"}
+                    </Text>
+                  </Pressable>
+
+                  {showSlotsDropdown && (
+                    <View style={styles.dropdownMenu}>
+                      <ScrollView style={styles.dropdownScroll}>
+                        {slotsOptions.map((option, index) => (
+                          <Pressable
+                            key={index}
+                            style={styles.dropdownItem}
+                            onPress={() => handleSlotsSelect(option)}
+                          >
+                            <Text style={styles.dropdownItemText}>
+                              {option}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.fieldContainer}>
+                <View style={styles.iconContainer}>
+                  <Text style={styles.iconText}>📅</Text>
+                </View>
+                <Pressable
+                  style={styles.dateButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={styles.dateLabel}>Date</Text>
+                  <Text style={styles.dateValue}>
+                    {formatDate(selectedDate)}
                   </Text>
                 </Pressable>
+              </View>
 
-                {showLocationDropdown && (
-                  <View style={styles.dropdownMenu}>
-                    <ScrollView style={styles.dropdownScroll}>
-                      {locationOptions.map((option, index) => (
-                        <Pressable
-                          key={index}
-                          style={styles.dropdownItem}
-                          onPress={() => handleLocationSelect(option)}
-                        >
-                          <Text style={styles.dropdownItemText}>{option}</Text>
-                        </Pressable>
+              <View style={styles.timeRowContainer}>
+                <View style={styles.timeFieldContainer}>
+                  <View style={styles.iconContainer}>
+                    <Text style={styles.iconText}>🕐</Text>
+                  </View>
+                  <Pressable
+                    style={styles.timeButton}
+                    onPress={() => setShowStartPicker(true)}
+                  >
+                    <Text style={styles.timeLabel}>Start</Text>
+                    <Text style={styles.timeValue}>
+                      {formatTime(startTime)}
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <View style={styles.timeFieldContainer}>
+                  <View style={styles.iconContainer}>
+                    <Text style={styles.iconText}>🕑</Text>
+                  </View>
+                  <Pressable
+                    style={styles.timeButton}
+                    onPress={() => setShowEndPicker(true)}
+                  >
+                    <Text style={styles.timeLabel}>End</Text>
+                    <Text style={styles.timeValue}>{formatTime(endTime)}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+
+            {/* Food Giveaway Field */}
+            <View style={styles.switchContainer}>
+              <Text style={styles.switchLabel}>Food Giveaway?</Text>
+              <Switch
+                value={isFoodGiveaway}
+                onValueChange={(value) => {
+                  setIsFoodGiveaway(value);
+                  if (!value) {
+                    setImageUris([]);
+                  }
+                }}
+                trackColor={{ false: "#ccc", true: "#D4B75F" }}
+                thumbColor={isFoodGiveaway ? "#fff" : "#fff"}
+              />
+            </View>
+            {/* Image Selector (only if Food Giveaway True) */}
+            {isFoodGiveaway && (
+              <View style={styles.photoUploadContainer}>
+                <Pressable
+                  style={[
+                    styles.photoUploadButton,
+                    imageUris.length >= MAX_PHOTOS &&
+                      styles.photoUploadButtonDisabled,
+                  ]}
+                  onPress={pickImage}
+                  disabled={imageUris.length >= MAX_PHOTOS}
+                >
+                  <Text style={styles.photoUploadButtonText}>
+                    {imageUris.length === 0
+                      ? "Upload Photos"
+                      : `Add Photos (${imageUris.length}/${MAX_PHOTOS})`}
+                  </Text>
+                </Pressable>
+                {imageUris.length > 0 && (
+                  <View style={styles.photoScrollContainer}>
+                    <ScrollView
+                      horizontal={true}
+                      nestedScrollEnabled={true}
+                      showsHorizontalScrollIndicator={false}
+                      scrollEventThrottle={16}
+                      style={styles.photoScrollView}
+                      contentContainerStyle={styles.photoScrollContent}
+                    >
+                      {imageUris.map((uri, index) => (
+                        <View key={index} style={styles.photoWrapper}>
+                          <Image source={{ uri }} style={styles.imagePreview} />
+                          <Pressable
+                            onPress={() =>
+                              setImageUris((prev) =>
+                                prev.filter((_, i) => i !== index)
+                              )
+                            }
+                            style={styles.removeImageButton}
+                          >
+                            <Text style={styles.removeImageButtonText}>✕</Text>
+                          </Pressable>
+                        </View>
                       ))}
                     </ScrollView>
                   </View>
                 )}
               </View>
-            </View>
+            )}
 
-            {/* reservation slots */}
-            <View style={styles.fieldContainer}>
-              <View style={styles.iconContainer}>
-                <Text style={styles.iconText}>#</Text>
-              </View>
-              <View style={[styles.dropdownWrapper, { zIndex: 998 }]}>
-                <Pressable
-                  style={styles.dropdownButton}
-                  onPress={() => setShowSlotsDropdown(!showSlotsDropdown)}
-                >
-                  <Text
-                    style={[
-                      styles.dropdownButtonText,
-                      !slots && styles.placeholderText,
-                    ]}
-                  >
-                    {slots || "select number"}
-                  </Text>
-                  <Text style={styles.dropdownArrow}>
-                    {showSlotsDropdown ? "▲" : "▼"}
-                  </Text>
-                </Pressable>
-
-                {showSlotsDropdown && (
-                  <View style={styles.dropdownMenu}>
-                    <ScrollView style={styles.dropdownScroll}>
-                      {slotsOptions.map((option, index) => (
-                        <Pressable
-                          key={index}
-                          style={styles.dropdownItem}
-                          onPress={() => handleSlotsSelect(option)}
-                        >
-                          <Text style={styles.dropdownItemText}>{option}</Text>
-                        </Pressable>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-            </View>
-
-            <View style={styles.fieldContainer}>
-              <View style={styles.iconContainer}>
-                <Text style={styles.iconText}>📅</Text>
-              </View>
-              <Pressable
-                style={styles.dateButton}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={styles.dateLabel}>Date</Text>
-                <Text style={styles.dateValue}>{formatDate(selectedDate)}</Text>
+            <View style={styles.postButtonContainer}>
+              <Pressable style={styles.postButton} onPress={insertToDB}>
+                <Text style={styles.postButtonText}>post ✓</Text>
               </Pressable>
             </View>
-
-            <View style={styles.timeRowContainer}>
-              <View style={styles.timeFieldContainer}>
-                <View style={styles.iconContainer}>
-                  <Text style={styles.iconText}>🕐</Text>
-                </View>
-                <Pressable
-                  style={styles.timeButton}
-                  onPress={() => setShowStartPicker(true)}
-                >
-                  <Text style={styles.timeLabel}>Start</Text>
-                  <Text style={styles.timeValue}>{formatTime(startTime)}</Text>
-                </Pressable>
-              </View>
-
-              <View style={styles.timeFieldContainer}>
-                <View style={styles.iconContainer}>
-                  <Text style={styles.iconText}>🕑</Text>
-                </View>
-                <Pressable
-                  style={styles.timeButton}
-                  onPress={() => setShowEndPicker(true)}
-                >
-                  <Text style={styles.timeLabel}>End</Text>
-                  <Text style={styles.timeValue}>{formatTime(endTime)}</Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.postButtonContainer}>
-            <Pressable style={styles.postButton} onPress={insertToDB}>
-              <Text style={styles.postButtonText}>post ✓</Text>
-            </Pressable>
-          </View>
+          </ScrollView>
         </View>
       </View>
 
@@ -522,7 +680,8 @@ const styles = StyleSheet.create({
     width: "90%",
     backgroundColor: "#FFF",
     borderRadius: 10,
-    overflow: "visible",
+    overflow: "hidden",
+    maxHeight: "90%",
   },
   header: {
     backgroundColor: "#D4B75F",
@@ -763,5 +922,88 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     zIndex: 1,
+  },
+  giveawayText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  giveawayTextSelected: {
+    color: "#FFF",
+  },
+  photoUploadContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    width: "100%",
+  },
+  photoUploadButton: {
+    backgroundColor: "#D4B75F",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    marginBottom: 15,
+    width: "50%",
+    alignItems: "center",
+    alignSelf: "center",
+  },
+  photoUploadButtonDisabled: {
+    backgroundColor: "#ccc",
+    opacity: 0.6,
+  },
+  photoUploadButtonText: {
+    color: "#FFF",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  photoScrollContainer: {
+    marginBottom: 15,
+    width: "100%",
+    maxHeight: 220,
+  },
+  photoScrollContent: {
+    flexDirection: "row",
+    paddingHorizontal: 5,
+  },
+  photoWrapper: {
+    marginRight: 10,
+    alignItems: "center",
+  },
+  photoScrollView: {
+    width: "100%",
+  },
+  imagePreview: {
+    width: 150,
+    height: 150,
+    borderRadius: 12,
+    resizeMode: "cover",
+    marginBottom: 8,
+  },
+  removeImageButton: {
+    backgroundColor: "#FF4D4D",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    alignSelf: "center",
+  },
+  removeImageButtonText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  switchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 15,
+    marginHorizontal: 20,
+    backgroundColor: "#F0F0F0",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 12,
+  },
+  switchLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
   },
 });

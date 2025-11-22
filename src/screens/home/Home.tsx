@@ -280,6 +280,8 @@ export default function Home() {
                 name={post.name}
                 isPoster={false}
                 fromScreen={"feed"}
+                isFoodGiveaway={post.isFoodGiveaway}
+                photoUrls={post.photoUrls}
               />
             );
           })}
