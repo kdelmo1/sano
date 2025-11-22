@@ -5,7 +5,8 @@ export default async function getFromDB(
   fromScreen: "feed" | "inbox" | "profile",
   emailHandle: string,
   selectedLocation: string,
-  selectedTime: string,
+  selectedDate: Date | null,
+  selectedStartTime: Date | null,
   setPosts: React.Dispatch<React.SetStateAction<PostProps[]>>
 ) {
   const email = emailHandle + "@ucsc.edu";
@@ -18,18 +19,26 @@ export default async function getFromDB(
   if (fromScreen === "feed") {
     query = query.neq("studentEmail", email);
 
-    if (selectedLocation !== "all") {
+    if (selectedLocation && selectedLocation !== "select location" && selectedLocation !== "All") {
       query = query.eq("location", selectedLocation);
     }
 
-    if (selectedTime !== "all") {
-      const now = new Date();
-      let since = new Date();
-      if (selectedTime === "24h") since.setDate(now.getDate() - 1);
-      if (selectedTime === "7d") since.setDate(now.getDate() - 7);
-      if (selectedTime === "30d") since.setDate(now.getDate() - 30);
-      query = query.gte("startTime", since.toISOString());
-    }
+    // Filter by specific date
+      if (selectedDate) {
+        const startOfDay = new Date(selectedDate);
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(selectedDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        query = query.gte("startTime", startOfDay.toISOString()).lte("startTime", endOfDay.toISOString());
+      }
+
+      // Filter by starting time (only if chosen)
+      if (selectedStartTime) {
+        query = query.gt("endTime", selectedStartTime.toISOString());
+      }
+
   } else if (fromScreen === "inbox") {
     query = query.contains("reservation", [emailHandle]);
   } else if (fromScreen === "profile") {

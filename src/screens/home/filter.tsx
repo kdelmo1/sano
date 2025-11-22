@@ -1,56 +1,204 @@
-import React, { useState } from "react";
-import { StyleSheet, View, Text } from "react-native";
+import React, { useEffect, useState } from "react";
+import { 
+  StyleSheet,
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  Platform
+} from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import { supabase } from "../../lib/supabase";
+import DateTimePicker from "@react-native-community/datetimepicker";
+
+interface FormProps {
+  selectedLocation: string;
+  setSelectedLocation: (val: string) => void;
+  selectedDate: Date | null;
+  setSelectedDate: (val: Date | null) => void;
+  selectedStartTime: Date | null;
+  setSelectedStartTime: (val: Date | null) => void;
+
+  selectedTag: string;
+  setSelectedTag: (val: string) => void;
+}
 
 export default function Filter({
   selectedLocation,
   setSelectedLocation,
-  selectedTime,
-  setSelectedTime,
+  selectedDate,
+  setSelectedDate,
+  selectedStartTime,
+  setSelectedStartTime,
+
   selectedTag,
   setSelectedTag,
-}: {
-  selectedLocation: string;
-  setSelectedLocation: (val: string) => void;
-  selectedTime: string;
-  setSelectedTime: (val: string) => void;
-  selectedTag: string;
-  setSelectedTag: (val: string) => void;
-}) {
+}: FormProps) {
+
+  //const [location, setLocation] = useState("");
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [locationOptions, setLocationOptions] = useState<string[]>([]);
+  //const [showSlotsDropdown, setShowSlotsDropdown] = useState(false);
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  //const [startTime, setStartTime] = React.useState(new Date());
+  //const [endTime, setEndTime] = React.useState(new Date());
+
+  useEffect(() => {
+    async function getLocationFromDB() {
+      const { data, error } = await supabase.from("location").select("*");
+
+      if (error) {
+      } else {
+        setLocationOptions(data.map((loc) => loc["location"]));
+      }
+    }
+    getLocationFromDB();
+  }, []);
+
+  const handleLocationSelect = (option: string) => {
+    setSelectedLocation(option);
+    setShowLocationDropdown(false);
+  };
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return "Select date";
+    return date.toLocaleDateString(undefined, { 
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (time: Date | null) => {
+    if (!time) return "Select Time";
+    return time.toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      //hour12: true,
+    });
+  };
+
   return (
-    <View style={styles.filterContainer}>
+    <View>
+      
       {/*Location*/}
-      <View style={styles.filterGroup}>
-        <Text style={styles.label}>Location:</Text>
-        <Picker
-          selectedValue={selectedLocation}
-          style={styles.picker}
-          onValueChange={(itemValue) => setSelectedLocation(itemValue)}
-        >
-          <Picker.Item label="All" value="all" />
-          <Picker.Item label="New York" value="New York" />
-          <Picker.Item label="Los Angeles" value="Los Angeles" />
-          <Picker.Item label="Chicago" value="Chicago" />
-          <Picker.Item label="San Francisco" value="San Francisco" />
-        </Picker>
+      <View style={styles.fieldContainer}>
+        <View style={styles.iconContainer}>
+          <Text style={styles.iconText}>📍</Text>
+        </View>
+        <View style={styles.dropdownWrapper}>
+          <Pressable
+            style={styles.dropdownButton}
+            onPress={() => setShowLocationDropdown(!showLocationDropdown)}
+          >
+            <Text
+              style={[
+                styles.dropdownButtonText,
+                !selectedLocation && styles.placeholderText,
+              ]}
+            >
+              {selectedLocation === "All" ? "All Locations" : selectedLocation || "select location"}
+            </Text>
+            <Text style={styles.dropdownArrow}>
+              {showLocationDropdown ? "▲" : "▼"}
+            </Text>
+          </Pressable>
+
+          {showLocationDropdown && (
+            <View style={styles.dropdownMenu}>
+              <ScrollView style={styles.dropdownScroll}>
+                <Pressable onPress={() => handleLocationSelect("All")}>
+                  <Text style={styles.dropdownItemText}>All Locations</Text>
+                </Pressable>
+                {locationOptions.map((option, index) => (
+                  <Pressable
+                    key={index}
+                    style={styles.dropdownItem}
+                    onPress={() => handleLocationSelect(option)}
+                  >
+                    <Text style={styles.dropdownItemText}>{option}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
       </View>
-      {/*Time*/}
-      <View style={styles.filterGroup}>
-        <Text style={styles.label}>Time:</Text>
-        <Picker
-          selectedValue={selectedTime}
-          style={styles.picker}
-          onValueChange={(itemValue) => setSelectedTime(itemValue)}
-        >
-          <Picker.Item label="All time" value="all" />
-          <Picker.Item label="Last 24 hours" value="24h" />
-          <Picker.Item label="Last 7 days" value="7d" />
-          <Picker.Item label="Last 30 days" value="30d" />
-        </Picker>
+      
+      {/* Date Pick */}
+      <View style={styles.fieldContainer}>
+        <View style={styles.iconContainer}>
+          <Text style={styles.iconText}>📅</Text>
+        </View>
+        <Pressable style={styles.dateButton} onPress={() => setShowDatePicker(!showDatePicker)}>
+          {/*<Text style={styles.dateLabel}>Date</Text>*/}
+          <Text style={styles.dateValue}>{formatDate(selectedDate)}</Text>
+        </Pressable>
+        {showDatePicker && (
+          <DateTimePicker
+            mode="date"
+            value={selectedDate || new Date()}
+            onChange={(event, date) => {
+              setShowDatePicker(Platform.OS === "ios");
+              if (date) setSelectedDate(date);
+            }}
+          />
+        )}
       </View>
+
+      {/* Time Pick */}
+      <View style={styles.timeRowContainer}>
+        {/* Start Time */}
+        <View style={styles.timeFieldContainer}>
+          <View style={styles.iconContainer}>
+            <Text style={styles.iconText}>🕐</Text>
+          </View>
+          <Pressable style={styles.timeButton} onPress={() => setShowTimePicker(true)}>
+            <Text style={styles.timeLabel}>Start</Text>
+            <Text style={styles.timeValue}>{formatTime(selectedStartTime)}</Text>
+          </Pressable>
+          {showTimePicker && (
+            <DateTimePicker
+              mode="time"
+              value={selectedStartTime || new Date()}
+              onChange={(event, time) => {
+                setShowTimePicker(Platform.OS === "ios");
+                if (time) setSelectedStartTime(time);
+              }}
+            />
+          )}
+        </View>
+
+        {/* End Time */}
+        <View style={styles.timeFieldContainer}>
+          <View style={styles.iconContainer}>
+            <Text style={styles.iconText}>🕐</Text>
+          </View>
+          <Pressable style={styles.timeButton} onPress={() => setShowTimePicker(true)}>
+            <Text style={styles.timeLabel}>End</Text>
+            <Text style={styles.timeValue}>{formatTime(selectedStartTime)}</Text>
+          </Pressable>
+          {showTimePicker && (
+            <DateTimePicker
+              mode="time"
+              value={selectedStartTime || new Date()}
+              onChange={(event, time) => {
+                setShowTimePicker(Platform.OS === "ios");
+                if (time) setSelectedStartTime(time);
+              }}
+            />
+          )}
+        </View>
+      </View>
+      
       {/*Tags*/}
-      <View style={styles.filterGroup}>
-        <Text style={styles.label}>Tags:</Text>
+      <View style={styles.fieldContainer}>
+        <View style={styles.iconContainer}>
+          <Text style={styles.iconText}>Tags</Text>
+        </View>
         <Picker
           selectedValue={selectedTag}
           style={styles.picker}
@@ -85,5 +233,174 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     borderWidth: 1,
     borderColor: "#DDD",
+  },
+  fieldContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  iconText: {
+    fontSize: 28,
+  },
+  dropdownWrapper: {
+    flex: 1,
+    position: "relative",
+    zIndex: 1000,
+  },
+  dropdownButton: {
+    height: 50,
+    backgroundColor: "#F0F0F0",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  placeholderText: {
+    color: "#999",
+  },
+  dropdownArrow: {
+    fontSize: 12,
+    color: "#666",
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: 55,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    maxHeight: 200,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1001,
+  },
+  dropdownScroll: {
+    maxHeight: 200,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  dateButton: {
+    flex: 1,
+    height: 50,
+    backgroundColor: "#F0F0F0",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    justifyContent: "center",
+  },
+  dateLabel: {
+    fontSize: 12,
+    color: "#999",
+    marginBottom: 2,
+  },
+  dateValue: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "500",
+  },
+  timeRowContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  timeFieldContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  timeButton: {
+    flex: 1,
+    height: 50,
+    backgroundColor: "#F0F0F0",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    justifyContent: "center",
+  },
+  timeLabel: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 15,
+    marginBottom: 2,
+  },
+  timeValue: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "500",
+  },
+  postButtonContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
+  postButton: {
+    backgroundColor: "#D4B75F",
+    marginTop: -15,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  postButtonText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#FFF",
+  },
+  timePickerModalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.0)",
+  },
+  timePickerModal: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 20,
+  },
+  timePickerHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+  },
+  timePickerDone: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#D4B75F",
+  },
+  timePicker: {
+    height: 200,
   },
 });
