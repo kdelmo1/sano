@@ -6,6 +6,7 @@ import {
   Pressable,
   Image,
   ScrollView,
+  Alert,
 } from "react-native";
 import ChatScreen from "../chat/chatScreen";
 import PosterView from "../chat/posterView";
@@ -25,8 +26,14 @@ declare global {
     isFoodGiveaway: boolean;
     photoUrls: string[];
     posterRating: number;
+    reservePostInit: boolean;
+    refreshHome: () => void;
   }
 }
+
+Post.defaultProps = {
+  refreshHome: () => {},
+};
 
 export default function Post({
   id,
@@ -39,11 +46,13 @@ export default function Post({
   isFoodGiveaway,
   photoUrls,
   posterRating,
+  reservePostInit,
+  refreshHome,
 }: PostProps) {
   const { emailHandle } = useContext(AuthContext);
 
   const [openChat, setOpenChat] = useState(false);
-  const [reservePost, setReservePost] = useState(false);
+  const [reservePost, setReservePost] = useState(reservePostInit);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -76,12 +85,18 @@ export default function Post({
       const func = "append_array";
       const { error } = await supabase.rpc(func, {
         post_id: id,
+        poster_name: name,
         applicant_name: emailHandle,
       });
+      if (error) {
+        console.error(error);
+        setReservePost(false);
+        refreshHome();
+        alert("Offer is already full");
+      }
       // if (func === "decrement" && error) {
       //   refresh or something...?
       // }
-      return error ? false : true;
     };
     if (reservePost && fromScreen === "feed") {
       reserve(id, false);

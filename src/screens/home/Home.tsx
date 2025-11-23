@@ -283,6 +283,8 @@ export default function Home() {
                 isFoodGiveaway={post.isFoodGiveaway}
                 photoUrls={post.photoUrls}
                 posterRating={post.posterRating}
+                reservePostInit={post.reservePostInit}
+                refreshHome={onRefresh}
               />
             );
           })}

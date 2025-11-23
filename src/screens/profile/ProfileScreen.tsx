@@ -104,6 +104,7 @@ export default function ProfileScreen({
                 isFoodGiveaway={post.isFoodGiveaway}
                 photoUrls={post.photoUrls}
                 posterRating={post.posterRating}
+                reservePostInit={false}
               />
             ))
           )}

@@ -18,7 +18,7 @@ export default async function getFromDB(
     .gt("endTime", now);
 
   if (fromScreen === "feed") {
-    //query = query.neq("studentEmail", email);
+    query = query.neq("studentEmail", email).gt("slots", 0);
 
     if (selectedLocation !== "all") {
       query = query.eq("location", selectedLocation);
@@ -88,6 +88,8 @@ export default async function getFromDB(
             isFoodGiveaway: val["is_food_giveaway"] || false,
             photoUrls: photoUrls,
             posterRating: posterRatingRecord?.[val["studentEmail"]] || 0.0,
+            reservePostInit: val["reservation"].includes(emailHandle),
+            refreshHome: () => {},
           };
         })
       );
