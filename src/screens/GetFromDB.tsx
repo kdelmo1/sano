@@ -7,6 +7,7 @@ export default async function getFromDB(
   selectedLocation: string,
   selectedDate: Date | null,
   selectedStartTime: Date | null,
+  selectedEndTime: Date | null,
   setPosts: React.Dispatch<React.SetStateAction<PostProps[]>>
 ) {
   const email = emailHandle + "@ucsc.edu";
@@ -35,8 +36,30 @@ export default async function getFromDB(
       }
 
       // Filter by starting time (only if chosen)
-      if (selectedStartTime) {
+      /*if (selectedStartTime) {
         query = query.gt("endTime", selectedStartTime.toISOString());
+      }*/
+
+      if (selectedStartTime || selectedEndTime) {
+        let S: string | null = null;
+        let E: string | null = null;
+
+        // Combine date + time so your timestamps land on the same day
+        if (selectedDate && selectedStartTime) {
+          const d = new Date(selectedDate);
+          d.setHours(selectedStartTime.getHours(), selectedStartTime.getMinutes(), 0, 0);
+          S = d.toISOString();
+        }
+
+        if (selectedDate && selectedEndTime) {
+          const d = new Date(selectedDate);
+          d.setHours(selectedEndTime.getHours(), selectedEndTime.getMinutes(), 0, 0);
+          E = d.toISOString();
+        }
+
+        // Overlap condition: PostEnd >= S AND PostStart <= E
+        if (S) query = query.gte("endTime", S);
+        if (E) query = query.lte("startTime", E);
       }
 
   } else if (fromScreen === "inbox") {

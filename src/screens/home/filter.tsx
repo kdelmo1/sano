@@ -18,7 +18,8 @@ interface FormProps {
   setSelectedDate: (val: Date | null) => void;
   selectedStartTime: Date | null;
   setSelectedStartTime: (val: Date | null) => void;
-
+  selectedEndTime: Date | null;
+  setSelectedEndTime: (val: Date | null) => void;
   selectedTag: string;
   setSelectedTag: (val: string) => void;
 }
@@ -30,7 +31,8 @@ export default function Filter({
   setSelectedDate,
   selectedStartTime,
   setSelectedStartTime,
-
+  selectedEndTime,
+  setSelectedEndTime,
   selectedTag,
   setSelectedTag,
 }: FormProps) {
@@ -41,9 +43,14 @@ export default function Filter({
   //const [showSlotsDropdown, setShowSlotsDropdown] = useState(false);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  //const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
   //const [startTime, setStartTime] = React.useState(new Date());
   //const [endTime, setEndTime] = React.useState(new Date());
+
+  const [showTagPicker, setShowTagPicker] = useState(false);
+  const tagOptions = ["All Tags", "Slug Points", "Food Giveaway"];
 
   useEffect(() => {
     async function getLocationFromDB() {
@@ -156,17 +163,24 @@ export default function Filter({
           <View style={styles.iconContainer}>
             <Text style={styles.iconText}>🕐</Text>
           </View>
-          <Pressable style={styles.timeButton} onPress={() => setShowTimePicker(true)}>
+          <Pressable style={styles.timeButton} onPress={() => setShowStartPicker(true)}>
             <Text style={styles.timeLabel}>Start</Text>
             <Text style={styles.timeValue}>{formatTime(selectedStartTime)}</Text>
           </Pressable>
-          {showTimePicker && (
+          {showStartPicker && (
             <DateTimePicker
               mode="time"
               value={selectedStartTime || new Date()}
               onChange={(event, time) => {
-                setShowTimePicker(Platform.OS === "ios");
-                if (time) setSelectedStartTime(time);
+                //if (time) setSelectedStartTime(time);
+                //setShowStartPicker(Platform.OS === "ios");
+                //if (time) setSelectedStartTime(time);
+                if (time) {
+                  setSelectedStartTime(time);
+                }
+                if (Platform.OS !== "ios") {
+                  setShowStartPicker(false);
+                }
               }}
             />
           )}
@@ -177,17 +191,17 @@ export default function Filter({
           <View style={styles.iconContainer}>
             <Text style={styles.iconText}>🕐</Text>
           </View>
-          <Pressable style={styles.timeButton} onPress={() => setShowTimePicker(true)}>
+          <Pressable style={styles.timeButton} onPress={() => setShowEndPicker(true)}>
             <Text style={styles.timeLabel}>End</Text>
-            <Text style={styles.timeValue}>{formatTime(selectedStartTime)}</Text>
+            <Text style={styles.timeValue}>{formatTime(selectedEndTime)}</Text>
           </Pressable>
-          {showTimePicker && (
+          {showEndPicker && (
             <DateTimePicker
               mode="time"
-              value={selectedStartTime || new Date()}
+              value={selectedEndTime || new Date()}
               onChange={(event, time) => {
-                setShowTimePicker(Platform.OS === "ios");
-                if (time) setSelectedStartTime(time);
+                if (time) setSelectedEndTime(time);
+                setShowEndPicker(Platform.OS === "ios");
               }}
             />
           )}
@@ -214,21 +228,6 @@ export default function Filter({
 }
 
 const styles = StyleSheet.create({
-  filterContainer: {
-    width: "100%",
-    backgroundColor: "#D4B75F",
-    borderBottomWidth: 1,
-    borderColor: "#DDD",
-    paddingVertical: 10,
-  },
-  filterGroup: {
-    paddingHorizontal: 15,
-    marginBottom: 8,
-  },
-  label: {
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
   picker: {
     backgroundColor: "#FFF",
     borderWidth: 1,

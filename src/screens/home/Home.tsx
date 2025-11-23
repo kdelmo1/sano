@@ -71,7 +71,7 @@ export default function Home() {
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    getFromDB("feed", emailHandle, selectedLocation, selectedDate, selectedStartTime, setPosts);
+    getFromDB("feed", emailHandle, selectedLocation, selectedDate, selectedStartTime, selectedEndTime, setPosts);
   }, [getPost, selectedLocation, selectedDate, selectedStartTime, selectedEndTime]);
 
   const animateNavButton = (button: NavButton) => {
@@ -274,6 +274,7 @@ export default function Home() {
                         setSelectedLocation("");
                         setSelectedDate(null);
                         setSelectedStartTime(null);
+                        setSelectedEndTime(null);
                         setSelectedTag("");
                         setShowFilter(false);
                       }}
@@ -286,9 +287,15 @@ export default function Home() {
                       onPress={() => {
                         setSelectedLocation(tempLocation);
                         setSelectedDate(tempDate);
-                        setSelectedStartTime(tempStartTime);
                         if (tempDate && tempStartTime) {
                           setSelectedStartTime(combineDateAndTime(tempDate, tempStartTime));
+                        } else {
+                          setSelectedStartTime(null);
+                        }
+                        if (tempDate && tempEndTime) {
+                          setSelectedEndTime(combineDateAndTime(tempDate, tempEndTime));
+                        } else {
+                          setSelectedEndTime(null);
                         }
                         //setSelectedTag(tempTag); // Tags not implemented yet
                         setShowFilter(false);
@@ -309,7 +316,9 @@ export default function Home() {
                       selectedDate={tempDate}
                       setSelectedDate={setTempDate}
                       selectedStartTime={tempStartTime}
-                      setSelectedStartTime={setTempStartTime}
+                      setSelectedStartTime={setTempEndTime}
+                      selectedEndTime={tempStartTime}
+                      setSelectedEndTime={setTempEndTime}
                       selectedTag={tempTag}
                       setSelectedTag={setTempTag}
                     />
