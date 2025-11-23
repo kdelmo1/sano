@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, Pressable, Image, Modal } from "react-native";
 import ChatScreen from "./chatScreen";
 import AuthContext from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
+import RateUser from "../home/RateUser";
 
 export default function PosterView({
   id,
@@ -39,8 +40,9 @@ export default function PosterView({
           setOpenChat(true);
         }}
       >
-        <View style={{ padding: 10 }}>
-          <Text>{applicant}</Text>
+        <View style={{ padding: 10, flexDirection: "row" }}>
+          <Text style={{ fontSize: 30 }}>{applicant}</Text>
+          <RateUser id={id} ratedEmailHandle={applicant} />
         </View>
         <ChatScreen
           goBack={() => setOpenChat(false)}
@@ -59,11 +61,8 @@ export default function PosterView({
     <Modal visible={showOpt}>
       <View style={styles.screen}>
         <View style={styles.container}>
-          <Pressable
-            onPress={goBack}
-            style={{ borderWidth: 1, borderColor: "#000" }}
-          >
-            <Text>Back</Text>
+          <Pressable onPress={goBack}>
+            <Text style={{ fontSize: 40 }}>Back</Text>
           </Pressable>
           {applicants.map((applicant) => (
             <RenderApplicant key={applicant} applicant={applicant} />

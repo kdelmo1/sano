@@ -282,6 +282,7 @@ export default function Home() {
                 fromScreen={"feed"}
                 isFoodGiveaway={post.isFoodGiveaway}
                 photoUrls={post.photoUrls}
+                posterRating={post.posterRating}
               />
             );
           })}

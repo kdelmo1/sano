@@ -64,6 +64,7 @@ export default function InboxScreen({
               fromScreen={"inbox"}
               isFoodGiveaway={post.isFoodGiveaway}
               photoUrls={post.photoUrls}
+              posterRating={post.posterRating}
             ></Post>
           );
         })}

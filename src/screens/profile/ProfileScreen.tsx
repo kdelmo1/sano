@@ -39,6 +39,7 @@ export default function ProfileScreen({
   };
 
   const [yourPosts, setYourPosts] = useState<PostProps[]>([]);
+  const [yourRating, setYourRating] = useState(0);
 
   useEffect(() => {
     getFromDB("profile", emailHandle, "", "", setYourPosts);
@@ -47,6 +48,20 @@ export default function ProfileScreen({
   // Extract user's name or email
 
   const displayName = user?.user_metadata?.name;
+
+  useEffect(() => {
+    async function getRating() {
+      const { data, error } = await supabase
+        .from("student")
+        .select("rating, number_of_raters")
+        .eq("email", user?.email)
+        .single();
+      if (error) console.error(error);
+      else {
+        setYourRating((data["rating"] / data["number_of_raters"]) * 10);
+      }
+    }
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -64,6 +79,9 @@ export default function ProfileScreen({
 
         {/* User Name */}
         <Text style={styles.userName}>{displayName}</Text>
+        <Text style={{ fontSize: 20, padding: 10 }}>
+          {yourRating.toFixed(1)}
+        </Text>
       </View>
 
       {/* Your Posts Section */}
@@ -73,18 +91,19 @@ export default function ProfileScreen({
           {yourPosts.length === 0 ? (
             <Text style={styles.noPostsText}>You have no posts</Text>
           ) : (
-            yourPosts.map((p) => (
+            yourPosts.map((post) => (
               <Post
-                key={p.id}
-                id={p.id}
-                location={p.location}
-                startTime={p.startTime}
-                endTime={p.endTime}
-                name={p.name}
+                key={post.id}
+                id={post.id}
+                location={post.location}
+                startTime={post.startTime}
+                endTime={post.endTime}
+                name={post.name}
                 isPoster={true}
                 fromScreen={"profile"}
-                isFoodGiveaway={p.isFoodGiveaway}
-                photoUrls={p.photoUrls}
+                isFoodGiveaway={post.isFoodGiveaway}
+                photoUrls={post.photoUrls}
+                posterRating={post.posterRating}
               />
             ))
           )}

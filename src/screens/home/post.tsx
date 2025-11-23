@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import ChatScreen from "../chat/chatScreen";
 import PosterView from "../chat/posterView";
+import RateUser from "./RateUser";
 import AuthContext from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 
@@ -23,6 +24,7 @@ declare global {
     fromScreen: "feed" | "inbox" | "profile";
     isFoodGiveaway: boolean;
     photoUrls: string[];
+    posterRating: number;
   }
 }
 
@@ -36,6 +38,7 @@ export default function Post({
   fromScreen,
   isFoodGiveaway,
   photoUrls,
+  posterRating,
 }: PostProps) {
   const { emailHandle } = useContext(AuthContext);
 
@@ -142,7 +145,12 @@ export default function Post({
             )}
           </Text>
 
-          <View style={styles.userBadgeContainer}>
+          <View
+            style={[
+              styles.userBadgeContainer,
+              { flexDirection: "row-reverse", justifyContent: "space-between" },
+            ]}
+          >
             <View style={styles.userBadge}>
               <View style={styles.profileIcon}>
                 <Image
@@ -151,7 +159,13 @@ export default function Post({
                 />
               </View>
               <Text style={styles.username}>{name}</Text>
+              {fromScreen !== "profile" && (
+                <Text>{posterRating.toFixed(1)}</Text>
+              )}
             </View>
+            {fromScreen === "inbox" && (
+              <RateUser id={id} ratedEmailHandle={name} />
+            )}
           </View>
         </View>
         {isFoodGiveaway && photoUrls.length > 0 && (
