@@ -20,6 +20,13 @@ interface FormProps {
   setSelectedStartTime: (val: Date | null) => void;
   selectedEndTime: Date | null;
   setSelectedEndTime: (val: Date | null) => void;
+
+  tempStartTime: Date | null;
+  setTempStartTime: (val: Date | null) => void;
+
+  tempEndTime: Date | null;
+  setTempEndTime: (val: Date | null) => void;
+
   selectedTag: string;
   setSelectedTag: (val: string) => void;
 }
@@ -29,10 +36,10 @@ export default function Filter({
   setSelectedLocation,
   selectedDate,
   setSelectedDate,
-  selectedStartTime,
-  setSelectedStartTime,
-  selectedEndTime,
-  setSelectedEndTime,
+  tempStartTime,
+  setTempStartTime,
+  tempEndTime,
+  setTempEndTime,
   selectedTag,
   setSelectedTag,
 }: FormProps) {
@@ -165,22 +172,15 @@ export default function Filter({
           </View>
           <Pressable style={styles.timeButton} onPress={() => setShowStartPicker(true)}>
             <Text style={styles.timeLabel}>Start</Text>
-            <Text style={styles.timeValue}>{formatTime(selectedStartTime)}</Text>
+            <Text style={styles.timeValue}>{formatTime(tempStartTime)}</Text>
           </Pressable>
           {showStartPicker && (
             <DateTimePicker
               mode="time"
-              value={selectedStartTime || new Date()}
+              value={tempStartTime || new Date()}
               onChange={(event, time) => {
-                //if (time) setSelectedStartTime(time);
-                //setShowStartPicker(Platform.OS === "ios");
-                //if (time) setSelectedStartTime(time);
-                if (time) {
-                  setSelectedStartTime(time);
-                }
-                if (Platform.OS !== "ios") {
-                  setShowStartPicker(false);
-                }
+                if (time) setTempStartTime(time);
+                if (Platform.OS !== "ios") setShowStartPicker(false);
               }}
             />
           )}
@@ -193,15 +193,15 @@ export default function Filter({
           </View>
           <Pressable style={styles.timeButton} onPress={() => setShowEndPicker(true)}>
             <Text style={styles.timeLabel}>End</Text>
-            <Text style={styles.timeValue}>{formatTime(selectedEndTime)}</Text>
+            <Text style={styles.timeValue}>{formatTime(tempEndTime)}</Text>
           </Pressable>
           {showEndPicker && (
             <DateTimePicker
               mode="time"
-              value={selectedEndTime || new Date()}
+              value={tempEndTime || new Date()}
               onChange={(event, time) => {
-                if (time) setSelectedEndTime(time);
-                setShowEndPicker(Platform.OS === "ios");
+                if (time) setTempEndTime(time);
+                if (Platform.OS !== "ios") setShowEndPicker(false);
               }}
             />
           )}

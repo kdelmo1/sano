@@ -287,14 +287,14 @@ export default function Home() {
                       onPress={() => {
                         setSelectedLocation(tempLocation);
                         setSelectedDate(tempDate);
-                        if (tempDate && tempStartTime) {
+                        if (tempStartTime && tempDate) {
                           setSelectedStartTime(combineDateAndTime(tempDate, tempStartTime));
-                        } else {
+                        } else if (!tempStartTime) {
                           setSelectedStartTime(null);
                         }
-                        if (tempDate && tempEndTime) {
+                        if (tempEndTime && tempDate) {
                           setSelectedEndTime(combineDateAndTime(tempDate, tempEndTime));
-                        } else {
+                        } else if (!tempEndTime) {
                           setSelectedEndTime(null);
                         }
                         //setSelectedTag(tempTag); // Tags not implemented yet
@@ -319,6 +319,12 @@ export default function Home() {
                       setSelectedStartTime={setTempEndTime}
                       selectedEndTime={tempStartTime}
                       setSelectedEndTime={setTempEndTime}
+
+                      tempStartTime={tempStartTime}
+                      setTempStartTime={setTempStartTime}
+                      tempEndTime={tempEndTime}
+                      setTempEndTime={setTempEndTime}
+
                       selectedTag={tempTag}
                       setSelectedTag={setTempTag}
                     />
