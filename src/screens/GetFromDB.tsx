@@ -5,9 +5,9 @@ export default async function getFromDB(
   fromScreen: "feed" | "inbox" | "profile",
   emailHandle: string,
   selectedLocation: string,
-  selectedDate: Date | null,
-  selectedStartTime: Date | null,
-  selectedEndTime: Date | null,
+  selectedDate: Date | null = null,
+  selectedStartTime: Date | null = null,
+  selectedEndTime: Date | null = null,
   setPosts: React.Dispatch<React.SetStateAction<PostProps[]>>
 ) {
   const email = emailHandle + "@ucsc.edu";
