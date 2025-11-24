@@ -19,6 +19,7 @@ import Filter from "./filter";
 import getFromDB from "../GetFromDB";
 import ProfileScreen from "../profile/ProfileScreen";
 import InboxScreen from "../profile/InboxScreen";
+import NavBar from "./NavBar";
 
 type NavButton = "home" | "post" | "profile";
 type Screen = "feed" | "chat" | "profile" | "inbox" | "form";
@@ -327,88 +328,13 @@ export default function Home() {
           })}
         </ScrollView>
 
-        <View style={styles.floatingNav}>
-          <Pressable
-            style={styles.nav_button}
-            onPress={() => handleNavPress("post")}
-          >
-            <Animated.View
-              style={[
-                styles.navCircle,
-                {
-                  opacity: postAnim,
-                  transform: [{ scale: postAnim }],
-                },
-              ]}
-            />
-            <Animated.Image
-              source={require("../../assets/images/icon-post.png")}
-              style={[
-                styles.nav_icon_image,
-                {
-                  tintColor: postAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["#FFF", "#D4B75F"],
-                  }),
-                },
-              ]}
-            />
-          </Pressable>
+        <NavBar
+          homeAnim={homeAnim}
+          postAnim={postAnim}
+          profileAnim={profileAnim}
+          onNavPress={handleNavPress}
+        />
 
-          <Pressable
-            style={styles.nav_button}
-            onPress={() => handleNavPress("home")}
-          >
-            <Animated.View
-              style={[
-                styles.navCircle,
-                {
-                  opacity: homeAnim,
-                  transform: [{ scale: homeAnim }],
-                },
-              ]}
-            />
-            <Animated.Image
-              source={require("../../assets/images/icon-home.png")}
-              style={[
-                styles.nav_icon_image,
-                {
-                  tintColor: homeAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["#FFF", "#D4B75F"],
-                  }),
-                },
-              ]}
-            />
-          </Pressable>
-
-          <Pressable
-            style={styles.nav_button}
-            onPress={() => handleNavPress("profile")}
-          >
-            <Animated.View
-              style={[
-                styles.navCircle,
-                {
-                  opacity: profileAnim,
-                  transform: [{ scale: profileAnim }],
-                },
-              ]}
-            />
-            <Animated.Image
-              source={require("../../assets/images/profile-icon.png")}
-              style={[
-                styles.nav_icon_image,
-                {
-                  tintColor: profileAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["#FFF", "#D4B75F"],
-                  }),
-                },
-              ]}
-            />
-          </Pressable>
-        </View>
         <StatusBar style="auto" />
       </View>
     </View>

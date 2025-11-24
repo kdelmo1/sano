@@ -12,6 +12,7 @@ import { supabase } from "../../lib/supabase";
 import AuthContext from "../../context/AuthContext";
 import Post from "../home/post";
 import getFromDB from "../GetFromDB";
+import NavBar from "../home/NavBar";
 
 interface ProfileScreenProps {
   goBack: () => void;
@@ -125,82 +126,12 @@ export default function ProfileScreen({
       </Pressable>
 
       {/* Navigation Bar */}
-      <View style={styles.floatingNav}>
-        <Pressable style={styles.nav_button} onPress={() => onNavPress("post")}>
-          <Animated.View
-            style={[
-              styles.navCircle,
-              {
-                opacity: postAnim,
-                transform: [{ scale: postAnim }],
-              },
-            ]}
-          />
-          <Animated.Image
-            source={require("../../assets/images/icon-post.png")}
-            style={[
-              styles.nav_icon_image,
-              {
-                tintColor: postAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["#FFF", "#D4B75F"],
-                }),
-              },
-            ]}
-          />
-        </Pressable>
-
-        <Pressable style={styles.nav_button} onPress={() => onNavPress("home")}>
-          <Animated.View
-            style={[
-              styles.navCircle,
-              {
-                opacity: homeAnim,
-                transform: [{ scale: homeAnim }],
-              },
-            ]}
-          />
-          <Animated.Image
-            source={require("../../assets/images/icon-home.png")}
-            style={[
-              styles.nav_icon_image,
-              {
-                tintColor: homeAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["#FFF", "#D4B75F"],
-                }),
-              },
-            ]}
-          />
-        </Pressable>
-
-        <Pressable
-          style={styles.nav_button}
-          onPress={() => onNavPress("profile")}
-        >
-          <Animated.View
-            style={[
-              styles.navCircle,
-              {
-                opacity: profileAnim,
-                transform: [{ scale: profileAnim }],
-              },
-            ]}
-          />
-          <Animated.Image
-            source={require("../../assets/images/profile-icon.png")}
-            style={[
-              styles.nav_icon_image,
-              {
-                tintColor: profileAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["#FFF", "#D4B75F"],
-                }),
-              },
-            ]}
-          />
-        </Pressable>
-      </View>
+      <NavBar
+        homeAnim={homeAnim}
+        postAnim={postAnim}
+        profileAnim={profileAnim}
+        onNavPress={onNavPress}
+      />
     </View>
   );
 }
