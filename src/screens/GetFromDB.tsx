@@ -35,16 +35,11 @@ export default async function getFromDB(
         query = query.gte("startTime", startOfDay.toISOString()).lte("startTime", endOfDay.toISOString());
       }
 
-      // Filter by starting time (only if chosen)
-      /*if (selectedStartTime) {
-        query = query.gt("endTime", selectedStartTime.toISOString());
-      }*/
-
+      // Filter with times
       if (selectedStartTime || selectedEndTime) {
         let S: string | null = null;
         let E: string | null = null;
 
-        // Combine date + time so your timestamps land on the same day
         if (selectedDate && selectedStartTime) {
           const d = new Date(selectedDate);
           d.setHours(selectedStartTime.getHours(), selectedStartTime.getMinutes(), 0, 0);
@@ -57,7 +52,6 @@ export default async function getFromDB(
           E = d.toISOString();
         }
 
-        // Overlap condition: PostEnd >= S AND PostStart <= E
         if (S) query = query.gte("endTime", S);
         if (E) query = query.lte("startTime", E);
       }

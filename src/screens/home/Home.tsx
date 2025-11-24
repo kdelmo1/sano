@@ -559,16 +559,6 @@ const styles = StyleSheet.create({
     height: 32,
     zIndex: 1,
   },
-  /*filterHeader: {
-    paddingTop: 60,
-    paddingHorizontal: 15,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderColor: "#ccc",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },*/
   filterHeader: {
     backgroundColor: "#D4B75F",
     paddingVertical: 15,
@@ -585,7 +575,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: "90%",
-    height: "80%",
+    height: "43%",
     backgroundColor: "#FFF",
     borderRadius: 12,
     overflow: "hidden",

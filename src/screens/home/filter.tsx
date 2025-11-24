@@ -44,17 +44,12 @@ export default function Filter({
   setSelectedTag,
 }: FormProps) {
 
-  //const [location, setLocation] = useState("");
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [locationOptions, setLocationOptions] = useState<string[]>([]);
-  //const [showSlotsDropdown, setShowSlotsDropdown] = useState(false);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
-  //const [showTimePicker, setShowTimePicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
-  //const [startTime, setStartTime] = React.useState(new Date());
-  //const [endTime, setEndTime] = React.useState(new Date());
 
   const [showTagPicker, setShowTagPicker] = useState(false);
   const tagOptions = ["All Tags", "Slug Points", "Food Giveaway"];
@@ -76,6 +71,11 @@ export default function Filter({
     setShowLocationDropdown(false);
   };
 
+  const handleTagSelect = (tag: string) => {
+    setSelectedTag(tag);
+    setShowTagPicker(false);
+  };
+
   const formatDate = (date: Date | null) => {
     if (!date) return "Select date";
     return date.toLocaleDateString(undefined, { 
@@ -91,13 +91,11 @@ export default function Filter({
     return time.toLocaleTimeString(undefined, {
       hour: "2-digit",
       minute: "2-digit",
-      //hour12: true,
     });
   };
 
   return (
     <View>
-      
       {/*Location*/}
       <View style={styles.fieldContainer}>
         <View style={styles.iconContainer}>
@@ -148,7 +146,6 @@ export default function Filter({
           <Text style={styles.iconText}>📅</Text>
         </View>
         <Pressable style={styles.dateButton} onPress={() => setShowDatePicker(!showDatePicker)}>
-          {/*<Text style={styles.dateLabel}>Date</Text>*/}
           <Text style={styles.dateValue}>{formatDate(selectedDate)}</Text>
         </Pressable>
         {showDatePicker && (
@@ -209,30 +206,51 @@ export default function Filter({
       </View>
       
       {/*Tags*/}
-      <View style={styles.fieldContainer}>
+      <View style={[styles.fieldContainer, {marginTop: 20}]}>
         <View style={styles.iconContainer}>
-          <Text style={styles.iconText}>Tags</Text>
+          <Text>🏷️</Text>
         </View>
-        <Picker
-          selectedValue={selectedTag}
-          style={styles.picker}
-          onValueChange={(itemValue) => setSelectedTag(itemValue)}
-        >
-          <Picker.Item label="All tags" value="all" />
-          <Picker.Item label="Slug Points" value="24h" />
-          <Picker.Item label="Packaged Food" value="7d" />
-        </Picker>
+        <View style={styles.dropdownWrapper}>
+          <Pressable
+            style={styles.dropdownButton}
+            onPress={() => setShowTagPicker(!showTagPicker)}
+          >
+            <Text
+              style={[
+                styles.dropdownButtonText,
+                !selectedTag && styles.placeholderText
+              ]}
+            >
+              {selectedTag === "All" ? "All Tags" : selectedTag || "Select tag"}
+            </Text>
+            <Text style={styles.dropdownArrow}>
+              {showTagPicker ? "▲" : "▼"}
+            </Text>
+          </Pressable>
+
+          {showTagPicker && (
+            <View style={styles.dropdownMenu}>
+              <ScrollView style={styles.dropdownScroll}>
+                {tagOptions.map((option, index) => (
+                  <Pressable
+                    key={index}
+                    style={styles.dropdownItem}
+                    onPress={() => handleTagSelect(option)}
+                  >
+                    <Text style={styles.dropdownItemText}>{option}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+        
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  picker: {
-    backgroundColor: "#FFF",
-    borderWidth: 1,
-    borderColor: "#DDD",
-  },
   fieldContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -312,11 +330,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     justifyContent: "center",
   },
-  dateLabel: {
-    fontSize: 12,
-    color: "#999",
-    marginBottom: 2,
-  },
   dateValue: {
     fontSize: 14,
     color: "#333",
@@ -350,56 +363,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#333",
     fontWeight: "500",
-  },
-  postButtonContainer: {
-    padding: 20,
-    alignItems: "center",
-  },
-  postButton: {
-    backgroundColor: "#D4B75F",
-    marginTop: -15,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  postButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FFF",
-  },
-  timePickerModalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0, 0, 0, 0.0)",
-  },
-  timePickerModal: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 20,
-  },
-  timePickerHeader: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-  },
-  timePickerDone: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#D4B75F",
-  },
-  timePicker: {
-    height: 200,
   },
 });
