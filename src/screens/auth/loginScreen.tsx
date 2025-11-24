@@ -8,8 +8,8 @@ import {
   Dimensions,
   Animated,
 } from "react-native";
-import { supabase } from "../../lib/supabase";
 import * as WebBrowser from "expo-web-browser";
+import { supabase } from "../../lib/supabase";
 
 type LoginScreenProps = {
   onLoginSuccess: () => void;

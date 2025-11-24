@@ -1,9 +1,9 @@
 import React, { useState, useContext, useEffect } from "react";
-import { StyleSheet, Text, View, Pressable, Image, Modal } from "react-native";
-import ChatScreen from "./chatScreen";
-import AuthContext from "../../context/AuthContext";
+import { StyleSheet, Text, View, Pressable, Modal } from "react-native";
 import { supabase } from "../../lib/supabase";
 import RateUser from "../home/RateUser";
+import ChatScreen from "./chatScreen";
+import AuthContext from "../../context/AuthContext";
 
 export default function PosterView({
   id,

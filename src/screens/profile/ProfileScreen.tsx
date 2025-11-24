@@ -5,7 +5,6 @@ import {
   View,
   Pressable,
   Image,
-  Animated,
   ScrollView,
 } from "react-native";
 import { supabase } from "../../lib/supabase";

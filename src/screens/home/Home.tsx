@@ -1,21 +1,20 @@
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View, Animated } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import React, { useState, useRef, useContext } from "react";
-import AuthContext from "../../../src/context/AuthContext";
+import React, { useState, useRef, useContext, useEffect } from "react";
 import Form from "./form";
 import ProfileScreen from "../profile/ProfileScreen";
 import InboxScreen from "../profile/InboxScreen";
 import NavBar from "./NavBar";
 import Feed from "./Feed";
 
-type NavButton = "home" | "post" | "profile";
-type Screen = "feed" | "chat" | "profile" | "inbox" | "form";
+declare global {
+  type NavButton = "feed" | "profile" | "form";
+}
+type Screen = "feed" | "profile" | "form" | "inbox";
 
 export default function Home() {
-  const { user, emailHandle } = useContext(AuthContext);
-
-  const [activeNav, setActiveNav] = useState<NavButton>("home");
+  const [activeNav, setActiveNav] = useState<NavButton>("feed");
   const [screen, setScreen] = useState<Screen>("feed");
 
   const insets = useSafeAreaInsets();
@@ -28,16 +27,20 @@ export default function Home() {
   }
 
   const handleNavPress = (button: NavButton) => {
-    setActiveNav(button);
-
-    if (button === "home") {
+    if (button === "feed") {
       setScreen("feed");
-    } else if (button === "post") {
+    } else if (button === "form") {
       setScreen("form");
     } else if (button === "profile") {
       setScreen("profile");
     }
   };
+
+  useEffect(() => {
+    if (screen !== "inbox") {
+      setActiveNav(screen);
+    }
+  }, [screen]);
 
   return (
     <View
@@ -50,11 +53,7 @@ export default function Home() {
         flex: 1,
       }}
     >
-      <Rendering
-        screen={screen}
-        setScreen={setScreen}
-        setActiveNav={setActiveNav}
-      />
+      <Rendering screen={screen} setScreen={setScreen} />
       <NavBar onNavPress={handleNavPress} button={activeNav} />
     </View>
   );
@@ -63,11 +62,9 @@ export default function Home() {
 function Rendering({
   screen,
   setScreen,
-  setActiveNav,
 }: {
   screen: string;
   setScreen: React.Dispatch<React.SetStateAction<Screen>>;
-  setActiveNav: React.Dispatch<React.SetStateAction<NavButton>>;
 }) {
   const [getPost, setGetPost] = useState(false);
 
@@ -87,7 +84,6 @@ function Rendering({
         }}
         onClose={() => {
           setScreen("feed");
-          setActiveNav("home");
         }}
       />
     );
@@ -108,7 +104,6 @@ function Rendering({
       <ProfileScreen
         goBack={() => {
           setScreen("feed");
-          setActiveNav("home");
         }}
         onInboxPress={() => {
           setScreen("inbox");

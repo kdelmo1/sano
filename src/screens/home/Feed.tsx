@@ -6,18 +6,18 @@ import {
   Pressable,
   RefreshControl,
 } from "react-native";
-import Post from "./post";
-import Filter from "./filter";
 import { useContext, useEffect, useState } from "react";
 import AuthContext from "../../../src/context/AuthContext";
 import getFromDB from "../GetFromDB";
+import Post from "./post";
+import Filter from "./filter";
 
 interface FeedProps {
   refresh: boolean;
 }
 
 export default function Feed({ refresh }: FeedProps) {
-  const { user, emailHandle } = useContext(AuthContext);
+  const { emailHandle } = useContext(AuthContext);
 
   const [posts, setPosts] = useState<PostProps[]>([]);
 

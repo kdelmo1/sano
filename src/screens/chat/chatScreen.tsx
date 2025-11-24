@@ -9,8 +9,8 @@ import {
   Modal,
 } from "react-native";
 import { useContext, useEffect, useState } from "react";
-import AuthContext from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
+import AuthContext from "../../context/AuthContext";
 
 interface Message {
   message: string;

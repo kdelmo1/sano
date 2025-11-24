@@ -1,21 +1,8 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  Pressable,
-  Modal,
-  Platform,
-  ScrollView,
-  Animated,
-  Image,
-  Switch,
-} from "react-native";
-import React, { useEffect, useState, useContext, useRef } from "react";
-
-type NavButton = "home" | "post" | "profile";
+import { StyleSheet, View, Pressable, Animated } from "react-native";
+import React, { useEffect, useRef } from "react";
 
 interface NavBarProps {
-  onNavPress: (button: "home" | "post" | "profile") => void;
+  onNavPress: (button: NavButton) => void;
   button: NavButton;
 }
 
@@ -42,7 +29,7 @@ export default function NavBar({ onNavPress, button }: NavBarProps) {
 
   return (
     <View style={styles.floatingNav}>
-      <Pressable style={styles.nav_button} onPress={() => onNavPress("post")}>
+      <Pressable style={styles.nav_button} onPress={() => onNavPress("form")}>
         <Animated.View
           style={[
             styles.navCircle,
@@ -66,7 +53,7 @@ export default function NavBar({ onNavPress, button }: NavBarProps) {
         />
       </Pressable>
 
-      <Pressable style={styles.nav_button} onPress={() => onNavPress("home")}>
+      <Pressable style={styles.nav_button} onPress={() => onNavPress("feed")}>
         <Animated.View
           style={[
             styles.navCircle,

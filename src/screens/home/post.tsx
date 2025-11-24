@@ -6,13 +6,12 @@ import {
   Pressable,
   Image,
   ScrollView,
-  Alert,
 } from "react-native";
+import { supabase } from "../../lib/supabase";
 import ChatScreen from "../chat/chatScreen";
 import PosterView from "../chat/posterView";
 import RateUser from "./RateUser";
 import AuthContext from "../../context/AuthContext";
-import { supabase } from "../../lib/supabase";
 
 declare global {
   interface PostProps {

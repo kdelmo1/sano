@@ -8,7 +8,6 @@ import {
   Platform,
   Modal,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import { supabase } from "../../lib/supabase";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
@@ -40,24 +39,23 @@ export default function Filter2({
   onApplyFilter,
 }: FormProps) {
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [tempLocation, setTempLocation] = useState(selectedLocation);
   const [locationOptions, setLocationOptions] = useState<string[]>([]);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showStartPicker, setShowStartPicker] = useState(false);
-  const [showEndPicker, setShowEndPicker] = useState(false);
-
-  const [showTagPicker, setShowTagPicker] = useState(false);
-  const tagOptions = ["All Tags", "Slug Points", "Food Giveaway"];
-
-  const [tempLocation, setTempLocation] = useState(selectedLocation);
-
   const [tempDate, setTempDate] = useState<Date | null>(selectedDate);
+
+  const [showStartPicker, setShowStartPicker] = useState(false);
   const [tempStartTime, setTempStartTime] = useState<Date | null>(
     selectedStartTime
   );
+
+  const [showEndPicker, setShowEndPicker] = useState(false);
   const [tempEndTime, setTempEndTime] = useState<Date | null>(selectedEndTime);
 
+  const [showTagPicker, setShowTagPicker] = useState(false);
   const [tempTag, setTempTag] = useState(selectedTag);
+  const tagOptions = ["All Tags", "Slug Points", "Food Giveaway"];
 
   useEffect(() => {
     async function getLocationFromDB() {
@@ -74,6 +72,14 @@ export default function Filter2({
     }
     getLocationFromDB();
   }, []);
+
+  const resetTempState = () => {
+    setTempLocation(selectedLocation);
+    setTempDate(selectedDate);
+    setTempStartTime(selectedStartTime);
+    setTempEndTime(selectedEndTime);
+    setTempTag(selectedTag);
+  };
 
   const handleLocationSelect = (option: string) => {
     setTempLocation(option);
@@ -119,6 +125,7 @@ export default function Filter2({
               style={styles.closeButton}
               onPress={() => {
                 onClose();
+                resetTempState();
               }}
             >
               <Text style={styles.closeButtonText}>x</Text>
@@ -126,15 +133,15 @@ export default function Filter2({
             <Text style={styles.headerTitle}>Filter Posts</Text>
             <Pressable
               style={styles.applyButton}
-              onPress={() => {
+              onPress={() =>
                 onApplyFilter(
                   tempLocation,
                   tempDate,
                   tempStartTime,
                   tempEndTime,
                   tempTag
-                );
-              }}
+                )
+              }
             >
               <Text style={styles.applyButtonText}>Apply</Text>
             </Pressable>

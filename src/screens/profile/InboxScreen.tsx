@@ -1,18 +1,8 @@
 import React, { useEffect, useState, useContext } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  Image,
-  Animated,
-  ScrollView,
-} from "react-native";
-import { supabase } from "../../lib/supabase";
+import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
 import Post from "../home/post";
 import getFromDB from "../GetFromDB";
 import AuthContext from "../../../src/context/AuthContext";
-import NavBar from "../home/NavBar";
 
 interface InboxScreenProps {
   goBack: () => void;

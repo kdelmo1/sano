@@ -6,16 +6,14 @@ import {
   Modal,
   Platform,
   ScrollView,
-  Animated,
   Image,
   Switch,
 } from "react-native";
 import React, { useEffect, useState, useContext } from "react";
-import { supabase } from "../../lib/supabase";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import AuthContext from "../../context/AuthContext";
 import * as ImagePicker from "expo-image-picker";
-import NavBar from "./NavBar";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { supabase } from "../../lib/supabase";
+import AuthContext from "../../context/AuthContext";
 
 const MAX_PHOTOS = 5;
 
