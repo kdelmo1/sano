@@ -3,7 +3,12 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
 import Post from "../home/post";
 import getFromDB from "../GetFromDB";
 import AuthContext from "../../../src/context/AuthContext";
-import { SharedStyles, Colors, Spacing, Typography } from "../../styles/sharedStyles";
+import {
+  SharedStyles,
+  Colors,
+  Spacing,
+  Typography,
+} from "../../styles/sharedStyles";
 
 interface InboxScreenProps {
   goBack: () => void;
@@ -14,7 +19,7 @@ export default function InboxScreen({ goBack }: InboxScreenProps) {
   const { emailHandle } = useContext(AuthContext);
 
   useEffect(() => {
-    getFromDB("inbox", emailHandle, "", "", setPosts);
+    getFromDB("inbox", emailHandle, setPosts);
   }, []);
 
   return (
@@ -44,6 +49,8 @@ export default function InboxScreen({ goBack }: InboxScreenProps) {
               fromScreen={"inbox"}
               isFoodGiveaway={post.isFoodGiveaway}
               photoUrls={post.photoUrls}
+              posterRating={post.posterRating}
+              reservePostInit={true}
             />
           );
         })}

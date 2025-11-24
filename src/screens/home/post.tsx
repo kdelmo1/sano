@@ -1,7 +1,16 @@
 import React, { useState, useContext, useEffect } from "react";
-import { StyleSheet, Text, View, Pressable, Image, ScrollView } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  Image,
+  ScrollView,
+  Alert,
+} from "react-native";
 import ChatScreen from "../chat/chatScreen";
 import PosterView from "../chat/posterView";
+import RateUser from "./RateUser";
 import AuthContext from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 import {
@@ -23,8 +32,15 @@ declare global {
     fromScreen: "feed" | "inbox" | "profile";
     isFoodGiveaway: boolean;
     photoUrls: string[];
+    posterRating: number | "X";
+    reservePostInit: boolean;
+    refreshHome: () => void;
   }
 }
+
+Post.defaultProps = {
+  refreshHome: () => {},
+};
 
 export default function Post({
   id,
@@ -36,29 +52,32 @@ export default function Post({
   fromScreen,
   isFoodGiveaway,
   photoUrls,
+  posterRating,
+  reservePostInit,
+  refreshHome,
 }: PostProps) {
   const { emailHandle } = useContext(AuthContext);
 
   const [openChat, setOpenChat] = useState(false);
-  const [reservePost, setReservePost] = useState(false);
+  const [reservePost, setReservePost] = useState(reservePostInit);
 
   useEffect(() => {
-  const checkReservationStatus = async () => {
-    // Fetch the post data to check if current user has reserved
-    const { data, error } = await supabase
-      .from('Posts') // Your table is named 'Posts'
-      .select('reservation')
-      .eq('postID', id) // Using postID as the primary key
-      .single();
-    
-    if (data && !error) {
-      // Check if the reservation field contains the current user's email
-      const isReserved = data.reservation?.includes(emailHandle);
-      setReservePost(isReserved || false);
-    }
-  };
-  
-  checkReservationStatus();
+    const checkReservationStatus = async () => {
+      // Fetch the post data to check if current user has reserved
+      const { data, error } = await supabase
+        .from("Posts") // Your table is named 'Posts'
+        .select("reservation")
+        .eq("postID", id) // Using postID as the primary key
+        .single();
+
+      if (data && !error) {
+        // Check if the reservation field contains the current user's email
+        const isReserved = data.reservation?.includes(emailHandle);
+        setReservePost(isReserved || false);
+      }
+    };
+
+    checkReservationStatus();
   }, [id, emailHandle]);
 
   const formatTime = (dateString: string) => {
@@ -92,10 +111,18 @@ export default function Post({
       const func = "append_array";
       const { error } = await supabase.rpc(func, {
         post_id: id,
-        applicant_name: emailHandle,
         poster_name: name,
+        applicant_name: emailHandle,
       });
-      return error ? false : true;
+      if (error) {
+        console.error(error);
+        setReservePost(false);
+        refreshHome();
+        alert("Offer is already full");
+      }
+      // if (func === "decrement" && error) {
+      //   refresh or something...?
+      // }
     };
     if (reservePost && fromScreen === "feed") {
       reserve(id, false);
@@ -149,7 +176,12 @@ export default function Post({
             )}
           </Text>
 
-          <View style={styles.userBadgeContainer}>
+          <View
+            style={[
+              styles.userBadgeContainer,
+              { flexDirection: "row-reverse", justifyContent: "space-between" },
+            ]}
+          >
             <View style={SharedStyles.userBadge}>
               <View style={SharedStyles.profileIcon}>
                 <Image
@@ -158,7 +190,16 @@ export default function Post({
                 />
               </View>
               <Text style={SharedStyles.username}>{name}</Text>
+              {fromScreen !== "profile" && typeof posterRating === "number" && (
+                <Text>{posterRating.toFixed(1)}</Text>
+              )}
+              {fromScreen !== "profile" && typeof posterRating === "string" && (
+                <Text>{posterRating}</Text>
+              )}
             </View>
+            {fromScreen === "inbox" && (
+              <RateUser id={id} ratedEmailHandle={name} />
+            )}
           </View>
         </View>
         {isFoodGiveaway && photoUrls.length > 0 && (

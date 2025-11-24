@@ -21,12 +21,12 @@ import ProfileScreen from "../profile/ProfileScreen";
 import InboxScreen from "../profile/InboxScreen";
 
 // Import shared styles
-import { 
-  Colors, 
-  Spacing, 
-  BorderRadius, 
-  Shadows, 
-  SharedStyles 
+import {
+  Colors,
+  Spacing,
+  BorderRadius,
+  Shadows,
+  SharedStyles,
 } from "../../styles/sharedStyles";
 
 type NavButton = "home" | "post" | "profile";
@@ -48,12 +48,11 @@ export default function Home() {
 
   // Filter values
   const [showFilter, setShowFilter] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState("all");
-  const [selectedTime, setSelectedTime] = useState("all");
+  const [selectedLocation, setSelectedLocation] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedStartTime, setSelectedStartTime] = useState<Date | null>(null);
+  const [selectedEndTime, setSelectedEndTime] = useState<Date | null>(null);
   const [selectedTag, setSelectedTag] = useState("all");
-  const [tempLocation, setTempLocation] = useState(selectedLocation);
-  const [tempTime, setTempTime] = useState(selectedTime);
-  const [tempTag, setTempTag] = useState(selectedTag);
 
   const onRefresh = () => {
     setGetPost(!getPost);
@@ -63,11 +62,51 @@ export default function Home() {
     }, 1000);
   };
 
+  const handleApplyFilter = (
+    selectedLocation: string,
+    selectedDate: Date | null,
+    selectedStartTime: Date | null,
+    selectedEndTime: Date | null,
+    selectedTag: string
+  ) => {
+    setShowFilter(false);
+    setSelectedLocation(selectedLocation);
+    setSelectedDate(selectedDate);
+    setSelectedStartTime(selectedStartTime);
+    setSelectedEndTime(selectedEndTime);
+    setSelectedTag(selectedTag);
+  };
+
+  const handleCloseFilter = () => {
+    setShowFilter(false);
+    setSelectedLocation("");
+    setSelectedDate(null);
+    setSelectedStartTime(null);
+    setSelectedEndTime(null);
+    setSelectedTag("");
+  };
+
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    getFromDB("feed", emailHandle, selectedLocation, selectedTime, setPosts);
-  }, [getPost, selectedLocation, selectedTime]);
+    getFromDB(
+      "feed",
+      emailHandle,
+      setPosts,
+      selectedLocation,
+      selectedDate,
+      selectedStartTime,
+      selectedEndTime,
+      selectedTag
+    );
+  }, [
+    getPost,
+    selectedLocation,
+    selectedDate,
+    selectedStartTime,
+    selectedEndTime,
+    selectedTag,
+  ]);
 
   const animateNavButton = (button: NavButton) => {
     const animations = {
@@ -92,14 +131,19 @@ export default function Home() {
 
     if (button === "home") {
       onRefresh();
+      setToPost(false);
       setScreen("feed");
       setToPost(false);
     } else if (button === "post") {
       setToPost(true);
       setScreen("form");
     } else if (button === "profile") {
+      setToPost(false);
       setScreen("profile");
     }
+    /*else if (button === "filter") {
+      setScreen("filter");
+    }*/
   };
 
   // Single NavBar Component using SharedStyles
@@ -229,55 +273,29 @@ export default function Home() {
           />
         );
 
-      case "feed":
       default:
         return (
           <View style={styles.container}>
             <View style={styles.navbar}>
               <View style={styles.search_bar_container}>
-                <Pressable style={styles.filterButton} onPress={() => setShowFilter(!showFilter)}>
+                <Pressable
+                  style={styles.filterButton}
+                  onPress={() => setShowFilter(!showFilter)}
+                >
                   <Text style={styles.filterButtonText}>
                     {showFilter ? "Hide Filters ▲" : "Show Filters ▼"}
                   </Text>
                 </Pressable>
-
-                <Modal
-                  visible={showFilter}
-                  animationType="slide"
-                  transparent={false}
-                  onRequestClose={() => setShowFilter(false)}
-                >
-                  <View style={{ flex: 1, backgroundColor: Colors.white }}>
-                    <View style={styles.filterHeader}>
-                      <Pressable onPress={() => setShowFilter(false)}>
-                        <Text style={styles.filterActionText}>Cancel</Text>
-                      </Pressable>
-                      <Text style={styles.filterTitle}>Filter Posts</Text>
-                      <Pressable
-                        onPress={() => {
-                          setSelectedLocation(tempLocation);
-                          setSelectedTime(tempTime);
-                          setShowFilter(false);
-                        }}
-                      >
-                        <Text style={styles.filterActionText}>Done</Text>
-                      </Pressable>
-                    </View>
-                    <ScrollView
-                      style={{ flex: 1, padding: 15 }}
-                      contentContainerStyle={{ paddingBottom: 50 }}
-                    >
-                      <Filter
-                        selectedLocation={tempLocation}
-                        setSelectedLocation={setTempLocation}
-                        selectedTime={tempTime}
-                        setSelectedTime={setTempTime}
-                        selectedTag={tempTag}
-                        setSelectedTag={setTempTag}
-                      />
-                    </ScrollView>
-                  </View>
-                </Modal>
+                <Filter
+                  showFilter={showFilter}
+                  selectedLocation={selectedLocation}
+                  selectedDate={selectedDate}
+                  selectedStartTime={selectedStartTime}
+                  selectedEndTime={selectedEndTime}
+                  selectedTag={selectedTag}
+                  onClose={handleCloseFilter}
+                  onApplyFilter={handleApplyFilter}
+                />
               </View>
             </View>
 
@@ -301,6 +319,9 @@ export default function Home() {
                     fromScreen={"feed"}
                     isFoodGiveaway={post.isFoodGiveaway}
                     photoUrls={post.photoUrls}
+                    posterRating={post.posterRating}
+                    reservePostInit={post.reservePostInit}
+                    refreshHome={onRefresh}
                   />
                 );
               })}
@@ -309,6 +330,12 @@ export default function Home() {
         );
     }
   };
+
+  function combineDateAndTime(date: Date, time: Date) {
+    const combined = new Date(date);
+    combined.setHours(time.getHours(), time.getMinutes(), 0, 0);
+    return combined;
+  }
 
   return (
     <View
@@ -367,11 +394,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   filterHeader: {
-    paddingTop: 60,
-    paddingHorizontal: 15,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderColor: "#ccc",
+    backgroundColor: "#D4B75F",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",

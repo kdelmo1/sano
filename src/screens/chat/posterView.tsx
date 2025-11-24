@@ -1,5 +1,12 @@
 import React, { useState, useContext, useEffect } from "react";
-import { StyleSheet, Text, View, Pressable, Modal, ScrollView } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  Modal,
+  ScrollView,
+} from "react-native";
 import ChatScreen from "./chatScreen";
 import AuthContext from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
@@ -11,6 +18,7 @@ import {
   BorderRadius,
   Typography,
 } from "../../styles/sharedStyles";
+import RateUser from "../home/RateUser";
 
 export default function PosterView({
   id,
@@ -24,7 +32,7 @@ export default function PosterView({
   const { emailHandle } = useContext(AuthContext);
 
   const [applicants, setApplicants] = useState<string[]>([]);
-  
+
   useEffect(() => {
     const getFromDB = async () => {
       const { error, data } = await supabase
@@ -55,6 +63,7 @@ export default function PosterView({
             </View>
             <Text style={SharedStyles.username}>{applicant}</Text>
           </View>
+          <RateUser id={id} ratedEmailHandle={applicant} />
         </Pressable>
         <ChatScreen
           goBack={() => setOpenChat(false)}
@@ -87,9 +96,7 @@ export default function PosterView({
           >
             {applicants.length === 0 ? (
               <View style={styles.emptyState}>
-                <Text style={SharedStyles.noPostsText}>
-                  No applicants yet
-                </Text>
+                <Text style={SharedStyles.noPostsText}>No applicants yet</Text>
               </View>
             ) : (
               applicants.map((applicant) => (

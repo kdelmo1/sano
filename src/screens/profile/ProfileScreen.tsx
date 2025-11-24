@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useContext } from "react";
-import { StyleSheet, Text, View, Pressable, Image, ScrollView } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  Image,
+  ScrollView,
+} from "react-native";
 import { supabase } from "../../lib/supabase";
 import AuthContext from "../../context/AuthContext";
 import Post from "../home/post";
@@ -28,12 +35,29 @@ export default function ProfileScreen({
   };
 
   const [yourPosts, setYourPosts] = useState<PostProps[]>([]);
+  const [yourRating, setYourRating] = useState<number | "X">("X");
 
   useEffect(() => {
-    getFromDB("profile", emailHandle, "", "", setYourPosts);
+    getFromDB("profile", emailHandle, setYourPosts);
   }, []);
 
   const displayName = user?.user_metadata?.name;
+
+  useEffect(() => {
+    async function getRating() {
+      const { data, error } = await supabase
+        .from("student")
+        .select("rating, number_of_raters")
+        .eq("email", user?.email)
+        .single();
+      if (error) console.error(error);
+      else {
+        if (data["number_of_raters"] >= 5)
+          setYourRating((data["rating"] / data["number_of_raters"]) * 10);
+      }
+    }
+    getRating();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -47,28 +71,40 @@ export default function ProfileScreen({
             />
           </View>
         </View>
-        <Text style={[Typography.userName, styles.userName]}>{displayName}</Text>
+
+        {/* User Name */}
+        <Text style={[Typography.userName, styles.userName]}>
+          {displayName}
+        </Text>
+        <Text style={{ fontSize: 20, padding: 10 }}>
+          Rating:{" "}
+          {typeof yourRating === "string" ? yourRating : yourRating.toFixed(1)}
+        </Text>
       </View>
 
       {/* Your Posts Section */}
       <View style={styles.yourPostsContainer}>
-        <Text style={[Typography.sectionTitle, styles.sectionTitle]}>Your posts</Text>
+        <Text style={[Typography.sectionTitle, styles.sectionTitle]}>
+          Your posts
+        </Text>
         <ScrollView style={styles.yourPostsList}>
           {yourPosts.length === 0 ? (
             <Text style={SharedStyles.noPostsText}>You have no posts</Text>
           ) : (
-            yourPosts.map((p) => (
+            yourPosts.map((post) => (
               <Post
-                key={p.id}
-                id={p.id}
-                location={p.location}
-                startTime={p.startTime}
-                endTime={p.endTime}
-                name={p.name}
+                key={post.id}
+                id={post.id}
+                location={post.location}
+                startTime={post.startTime}
+                endTime={post.endTime}
+                name={post.name}
                 isPoster={true}
                 fromScreen={"profile"}
-                isFoodGiveaway={p.isFoodGiveaway}
-                photoUrls={p.photoUrls}
+                isFoodGiveaway={post.isFoodGiveaway}
+                photoUrls={post.photoUrls}
+                posterRating={post.posterRating}
+                reservePostInit={false}
               />
             ))
           )}
@@ -122,5 +158,5 @@ const styles = StyleSheet.create({
   userName: {
     marginBottom: -10,
     marginTop: -10,
-  }
+  },
 });
