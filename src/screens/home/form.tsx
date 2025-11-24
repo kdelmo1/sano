@@ -54,7 +54,6 @@ export default function Form({
 
   const [isFoodGiveaway, setIsFoodGiveaway] = useState(false);
   const [imageUris, setImageUris] = useState<string[]>([]);
-  const [isPosting, setIsPosting] = useState(false);
 
   const slotsOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -471,14 +470,6 @@ export default function Form({
           </ScrollView>
         </View>
       </View>
-
-      {/* Navigation Bar - Now always rendered with passed props */}
-      <NavBar
-        homeAnim={homeAnim}
-        postAnim={postAnim}
-        profileAnim={profileAnim}
-        onNavPress={onNavPress}
-      />
 
       {showDatePicker && (
         <Modal

@@ -326,10 +326,10 @@ const styles = StyleSheet.create({
   },
   floatingNav: {
     position: "absolute" as const,
-    bottom: 10,
+    bottom: "5%",
     alignSelf: "center",
     height: 70,
-    width: 390,
+    width: "95%",
     backgroundColor: "#D4B75F",
     borderRadius: 20,
     flexDirection: "row",

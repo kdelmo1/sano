@@ -104,6 +104,12 @@ export default function Home() {
           profileAnim={profileAnim}
           onNavPress={handleNavPress}
         />
+        <NavBar
+          homeAnim={homeAnim}
+          postAnim={postAnim}
+          profileAnim={profileAnim}
+          onNavPress={handleNavPress}
+        />
       </View>
     );
   }
@@ -129,6 +135,12 @@ export default function Home() {
           profileAnim={profileAnim}
           onNavPress={handleNavPress}
           activeNav={activeNav}
+        />
+        <NavBar
+          homeAnim={homeAnim}
+          postAnim={postAnim}
+          profileAnim={profileAnim}
+          onNavPress={handleNavPress}
         />
       </View>
     );
@@ -160,6 +172,12 @@ export default function Home() {
           onNavPress={handleNavPress}
           activeNav={activeNav}
         />
+        <NavBar
+          homeAnim={homeAnim}
+          postAnim={postAnim}
+          profileAnim={profileAnim}
+          onNavPress={handleNavPress}
+        />
       </View>
     );
   }
@@ -176,16 +194,14 @@ export default function Home() {
     >
       <View style={styles.container}>
         <Feed refresh={getPost} />
-
-        <NavBar
-          homeAnim={homeAnim}
-          postAnim={postAnim}
-          profileAnim={profileAnim}
-          onNavPress={handleNavPress}
-        />
-
         <StatusBar style="auto" />
       </View>
+      <NavBar
+        homeAnim={homeAnim}
+        postAnim={postAnim}
+        profileAnim={profileAnim}
+        onNavPress={handleNavPress}
+      />
     </View>
   );
 }

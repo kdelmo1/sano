@@ -12,6 +12,7 @@ import { supabase } from "../../lib/supabase";
 import Post from "../home/post";
 import getFromDB from "../GetFromDB";
 import AuthContext from "../../../src/context/AuthContext";
+import NavBar from "../home/NavBar";
 
 interface InboxScreenProps {
   goBack: () => void;
@@ -65,79 +66,12 @@ export default function InboxScreen({
               isFoodGiveaway={post.isFoodGiveaway}
               photoUrls={post.photoUrls}
               posterRating={post.posterRating}
-              reservePostInit={true}
-            ></Post>
+              reservePostInit={post.reservePostInit}
+              refreshHome={() => {}}
+            />
           );
         })}
       </ScrollView>
-
-      <View style={styles.floatingNav}>
-        <Pressable style={styles.nav_button} onPress={() => onNavPress("post")}>
-          <Animated.View
-            style={[
-              styles.navCircle,
-              {
-                opacity: postAnim,
-                transform: [{ scale: postAnim }],
-              },
-            ]}
-          />
-          <Image
-            source={require("../../assets/images/icon-post.png")}
-            style={[
-              styles.nav_icon_image,
-              {
-                tintColor: activeNav === "post" ? "#D4B75F" : "#FFF",
-              },
-            ]}
-          />
-        </Pressable>
-
-        <Pressable style={styles.nav_button} onPress={() => onNavPress("home")}>
-          <Animated.View
-            style={[
-              styles.navCircle,
-              {
-                opacity: homeAnim,
-                transform: [{ scale: homeAnim }],
-              },
-            ]}
-          />
-          <Image
-            source={require("../../assets/images/icon-home.png")}
-            style={[
-              styles.nav_icon_image,
-              {
-                tintColor: activeNav === "home" ? "#D4B75F" : "#FFF",
-              },
-            ]}
-          />
-        </Pressable>
-
-        <Pressable
-          style={styles.nav_button}
-          onPress={() => onNavPress("profile")}
-        >
-          <Animated.View
-            style={[
-              styles.navCircle,
-              {
-                opacity: profileAnim,
-                transform: [{ scale: profileAnim }],
-              },
-            ]}
-          />
-          <Image
-            source={require("../../assets/images/profile-icon.png")}
-            style={[
-              styles.nav_icon_image,
-              {
-                tintColor: activeNav === "profile" ? "#D4B75F" : "#FFF",
-              },
-            ]}
-          />
-        </Pressable>
-      </View>
     </View>
   );
 }

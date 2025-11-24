@@ -75,7 +75,6 @@ export default async function getFromDB(
       if (E) query = query.lte("startTime", E);
     }
 
-    console.log(selectedTag);
     if (selectedTag && selectedTag !== "All Tags") {
       query = query.lte("is_food_giveaway", selectedTag === "Food Giveaway");
     }

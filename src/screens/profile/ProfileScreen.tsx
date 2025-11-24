@@ -12,7 +12,6 @@ import { supabase } from "../../lib/supabase";
 import AuthContext from "../../context/AuthContext";
 import Post from "../home/post";
 import getFromDB from "../GetFromDB";
-import NavBar from "../home/NavBar";
 
 interface ProfileScreenProps {
   goBack: () => void;
@@ -67,7 +66,7 @@ export default function ProfileScreen({
   }, []);
 
   return (
-    <>
+    <View style={styles.container}>
       {/* Profile Card */}
       <View style={styles.profileCard}>
         {/* Profile Picture */}
@@ -124,15 +123,7 @@ export default function ProfileScreen({
       <Pressable style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>log-out</Text>
       </Pressable>
-
-      {/* Navigation Bar */}
-      <NavBar
-        homeAnim={homeAnim}
-        postAnim={postAnim}
-        profileAnim={profileAnim}
-        onNavPress={onNavPress}
-      />
-    </>
+    </View>
   );
 }
 
