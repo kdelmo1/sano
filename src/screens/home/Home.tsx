@@ -16,6 +16,7 @@ import AuthContext from "../../../src/context/AuthContext";
 import Post from "./post";
 import Form from "./form";
 import Filter from "./filter";
+import Filter2 from "./filter2";
 import getFromDB from "../GetFromDB";
 import ProfileScreen from "../profile/ProfileScreen";
 import InboxScreen from "../profile/InboxScreen";
@@ -40,25 +41,11 @@ export default function Home() {
 
   // Filter values
   const [showFilter, setShowFilter] = useState(false);
-  
   const [selectedLocation, setSelectedLocation] = useState("");
-  const [tempLocation, setTempLocation] = useState(selectedLocation);
-
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [tempDate, setTempDate] = useState<Date | null>(selectedDate);
   const [selectedStartTime, setSelectedStartTime] = useState<Date | null>(null);
-  const [tempStartTime, setTempStartTime] = useState<Date | null>(selectedStartTime);
   const [selectedEndTime, setSelectedEndTime] = useState<Date | null>(null);
-  const [tempEndTime, setTempEndTime] = useState<Date | null>(selectedEndTime);
-
   const [selectedTag, setSelectedTag] = useState("all");
-  const [tempTag, setTempTag] = useState(selectedTag);
-
-  const openFilterModal = () => {
-    setTempLocation(selectedLocation);
-    setTempStartTime(selectedStartTime);
-    setShowFilter(true);
-  };
 
   const onRefresh = () => {
     setGetPost(!getPost);
@@ -68,11 +55,49 @@ export default function Home() {
     }, 1000);
   };
 
+  const handleApplyFilter = (
+    selectedLocation: string,
+    selectedDate: Date | null,
+    selectedStartTime: Date | null,
+    selectedEndTime: Date | null,
+    selectedTag: string
+  ) => {
+    setShowFilter(false);
+    setSelectedLocation(selectedLocation);
+    setSelectedDate(selectedDate);
+    setSelectedStartTime(selectedStartTime);
+    setSelectedEndTime(selectedEndTime);
+    setSelectedTag(selectedTag);
+  };
+
+  const handleCloseFilter = () => {
+    setShowFilter(false);
+    setSelectedLocation("");
+    setSelectedDate(null);
+    setSelectedStartTime(null);
+    setSelectedEndTime(null);
+    setSelectedTag("");
+  };
+
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    getFromDB("feed", emailHandle, selectedLocation, selectedDate, selectedStartTime, selectedEndTime, setPosts);
-  }, [getPost, selectedLocation, selectedDate, selectedStartTime, selectedEndTime]);
+    getFromDB(
+      "feed",
+      emailHandle,
+      setPosts,
+      selectedLocation,
+      selectedDate,
+      selectedStartTime,
+      selectedEndTime
+    );
+  }, [
+    getPost,
+    selectedLocation,
+    selectedDate,
+    selectedStartTime,
+    selectedEndTime,
+  ]);
 
   const animateNavButton = (button: NavButton) => {
     const animations = {
@@ -258,80 +283,30 @@ export default function Home() {
               </Text>
             </Pressable>
             {/* Filter Screen */}
-            <Modal
-              visible={showFilter}
-              animationType="fade"
-              transparent={true}
-              onRequestClose={() => setShowFilter(false)}
-            >
-              <View style={styles.modalOverlay}>
-                {/* Header Title and Buttons */}
-                <View style={styles.modalContent}>
-                  <View style={styles.filterHeader}>
-                    <Pressable
-                      style={styles.closeButton}
-                      onPress={() => {
-                        setSelectedLocation("");
-                        setSelectedDate(null);
-                        setSelectedStartTime(null);
-                        setSelectedEndTime(null);
-                        setSelectedTag("");
-                        setShowFilter(false);
-                      }}
-                    >
-                      <Text style={styles.closeButtonText}>x</Text>
-                    </Pressable>
-                    <Text style={styles.headerTitle}>Filter Posts</Text>
-                    <Pressable
-                      style={styles.applyButton}
-                      onPress={() => {
-                        setSelectedLocation(tempLocation);
-                        setSelectedDate(tempDate);
-                        if (tempStartTime && tempDate) {
-                          setSelectedStartTime(combineDateAndTime(tempDate, tempStartTime));
-                        } else if (!tempStartTime) {
-                          setSelectedStartTime(null);
-                        }
-                        if (tempEndTime && tempDate) {
-                          setSelectedEndTime(combineDateAndTime(tempDate, tempEndTime));
-                        } else if (!tempEndTime) {
-                          setSelectedEndTime(null);
-                        }
-                        //setSelectedTag(tempTag); // Tags not implemented yet
-                        setShowFilter(false);
-                      }}
-                    >
-                      <Text style={styles.applyButtonText}>Apply</Text>
-                    </Pressable>
-                  </View>
-
-                  {/* Scrollable filter options */}
-                  <ScrollView
-                    style={{ flex: 1 }}
-                    contentContainerStyle={{ padding: 20, paddingBottom: 50 }}
-                  >
-                    <Filter
-                      selectedLocation={tempLocation}
-                      setSelectedLocation={setTempLocation}
-                      selectedDate={tempDate}
-                      setSelectedDate={setTempDate}
-                      selectedStartTime={tempStartTime}
-                      setSelectedStartTime={setTempEndTime}
-                      selectedEndTime={tempStartTime}
-                      setSelectedEndTime={setTempEndTime}
-
-                      tempStartTime={tempStartTime}
-                      setTempStartTime={setTempStartTime}
-                      tempEndTime={tempEndTime}
-                      setTempEndTime={setTempEndTime}
-
-                      selectedTag={tempTag}
-                      setSelectedTag={setTempTag}
-                    />
-                  </ScrollView>
-                </View>
-              </View>
-            </Modal>
+            <Filter2
+              showFilter={showFilter}
+              selectedLocation={selectedLocation}
+              selectedDate={selectedDate}
+              selectedStartTime={selectedStartTime}
+              selectedEndTime={selectedEndTime}
+              selectedTag={selectedTag}
+              onClose={handleCloseFilter}
+              onApplyFilter={(
+                selectedLocation,
+                selectedDate,
+                selectedStartTime,
+                selectedEndTime,
+                selectedTag
+              ) =>
+                handleApplyFilter(
+                  selectedLocation,
+                  selectedDate,
+                  selectedStartTime,
+                  selectedEndTime,
+                  selectedTag
+                )
+              }
+            />
           </View>
         </View>
 
@@ -343,7 +318,6 @@ export default function Home() {
           }
         >
           {posts.map((post) => {
-            console.log(post);
             return (
               <Post
                 key={post.id}
@@ -603,7 +577,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: "#D4B75F",
     fontWeight: "600",
-    lineHeight: 20
+    lineHeight: 20,
   },
   applyButton: {
     backgroundColor: "#FFF",

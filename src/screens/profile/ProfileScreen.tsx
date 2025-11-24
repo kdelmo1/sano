@@ -42,7 +42,7 @@ export default function ProfileScreen({
   const [yourRating, setYourRating] = useState<number | "X">("X");
 
   useEffect(() => {
-    getFromDB("profile", emailHandle, "", "", setYourPosts);
+    getFromDB("profile", emailHandle, setYourPosts);
   }, []);
 
   // Extract user's name or email

@@ -3,11 +3,11 @@ import { supabase } from "../lib/supabase";
 export default async function getFromDB(
   fromScreen: "feed" | "inbox" | "profile",
   emailHandle: string,
-  selectedLocation: string,
+  setPosts: React.Dispatch<React.SetStateAction<PostProps[]>>,
+  selectedLocation: string = "",
   selectedDate: Date | null = null,
   selectedStartTime: Date | null = null,
-  selectedEndTime: Date | null = null,
-  setPosts: React.Dispatch<React.SetStateAction<PostProps[]>>
+  selectedEndTime: Date | null = null
 ) {
   const email = emailHandle + "@ucsc.edu";
 
@@ -22,42 +22,57 @@ export default async function getFromDB(
   if (fromScreen === "feed") {
     query = query.neq("studentEmail", email).gt("slots", 0);
 
-    if (selectedLocation && selectedLocation !== "select location" && selectedLocation !== "All") {
+    if (
+      selectedLocation &&
+      selectedLocation !== "select location" &&
+      selectedLocation !== "All"
+    ) {
       query = query.eq("location", selectedLocation);
     }
 
     // Filter by specific date
-      if (selectedDate) {
-        const startOfDay = new Date(selectedDate);
-        startOfDay.setHours(0, 0, 0, 0);
+    if (selectedDate) {
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
 
-        const endOfDay = new Date(selectedDate);
-        endOfDay.setHours(23, 59, 59, 999);
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
 
-        query = query.gte("startTime", startOfDay.toISOString()).lte("startTime", endOfDay.toISOString());
+      query = query
+        .gte("startTime", startOfDay.toISOString())
+        .lte("startTime", endOfDay.toISOString());
+    }
+
+    // Filter with times
+    if (selectedStartTime || selectedEndTime) {
+      let S: string | null = null;
+      let E: string | null = null;
+
+      if (selectedDate && selectedStartTime) {
+        const d = new Date(selectedDate);
+        d.setHours(
+          selectedStartTime.getHours(),
+          selectedStartTime.getMinutes(),
+          0,
+          0
+        );
+        S = d.toISOString();
       }
 
-      // Filter with times
-      if (selectedStartTime || selectedEndTime) {
-        let S: string | null = null;
-        let E: string | null = null;
-
-        if (selectedDate && selectedStartTime) {
-          const d = new Date(selectedDate);
-          d.setHours(selectedStartTime.getHours(), selectedStartTime.getMinutes(), 0, 0);
-          S = d.toISOString();
-        }
-
-        if (selectedDate && selectedEndTime) {
-          const d = new Date(selectedDate);
-          d.setHours(selectedEndTime.getHours(), selectedEndTime.getMinutes(), 0, 0);
-          E = d.toISOString();
-        }
-
-        if (S) query = query.gte("endTime", S);
-        if (E) query = query.lte("startTime", E);
+      if (selectedDate && selectedEndTime) {
+        const d = new Date(selectedDate);
+        d.setHours(
+          selectedEndTime.getHours(),
+          selectedEndTime.getMinutes(),
+          0,
+          0
+        );
+        E = d.toISOString();
       }
 
+      if (S) query = query.gte("endTime", S);
+      if (E) query = query.lte("startTime", E);
+    }
   } else if (fromScreen === "inbox") {
     query = query.contains("reservation", [emailHandle]);
   } else if (fromScreen === "profile") {
@@ -65,6 +80,7 @@ export default async function getFromDB(
   }
 
   const { data, error } = await query;
+  console.log(await query);
 
   if (error) {
     console.log("err", error);

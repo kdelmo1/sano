@@ -34,7 +34,7 @@ export default function InboxScreen({
   const { emailHandle } = useContext(AuthContext);
 
   useEffect(() => {
-    getFromDB("inbox", emailHandle, "", "", setPosts);
+    getFromDB("inbox", emailHandle, setPosts);
   }, []);
 
   return (

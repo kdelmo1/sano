@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { 
+import {
   StyleSheet,
   View,
   Text,
   Pressable,
   ScrollView,
-  Platform
+  Platform,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { supabase } from "../../lib/supabase";
@@ -43,7 +43,6 @@ export default function Filter({
   selectedTag,
   setSelectedTag,
 }: FormProps) {
-
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [locationOptions, setLocationOptions] = useState<string[]>([]);
 
@@ -78,7 +77,7 @@ export default function Filter({
 
   const formatDate = (date: Date | null) => {
     if (!date) return "Select date";
-    return date.toLocaleDateString(undefined, { 
+    return date.toLocaleDateString(undefined, {
       weekday: "short",
       month: "short",
       day: "numeric",
@@ -112,7 +111,9 @@ export default function Filter({
                 !selectedLocation && styles.placeholderText,
               ]}
             >
-              {selectedLocation === "All" ? "All Locations" : selectedLocation || "select location"}
+              {selectedLocation === "All"
+                ? "All Locations"
+                : selectedLocation || "select location"}
             </Text>
             <Text style={styles.dropdownArrow}>
               {showLocationDropdown ? "▲" : "▼"}
@@ -139,13 +140,16 @@ export default function Filter({
           )}
         </View>
       </View>
-      
+
       {/* Date Pick */}
       <View style={styles.fieldContainer}>
         <View style={styles.iconContainer}>
           <Text style={styles.iconText}>📅</Text>
         </View>
-        <Pressable style={styles.dateButton} onPress={() => setShowDatePicker(!showDatePicker)}>
+        <Pressable
+          style={styles.dateButton}
+          onPress={() => setShowDatePicker(!showDatePicker)}
+        >
           <Text style={styles.dateValue}>{formatDate(selectedDate)}</Text>
         </Pressable>
         {showDatePicker && (
@@ -167,7 +171,10 @@ export default function Filter({
           <View style={styles.iconContainer}>
             <Text style={styles.iconText}>🕐</Text>
           </View>
-          <Pressable style={styles.timeButton} onPress={() => setShowStartPicker(true)}>
+          <Pressable
+            style={styles.timeButton}
+            onPress={() => setShowStartPicker(true)}
+          >
             <Text style={styles.timeLabel}>Start</Text>
             <Text style={styles.timeValue}>{formatTime(tempStartTime)}</Text>
           </Pressable>
@@ -188,7 +195,10 @@ export default function Filter({
           <View style={styles.iconContainer}>
             <Text style={styles.iconText}>🕐</Text>
           </View>
-          <Pressable style={styles.timeButton} onPress={() => setShowEndPicker(true)}>
+          <Pressable
+            style={styles.timeButton}
+            onPress={() => setShowEndPicker(true)}
+          >
             <Text style={styles.timeLabel}>End</Text>
             <Text style={styles.timeValue}>{formatTime(tempEndTime)}</Text>
           </Pressable>
@@ -204,9 +214,9 @@ export default function Filter({
           )}
         </View>
       </View>
-      
+
       {/*Tags*/}
-      <View style={[styles.fieldContainer, {marginTop: 20}]}>
+      <View style={[styles.fieldContainer, { marginTop: 20 }]}>
         <View style={styles.iconContainer}>
           <Text>🏷️</Text>
         </View>
@@ -218,7 +228,7 @@ export default function Filter({
             <Text
               style={[
                 styles.dropdownButtonText,
-                !selectedTag && styles.placeholderText
+                !selectedTag && styles.placeholderText,
               ]}
             >
               {selectedTag === "All" ? "All Tags" : selectedTag || "Select tag"}
@@ -244,7 +254,6 @@ export default function Filter({
             </View>
           )}
         </View>
-        
       </View>
     </View>
   );

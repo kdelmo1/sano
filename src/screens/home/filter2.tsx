@@ -1,0 +1,480 @@
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  Platform,
+  Modal,
+} from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import { supabase } from "../../lib/supabase";
+import DateTimePicker from "@react-native-community/datetimepicker";
+
+interface FormProps {
+  showFilter: boolean;
+  selectedLocation: string;
+  selectedDate: Date | null;
+  selectedStartTime: Date | null;
+  selectedEndTime: Date | null;
+  selectedTag: string;
+  onClose: () => void;
+  onApplyFilter: (
+    selectedLocation: string,
+    selectedDate: Date | null,
+    selectedStartTime: Date | null,
+    selectedEndTime: Date | null,
+    selectedTag: string
+  ) => void;
+}
+
+export default function Filter2({
+  showFilter,
+  selectedLocation,
+  selectedDate,
+  selectedStartTime,
+  selectedEndTime,
+  selectedTag,
+  onClose,
+  onApplyFilter,
+}: FormProps) {
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [locationOptions, setLocationOptions] = useState<string[]>([]);
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+
+  const [showTagPicker, setShowTagPicker] = useState(false);
+  const tagOptions = ["All Tags", "Slug Points", "Food Giveaway"];
+
+  const [tempLocation, setTempLocation] = useState(selectedLocation);
+
+  const [tempDate, setTempDate] = useState<Date | null>(selectedDate);
+  const [tempStartTime, setTempStartTime] = useState<Date | null>(
+    selectedStartTime
+  );
+  const [tempEndTime, setTempEndTime] = useState<Date | null>(selectedEndTime);
+
+  const [tempTag, setTempTag] = useState(selectedTag);
+
+  useEffect(() => {
+    async function getLocationFromDB() {
+      const { data, error } = await supabase.from("location").select("*");
+
+      if (error) {
+      } else {
+        setLocationOptions([
+          "All Location",
+          ...data.map((loc) => loc["location"]),
+        ]);
+      }
+    }
+    getLocationFromDB();
+  }, []);
+
+  const handleLocationSelect = (option: string) => {
+    setTempLocation(option);
+    setShowLocationDropdown(false);
+  };
+
+  const handleTagSelect = (tag: string) => {
+    setTempTag(tag);
+    setShowTagPicker(false);
+  };
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return "Select date";
+    return date.toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (time: Date | null) => {
+    if (!time) return "Select Time";
+    return time.toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  return (
+    <Modal visible={showFilter} animationType="fade" transparent={true}>
+      <View style={styles.modalOverlay}>
+        {/* Header Title and Buttons */}
+        <View style={styles.modalContent}>
+          <View style={styles.filterHeader}>
+            <Pressable
+              style={styles.closeButton}
+              onPress={() => {
+                onClose();
+              }}
+            >
+              <Text style={styles.closeButtonText}>x</Text>
+            </Pressable>
+            <Text style={styles.headerTitle}>Filter Posts</Text>
+            <Pressable
+              style={styles.applyButton}
+              onPress={() => {
+                onApplyFilter(
+                  tempLocation,
+                  tempDate,
+                  tempStartTime,
+                  tempEndTime,
+                  tempTag
+                );
+              }}
+            >
+              <Text style={styles.applyButtonText}>Apply</Text>
+            </Pressable>
+          </View>
+
+          {/* Scrollable filter options */}
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ padding: 20, paddingBottom: 50 }}
+          >
+            <View>
+              {/*Location*/}
+              <View style={styles.fieldContainer}>
+                <View style={styles.iconContainer}>
+                  <Text style={styles.iconText}>📍</Text>
+                </View>
+                <View style={styles.dropdownWrapper}>
+                  <Pressable
+                    style={styles.dropdownButton}
+                    onPress={() =>
+                      setShowLocationDropdown(!showLocationDropdown)
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.dropdownButtonText,
+                        !tempLocation && styles.placeholderText,
+                      ]}
+                    >
+                      {tempLocation === "" ? "select location" : tempLocation}
+                    </Text>
+                    <Text style={styles.dropdownArrow}>
+                      {showLocationDropdown ? "▲" : "▼"}
+                    </Text>
+                  </Pressable>
+
+                  {showLocationDropdown && (
+                    <View style={styles.dropdownMenu}>
+                      <ScrollView style={styles.dropdownScroll}>
+                        {locationOptions.map((option, index) => (
+                          <Pressable
+                            key={index}
+                            style={styles.dropdownItem}
+                            onPress={() => handleLocationSelect(option)}
+                          >
+                            <Text style={styles.dropdownItemText}>
+                              {option}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* Date Pick */}
+              <View style={styles.fieldContainer}>
+                <View style={styles.iconContainer}>
+                  <Text style={styles.iconText}>📅</Text>
+                </View>
+                <Pressable
+                  style={styles.dateButton}
+                  onPress={() => setShowDatePicker(!showDatePicker)}
+                >
+                  <Text style={styles.dateValue}>{formatDate(tempDate)}</Text>
+                </Pressable>
+                {showDatePicker && (
+                  <DateTimePicker
+                    mode="date"
+                    value={tempDate || new Date()}
+                    onChange={(event, date) => {
+                      setShowDatePicker(Platform.OS === "ios");
+                      if (date) setTempDate(date);
+                    }}
+                  />
+                )}
+              </View>
+
+              {/* Time Pick */}
+              <View style={styles.timeRowContainer}>
+                {/* Start Time */}
+                <View style={styles.timeFieldContainer}>
+                  <View style={styles.iconContainer}>
+                    <Text style={styles.iconText}>🕐</Text>
+                  </View>
+                  <Pressable
+                    style={styles.timeButton}
+                    onPress={() => setShowStartPicker(true)}
+                  >
+                    <Text style={styles.timeLabel}>Start</Text>
+                    <Text style={styles.timeValue}>
+                      {formatTime(tempStartTime)}
+                    </Text>
+                  </Pressable>
+                  {showStartPicker && (
+                    <DateTimePicker
+                      mode="time"
+                      value={tempStartTime || new Date()}
+                      onChange={(event, time) => {
+                        if (time) setTempStartTime(time);
+                        if (Platform.OS !== "ios") setShowStartPicker(false);
+                      }}
+                    />
+                  )}
+                </View>
+
+                {/* End Time */}
+                <View style={styles.timeFieldContainer}>
+                  <View style={styles.iconContainer}>
+                    <Text style={styles.iconText}>🕐</Text>
+                  </View>
+                  <Pressable
+                    style={styles.timeButton}
+                    onPress={() => setShowEndPicker(true)}
+                  >
+                    <Text style={styles.timeLabel}>End</Text>
+                    <Text style={styles.timeValue}>
+                      {formatTime(tempEndTime)}
+                    </Text>
+                  </Pressable>
+                  {showEndPicker && (
+                    <DateTimePicker
+                      mode="time"
+                      value={tempEndTime || new Date()}
+                      onChange={(event, time) => {
+                        if (time) setTempEndTime(time);
+                        if (Platform.OS !== "ios") setShowEndPicker(false);
+                      }}
+                    />
+                  )}
+                </View>
+              </View>
+
+              {/*Tags*/}
+              <View style={[styles.fieldContainer, { marginTop: 20 }]}>
+                <View style={styles.iconContainer}>
+                  <Text>🏷️</Text>
+                </View>
+                <View style={styles.dropdownWrapper}>
+                  <Pressable
+                    style={styles.dropdownButton}
+                    onPress={() => setShowTagPicker(!showTagPicker)}
+                  >
+                    <Text
+                      style={[
+                        styles.dropdownButtonText,
+                        !tempTag && styles.placeholderText,
+                      ]}
+                    >
+                      {tempTag === "All" ? "All Tags" : tempTag || "Select tag"}
+                    </Text>
+                    <Text style={styles.dropdownArrow}>
+                      {showTagPicker ? "▲" : "▼"}
+                    </Text>
+                  </Pressable>
+
+                  {showTagPicker && (
+                    <View style={styles.dropdownMenu}>
+                      <ScrollView style={styles.dropdownScroll}>
+                        {tagOptions.map((option, index) => (
+                          <Pressable
+                            key={index}
+                            style={styles.dropdownItem}
+                            onPress={() => handleTagSelect(option)}
+                          >
+                            <Text style={styles.dropdownItemText}>
+                              {option}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  fieldContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  iconText: {
+    fontSize: 28,
+  },
+  dropdownWrapper: {
+    flex: 1,
+    position: "relative",
+    zIndex: 1000,
+  },
+  dropdownButton: {
+    height: 50,
+    backgroundColor: "#F0F0F0",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  placeholderText: {
+    color: "#999",
+  },
+  dropdownArrow: {
+    fontSize: 12,
+    color: "#666",
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: 55,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    maxHeight: 200,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1001,
+  },
+  dropdownScroll: {
+    maxHeight: 200,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  dateButton: {
+    flex: 1,
+    height: 50,
+    backgroundColor: "#F0F0F0",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    justifyContent: "center",
+  },
+  dateValue: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "500",
+  },
+  timeRowContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  timeFieldContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  timeButton: {
+    flex: 1,
+    height: 50,
+    backgroundColor: "#F0F0F0",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    justifyContent: "center",
+  },
+  timeLabel: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 15,
+    marginBottom: 2,
+  },
+  timeValue: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "500",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalContent: {
+    width: "90%",
+    height: "43%",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  filterHeader: {
+    backgroundColor: "#D4B75F",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#FFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: "#D4B75F",
+    fontWeight: "600",
+    lineHeight: 20,
+  },
+  applyButton: {
+    backgroundColor: "#FFF",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 15,
+  },
+  applyButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#D4B75F",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#FFF",
+  },
+});
