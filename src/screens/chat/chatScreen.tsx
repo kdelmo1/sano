@@ -11,6 +11,14 @@ import {
 import { useContext, useEffect, useState } from "react";
 import AuthContext from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
+import {
+  SharedStyles,
+  Colors,
+  Spacing,
+  FontSizes,
+  BorderRadius,
+  Shadows,
+} from "../../styles/sharedStyles";
 
 interface Message {
   message: string;
@@ -41,8 +49,6 @@ export default function ChatScreen({
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
 
-  //const applicantName = user?.email?.split("@")[0];
-
   useEffect(() => {
     const channelName = `chat:${postID}:${posterName}:${applicantName}`;
 
@@ -58,10 +64,9 @@ export default function ChatScreen({
     });
     if (openChat) {
       const initChat = async () => {
-        // Get all messages for this post where user is involved
         const { data, error } = await supabase
           .from("chat")
-          .select("id,poster,applicant,message")
+          .select("id,poster,applicant,message,sender")
           .eq("postID", postID)
           .eq("poster", posterName)
           .eq("applicant", applicantName);
@@ -74,7 +79,7 @@ export default function ChatScreen({
               return {
                 message: val["message"],
                 id: val["id"],
-                sender: val["poster"],
+                sender: val["sender"],
               };
             })
           );
@@ -92,7 +97,6 @@ export default function ChatScreen({
           filter: `postID=eq.${postID}`,
         },
         (payload) => {
-          // Accept messages where the conversation involves both parties
           const isRelevantMessage =
             payload.new.poster === posterName &&
             payload.new.applicant === applicantName;
@@ -102,7 +106,7 @@ export default function ChatScreen({
               const newMess = {
                 message: payload.new["message"],
                 id: payload.new["id"],
-                sender: payload.new["poster"],
+                sender: payload.new["sender"],
               };
               return [...prev, newMess];
             });
@@ -124,23 +128,53 @@ export default function ChatScreen({
   }, [openChat]);
 
   const sendMessage = async () => {
+    // Don't send if message is empty or only whitespace
+    if (!newMessage.trim()) {
+      return;
+    }
+    
+    const currentUsername = user?.email?.split("@")[0];
     const { error } = await supabase.from("chat").insert({
       postID: postID,
       poster: posterName,
       applicant: applicantName,
-      message: newMessage,
+      message: newMessage.trim(),
+      sender: currentUsername,
     });
     if (error) console.log(error);
     setNewMessage("");
   };
+  
+  const renderMessage = ({ item }: ListRenderItemInfo<Message>) => {
+    const currentUsername = user?.email?.split("@")[0];
+    const isMyMessage = item.sender === currentUsername;
 
-  const renderMessage = ({ item }: ListRenderItemInfo<Message>) => (
-    <View style={styles.messageBubble}>
-      <Text style={styles.text}>{item.message}</Text>
-    </View>
-  );
+    return (
+      <View
+        style={[
+          styles.messageContainer,
+          isMyMessage ? styles.myMessageContainer : styles.theirMessageContainer,
+        ]}
+      >
+        <View
+          style={[
+            styles.messageBubble,
+            isMyMessage ? styles.myMessageBubble : styles.theirMessageBubble,
+          ]}
+        >
+          <Text
+            style={[
+              styles.messageText,
+              isMyMessage ? styles.myMessageText : styles.theirMessageText,
+            ]}
+          >
+            {item.message}
+          </Text>
+        </View>
+      </View>
+    );
+  };
 
-  // Determine back button text based on where user came from
   const backButtonText = `Back to ${fromScreen}`;
 
   return (
@@ -148,12 +182,13 @@ export default function ChatScreen({
       <View style={styles.screen}>
         <View style={styles.container}>
           <View style={styles.header}>
-            <Pressable onPress={goBack} style={styles.backButton}>
-              <Text style={styles.backText}>{backButtonText}</Text>
+            <Pressable onPress={goBack} style={SharedStyles.backButton}>
+              <Text style={SharedStyles.backText}>{backButtonText}</Text>
             </Pressable>
             <Text style={styles.headerTitle}>
               Chat with {isPoster ? applicantName : posterName}
             </Text>
+            <View style={SharedStyles.placeholder} />
           </View>
           <FlatList
             style={styles.mainChat}
@@ -162,16 +197,16 @@ export default function ChatScreen({
             renderItem={renderMessage}
             keyExtractor={(item, index) => item.id || index.toString()}
           />
-          <View style={styles.input}>
+          <View style={styles.inputContainer}>
             <TextInput
               style={styles.textInput}
               placeholder="Type a message..."
-              placeholderTextColor="#A1A1AA"
+              placeholderTextColor={Colors.placeholder}
               value={newMessage}
               onChangeText={(text) => setNewMessage(text)}
             />
-            <Pressable style={styles.button} onPress={sendMessage}>
-              <Text style={styles.buttonText}>Send</Text>
+            <Pressable style={styles.sendButton} onPress={sendMessage}>
+              <Text style={styles.sendButtonText}>Send</Text>
             </Pressable>
           </View>
         </View>
@@ -186,16 +221,17 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
-    padding: 16,
+    padding: Spacing.lg,
+    backgroundColor: Colors.background,
   },
   container: {
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: Colors.border,
     maxWidth: 1152,
     width: "100%",
     minHeight: 600,
-    borderRadius: 12,
-    backgroundColor: "#FFF",
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.white,
     overflow: "hidden",
   },
   header: {
@@ -204,72 +240,82 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: 70,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-    paddingHorizontal: 16,
-    backgroundColor: "#F9F9F9",
+    borderBottomColor: Colors.border,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.inputBg,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: FontSizes.md,
     fontWeight: "600",
-    color: "#000",
+    color: Colors.text,
     flex: 1,
     textAlign: "center",
   },
-  input: {
+  inputContainer: {
     flexDirection: "row",
-    padding: 16,
+    padding: Spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
+    borderTopColor: Colors.border,
     alignItems: "center",
-    gap: 12,
-    backgroundColor: "#F9F9F9",
+    gap: Spacing.base,
+    backgroundColor: Colors.inputBg,
   },
-  backButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+  sendButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.base,
+    borderRadius: BorderRadius.sm,
   },
-  backText: {
-    fontSize: 16,
-    color: "#D4B75F",
+  sendButtonText: {
+    fontSize: FontSizes.base,
     fontWeight: "600",
-  },
-  button: {
-    backgroundColor: "#D4B75F",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FFF",
+    color: Colors.white,
   },
   mainChat: {
     flex: 1,
-    backgroundColor: "#FFF",
+    backgroundColor: Colors.white,
   },
   contentMainChat: {
-    padding: 16,
+    padding: Spacing.lg,
+  },
+  messageContainer: {
+    width: "100%",
+    marginVertical: 4,
+  },
+  myMessageContainer: {
+    alignItems: "flex-end",
+  },
+  theirMessageContainer: {
+    alignItems: "flex-start",
   },
   messageBubble: {
-    padding: 12,
-    backgroundColor: "#D4B75F",
-    borderRadius: 15,
-    marginVertical: 4,
+    padding: Spacing.base,
+    borderRadius: BorderRadius.lg,
     maxWidth: "80%",
   },
-  text: {
-    fontSize: 16,
-    color: "#FFF",
+  myMessageBubble: {
+    backgroundColor: "#D4B75F",
+  },
+  theirMessageBubble: {
+    backgroundColor: "#E5E5E5",
+  },
+  messageText: {
+    fontSize: FontSizes.base,
+  },
+  myMessageText: {
+    color: Colors.white,
+  },
+  theirMessageText: {
+    color: "#000",
   },
   textInput: {
     flex: 1,
-    padding: 12,
-    backgroundColor: "#FFF",
-    borderRadius: 8,
+    padding: Spacing.base,
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.sm,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
-    color: "#000",
-    fontSize: 16,
+    borderColor: Colors.border,
+    color: Colors.text,
+    fontSize: FontSizes.base,
   },
 });

@@ -6,7 +6,6 @@ import {
   Modal,
   Platform,
   ScrollView,
-  Animated,
   Image,
   Switch,
 } from "react-native";
@@ -15,6 +14,13 @@ import { supabase } from "../../lib/supabase";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AuthContext from "../../context/AuthContext";
 import * as ImagePicker from "expo-image-picker";
+import {
+  SharedStyles,
+  Colors,
+  Spacing,
+  BorderRadius,
+  Typography,
+} from "../../styles/sharedStyles";
 
 const MAX_PHOTOS = 5;
 
@@ -23,10 +29,6 @@ interface FormProps {
   setToPost: React.Dispatch<React.SetStateAction<boolean>>;
   onPostSuccess: () => void;
   onClose: () => void;
-  homeAnim: any;
-  postAnim: any;
-  profileAnim: any;
-  onNavPress: (button: "home" | "post" | "profile") => void;
 }
 
 export default function Form({
@@ -34,10 +36,6 @@ export default function Form({
   setToPost,
   onPostSuccess,
   onClose,
-  homeAnim,
-  postAnim,
-  profileAnim,
-  onNavPress,
 }: FormProps) {
   const { user, emailHandle } = useContext(AuthContext);
 
@@ -64,14 +62,21 @@ export default function Form({
   useEffect(() => {
     async function getLocationFromDB() {
       const { data, error } = await supabase.from("location").select("*");
-
-      if (error) {
-      } else {
+      if (!error) {
         setLocationOptions(data.map((loc) => loc["location"]));
       }
     }
     getLocationFromDB();
   }, []);
+
+  useEffect(() => {
+    if (toPost) {
+      const now = new Date();
+      setStartTime(now);
+      const thirtyMinsLater = new Date(now.getTime() + 30 * 60000);
+      setEndTime(thirtyMinsLater);
+    }
+  }, [toPost]);
 
   const resetForm = () => {
     setLocation("");
@@ -116,7 +121,6 @@ export default function Form({
     });
   };
 
-  // Image Picker Function
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -135,7 +139,6 @@ export default function Form({
       const newUris = result.assets.map((asset) => asset.uri);
       setImageUris((prev) => {
         const combined = [...prev, ...newUris];
-        // Limit to MAX_PHOTOS
         return combined.slice(0, MAX_PHOTOS);
       });
     }
@@ -249,52 +252,52 @@ export default function Form({
   if (!toPost) return null;
 
   return (
-    <View style={styles.fullScreenContainer}>
+    <View style={SharedStyles.fullScreenContainer}>
       <View style={styles.screenOverlay}>
         <View style={styles.screenContent}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>new post</Text>
+          <View style={SharedStyles.header}>
+            <Text style={Typography.headerTitle}>new post</Text>
             <Pressable
-              style={styles.closeButton}
+              style={SharedStyles.closeButton}
               onPress={() => {
                 resetForm();
                 onClose();
               }}
             >
-              <Text style={styles.closeButtonText}>✕</Text>
+              <Text style={SharedStyles.closeButtonText}>✕</Text>
             </Pressable>
           </View>
           <ScrollView>
             <View style={styles.formContent}>
-              <View style={styles.fieldContainer}>
-                <View style={styles.iconContainer}>
-                  <Text style={styles.iconText}>📍</Text>
+              {/* Location Dropdown */}
+              <View style={SharedStyles.fieldContainer}>
+                <View style={SharedStyles.iconContainer}>
+                  <Text style={SharedStyles.iconText}>📍</Text>
                 </View>
-                <View style={styles.dropdownWrapper}>
+                <View style={SharedStyles.dropdownWrapper}>
                   <Pressable
-                    style={styles.dropdownButton}
+                    style={SharedStyles.dropdownButton}
                     onPress={() =>
                       setShowLocationDropdown(!showLocationDropdown)
                     }
                   >
                     <Text
                       style={[
-                        styles.dropdownButtonText,
-                        !location && styles.placeholderText,
+                        SharedStyles.dropdownButtonText,
+                        !location && SharedStyles.placeholderText,
                       ]}
                     >
                       {location || "select location"}
                     </Text>
-                    <Text style={styles.dropdownArrow}>
+                    <Text style={SharedStyles.dropdownArrow}>
                       {showLocationDropdown ? "▲" : "▼"}
                     </Text>
                   </Pressable>
 
                   {showLocationDropdown && (
-                    <View style={styles.dropdownMenu}>
+                    <View style={SharedStyles.dropdownMenu}>
                       <ScrollView
-                        style={styles.dropdownScroll}
+                        style={SharedStyles.dropdownScroll}
                         nestedScrollEnabled={true}
                         scrollEventThrottle={16}
                         showsVerticalScrollIndicator={false}
@@ -302,10 +305,10 @@ export default function Form({
                         {locationOptions.map((option, index) => (
                           <Pressable
                             key={index}
-                            style={styles.dropdownItem}
+                            style={SharedStyles.dropdownItem}
                             onPress={() => handleLocationSelect(option)}
                           >
-                            <Text style={styles.dropdownItemText}>
+                            <Text style={SharedStyles.dropdownItemText}>
                               {option}
                             </Text>
                           </Pressable>
@@ -316,39 +319,39 @@ export default function Form({
                 </View>
               </View>
 
-              {/* reservation slots */}
-              <View style={styles.fieldContainer}>
-                <View style={styles.iconContainer}>
-                  <Text style={styles.iconText}>#</Text>
+              {/* Slots Dropdown */}
+              <View style={SharedStyles.fieldContainer}>
+                <View style={SharedStyles.iconContainer}>
+                  <Text style={SharedStyles.iconText}>#</Text>
                 </View>
-                <View style={[styles.dropdownWrapper, { zIndex: 998 }]}>
+                <View style={[SharedStyles.dropdownWrapper, { zIndex: 998 }]}>
                   <Pressable
-                    style={styles.dropdownButton}
+                    style={SharedStyles.dropdownButton}
                     onPress={() => setShowSlotsDropdown(!showSlotsDropdown)}
                   >
                     <Text
                       style={[
-                        styles.dropdownButtonText,
-                        !slots && styles.placeholderText,
+                        SharedStyles.dropdownButtonText,
+                        !slots && SharedStyles.placeholderText,
                       ]}
                     >
                       {slots || "select number"}
                     </Text>
-                    <Text style={styles.dropdownArrow}>
+                    <Text style={SharedStyles.dropdownArrow}>
                       {showSlotsDropdown ? "▲" : "▼"}
                     </Text>
                   </Pressable>
 
                   {showSlotsDropdown && (
-                    <View style={styles.dropdownMenu}>
-                      <ScrollView style={styles.dropdownScroll}>
+                    <View style={SharedStyles.dropdownMenu}>
+                      <ScrollView style={SharedStyles.dropdownScroll}>
                         {slotsOptions.map((option, index) => (
                           <Pressable
                             key={index}
-                            style={styles.dropdownItem}
+                            style={SharedStyles.dropdownItem}
                             onPress={() => handleSlotsSelect(option)}
                           >
-                            <Text style={styles.dropdownItemText}>
+                            <Text style={SharedStyles.dropdownItemText}>
                               {option}
                             </Text>
                           </Pressable>
@@ -359,55 +362,59 @@ export default function Form({
                 </View>
               </View>
 
-              <View style={styles.fieldContainer}>
-                <View style={styles.iconContainer}>
-                  <Text style={styles.iconText}>📅</Text>
+              {/* Date Picker */}
+              <View style={SharedStyles.fieldContainer}>
+                <View style={SharedStyles.iconContainer}>
+                  <Text style={SharedStyles.iconText}>📅</Text>
                 </View>
                 <Pressable
-                  style={styles.dateButton}
+                  style={SharedStyles.dateButton}
                   onPress={() => setShowDatePicker(true)}
                 >
-                  <Text style={styles.dateLabel}>Date</Text>
-                  <Text style={styles.dateValue}>
+                  <Text style={SharedStyles.dateLabel}>Date</Text>
+                  <Text style={SharedStyles.dateValue}>
                     {formatDate(selectedDate)}
                   </Text>
                 </Pressable>
               </View>
 
+              {/* Time Pickers */}
               <View style={styles.timeRowContainer}>
                 <View style={styles.timeFieldContainer}>
-                  <View style={styles.iconContainer}>
-                    <Text style={styles.iconText}>🕐</Text>
+                  <View style={SharedStyles.iconContainer}>
+                    <Text style={SharedStyles.iconText}>🕐</Text>
                   </View>
                   <Pressable
-                    style={styles.timeButton}
+                    style={SharedStyles.dateButton}
                     onPress={() => setShowStartPicker(true)}
                   >
-                    <Text style={styles.timeLabel}>Start</Text>
-                    <Text style={styles.timeValue}>
+                    <Text style={SharedStyles.dateLabel}>Start</Text>
+                    <Text style={SharedStyles.dateValue}>
                       {formatTime(startTime)}
                     </Text>
                   </Pressable>
                 </View>
 
                 <View style={styles.timeFieldContainer}>
-                  <View style={styles.iconContainer}>
-                    <Text style={styles.iconText}>🕑</Text>
+                  <View style={SharedStyles.iconContainer}>
+                    <Text style={SharedStyles.iconText}>🕑</Text>
                   </View>
                   <Pressable
-                    style={styles.timeButton}
+                    style={SharedStyles.dateButton}
                     onPress={() => setShowEndPicker(true)}
                   >
-                    <Text style={styles.timeLabel}>End</Text>
-                    <Text style={styles.timeValue}>{formatTime(endTime)}</Text>
+                    <Text style={SharedStyles.dateLabel}>End</Text>
+                    <Text style={SharedStyles.dateValue}>
+                      {formatTime(endTime)}
+                    </Text>
                   </Pressable>
                 </View>
               </View>
             </View>
 
-            {/* Food Giveaway Field */}
-            <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Food Giveaway?</Text>
+            {/* Food Giveaway Switch */}
+            <View style={SharedStyles.switchContainer}>
+              <Text style={SharedStyles.switchLabel}>Food Giveaway?</Text>
               <Switch
                 value={isFoodGiveaway}
                 onValueChange={(value) => {
@@ -416,50 +423,55 @@ export default function Form({
                     setImageUris([]);
                   }
                 }}
-                trackColor={{ false: "#ccc", true: "#D4B75F" }}
-                thumbColor={isFoodGiveaway ? "#fff" : "#fff"}
+                trackColor={{ false: Colors.disabled, true: Colors.primary }}
+                thumbColor={Colors.white}
               />
             </View>
-            {/* Image Selector (only if Food Giveaway True) */}
+
+            {/* Photo Upload */}
             {isFoodGiveaway && (
-              <View style={styles.photoUploadContainer}>
+              <View style={SharedStyles.photoUploadContainer}>
                 <Pressable
                   style={[
-                    styles.photoUploadButton,
+                    SharedStyles.photoUploadButton,
                     imageUris.length >= MAX_PHOTOS &&
-                      styles.photoUploadButtonDisabled,
+                      SharedStyles.photoUploadButtonDisabled,
                   ]}
                   onPress={pickImage}
                   disabled={imageUris.length >= MAX_PHOTOS}
                 >
-                  <Text style={styles.photoUploadButtonText}>
+                  <Text style={SharedStyles.photoUploadButtonText}>
                     {imageUris.length === 0
                       ? "Upload Photos"
                       : `Add Photos (${imageUris.length}/${MAX_PHOTOS})`}
                   </Text>
                 </Pressable>
                 {imageUris.length > 0 && (
-                  <View style={styles.photoScrollContainer}>
+                  <View style={SharedStyles.photoScrollContainer}>
                     <ScrollView
                       horizontal={true}
                       nestedScrollEnabled={true}
                       showsHorizontalScrollIndicator={false}
                       scrollEventThrottle={16}
-                      style={styles.photoScrollView}
                       contentContainerStyle={styles.photoScrollContent}
                     >
                       {imageUris.map((uri, index) => (
-                        <View key={index} style={styles.photoWrapper}>
-                          <Image source={{ uri }} style={styles.imagePreview} />
+                        <View key={index} style={SharedStyles.photoWrapper}>
+                          <Image
+                            source={{ uri }}
+                            style={SharedStyles.imagePreview}
+                          />
                           <Pressable
                             onPress={() =>
                               setImageUris((prev) =>
                                 prev.filter((_, i) => i !== index)
                               )
                             }
-                            style={styles.removeImageButton}
+                            style={SharedStyles.removeImageButton}
                           >
-                            <Text style={styles.removeImageButtonText}>✕</Text>
+                            <Text style={SharedStyles.removeImageButtonText}>
+                              ✕
+                            </Text>
                           </Pressable>
                         </View>
                       ))}
@@ -469,102 +481,17 @@ export default function Form({
               </View>
             )}
 
+            {/* Post Button */}
             <View style={styles.postButtonContainer}>
-              <Pressable style={styles.postButton} onPress={insertToDB}>
-                <Text style={styles.postButtonText}>post ✓</Text>
+              <Pressable style={[SharedStyles.primaryButton, styles.primaryButton]} onPress={insertToDB}>
+                <Text style={SharedStyles.primaryButtonText}>post ✓</Text>
               </Pressable>
             </View>
           </ScrollView>
         </View>
       </View>
 
-      {/* Navigation Bar - Now always rendered with passed props */}
-      <View style={styles.floatingNav}>
-        <Pressable style={styles.nav_button} onPress={() => onNavPress("post")}>
-          <Animated.View
-            style={[
-              styles.navCircle,
-              {
-                opacity: postAnim,
-                transform: [{ scale: postAnim }],
-              },
-            ]}
-          />
-          <Animated.Image
-            source={require("../../assets/images/icon-post.png")}
-            style={[
-              styles.nav_icon_image,
-              {
-                tintColor: postAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["#FFF", "#D4B75F"],
-                }),
-              },
-            ]}
-          />
-        </Pressable>
-
-        <Pressable
-          style={styles.nav_button}
-          onPress={() => {
-            setToPost(false);
-            onNavPress("home");
-          }}
-        >
-          <Animated.View
-            style={[
-              styles.navCircle,
-              {
-                opacity: homeAnim,
-                transform: [{ scale: homeAnim }],
-              },
-            ]}
-          />
-          <Animated.Image
-            source={require("../../assets/images/icon-home.png")}
-            style={[
-              styles.nav_icon_image,
-              {
-                tintColor: homeAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["#FFF", "#D4B75F"],
-                }),
-              },
-            ]}
-          />
-        </Pressable>
-
-        <Pressable
-          style={styles.nav_button}
-          onPress={() => {
-            onNavPress("profile");
-            setToPost(false);
-          }}
-        >
-          <Animated.View
-            style={[
-              styles.navCircle,
-              {
-                opacity: profileAnim,
-                transform: [{ scale: profileAnim }],
-              },
-            ]}
-          />
-          <Animated.Image
-            source={require("../../assets/images/profile-icon.png")}
-            style={[
-              styles.nav_icon_image,
-              {
-                tintColor: profileAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["#FFF", "#D4B75F"],
-                }),
-              },
-            ]}
-          />
-        </Pressable>
-      </View>
-
+      {/* Date Picker Modal */}
       {showDatePicker && (
         <Modal
           transparent={true}
@@ -572,16 +499,16 @@ export default function Form({
           animationType="slide"
         >
           <Pressable
-            style={styles.timePickerModalOverlay}
+            style={SharedStyles.timePickerModalOverlay}
             onPress={() => setShowDatePicker(false)}
           >
             <Pressable
-              style={styles.timePickerModal}
+              style={SharedStyles.timePickerModal}
               onPress={(e) => e.stopPropagation()}
             >
-              <View style={styles.timePickerHeader}>
+              <View style={SharedStyles.timePickerHeader}>
                 <Pressable onPress={() => setShowDatePicker(false)}>
-                  <Text style={styles.timePickerDone}>Done</Text>
+                  <Text style={SharedStyles.timePickerDone}>Done</Text>
                 </Pressable>
               </View>
               <DateTimePicker
@@ -599,6 +526,7 @@ export default function Form({
         </Modal>
       )}
 
+      {/* Start Time Picker Modal */}
       {showStartPicker && (
         <Modal
           transparent={true}
@@ -606,16 +534,16 @@ export default function Form({
           animationType="slide"
         >
           <Pressable
-            style={styles.timePickerModalOverlay}
+            style={SharedStyles.timePickerModalOverlay}
             onPress={() => setShowStartPicker(false)}
           >
             <Pressable
-              style={styles.timePickerModal}
+              style={SharedStyles.timePickerModal}
               onPress={(e) => e.stopPropagation()}
             >
-              <View style={styles.timePickerHeader}>
+              <View style={SharedStyles.timePickerHeader}>
                 <Pressable onPress={() => setShowStartPicker(false)}>
-                  <Text style={styles.timePickerDone}>Done</Text>
+                  <Text style={SharedStyles.timePickerDone}>Done</Text>
                 </Pressable>
               </View>
               <DateTimePicker
@@ -632,19 +560,20 @@ export default function Form({
         </Modal>
       )}
 
+      {/* End Time Picker Modal */}
       {showEndPicker && (
         <Modal transparent={true} visible={showEndPicker} animationType="slide">
           <Pressable
-            style={styles.timePickerModalOverlay}
+            style={SharedStyles.timePickerModalOverlay}
             onPress={() => setShowEndPicker(false)}
           >
             <Pressable
-              style={styles.timePickerModal}
+              style={SharedStyles.timePickerModal}
               onPress={(e) => e.stopPropagation()}
             >
-              <View style={styles.timePickerHeader}>
+              <View style={SharedStyles.timePickerHeader}>
                 <Pressable onPress={() => setShowEndPicker(false)}>
-                  <Text style={styles.timePickerDone}>Done</Text>
+                  <Text style={SharedStyles.timePickerDone}>Done</Text>
                 </Pressable>
               </View>
               <DateTimePicker
@@ -664,346 +593,49 @@ export default function Form({
   );
 }
 
+// Only form-specific layout styles
 const styles = StyleSheet.create({
-  fullScreenContainer: {
-    flex: 1,
-    backgroundColor: "#F5F5F5",
-  },
   screenOverlay: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.background,
     alignItems: "center",
     justifyContent: "center",
     paddingBottom: 80,
   },
   screenContent: {
     width: "90%",
-    backgroundColor: "#FFF",
-    borderRadius: 10,
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.md,
     overflow: "hidden",
     maxHeight: "90%",
   },
-  header: {
-    backgroundColor: "#D4B75F",
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderTopRightRadius: 10,
-    borderTopLeftRadius: 10,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#FFF",
-  },
-  closeButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#FFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  closeButtonText: {
-    fontSize: 20,
-    color: "#D4B75F",
-    fontWeight: "600",
-  },
   formContent: {
-    padding: 20,
+    padding: Spacing.xl,
     zIndex: 1,
-  },
-  fieldContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 10,
-  },
-  iconText: {
-    fontSize: 28,
-  },
-  dropdownWrapper: {
-    flex: 1,
-    position: "relative",
-    zIndex: 1000,
-  },
-  dropdownButton: {
-    height: 50,
-    backgroundColor: "#F0F0F0",
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  dropdownButtonText: {
-    fontSize: 16,
-    color: "#333",
-  },
-  placeholderText: {
-    color: "#999",
-  },
-  dropdownArrow: {
-    fontSize: 12,
-    color: "#666",
-  },
-  dropdownMenu: {
-    position: "absolute",
-    top: 55,
-    left: 0,
-    right: 0,
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    maxHeight: 200,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    zIndex: 1001,
-  },
-  dropdownScroll: {
-    maxHeight: 200,
-  },
-  dropdownItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-  },
-  dropdownItemText: {
-    fontSize: 16,
-    color: "#333",
-  },
-  dateButton: {
-    flex: 1,
-    height: 50,
-    backgroundColor: "#F0F0F0",
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    justifyContent: "center",
-  },
-  dateLabel: {
-    fontSize: 12,
-    color: "#999",
-    marginBottom: 2,
-  },
-  dateValue: {
-    fontSize: 14,
-    color: "#333",
-    fontWeight: "500",
   },
   timeRowContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 10,
+    gap: Spacing.md,
   },
   timeFieldContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
   },
-  timeButton: {
-    flex: 1,
-    height: 50,
-    backgroundColor: "#F0F0F0",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    justifyContent: "center",
-  },
-  timeLabel: {
-    fontSize: 12,
-    color: "#999",
-    marginBottom: 2,
-  },
-  timeValue: {
-    fontSize: 14,
-    color: "#333",
-    fontWeight: "500",
-  },
   postButtonContainer: {
-    padding: 20,
+    padding: Spacing.xl,
     alignItems: "center",
-  },
-  postButton: {
-    backgroundColor: "#D4B75F",
-    marginTop: -15,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  postButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FFF",
-  },
-  timePickerModalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0, 0, 0, 0.0)",
-  },
-  timePickerModal: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 20,
-  },
-  timePickerHeader: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-  },
-  timePickerDone: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#D4B75F",
-  },
-  timePicker: {
-    height: 200,
-  },
-  floatingNav: {
-    position: "absolute" as const,
-    bottom: 10,
-    alignSelf: "center",
-    height: 70,
-    width: 390,
-    backgroundColor: "#D4B75F",
-    borderRadius: 20,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 10,
-    zIndex: 1000,
-  },
-  nav_button: {
-    width: 60,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  navCircle: {
-    position: "absolute",
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "#FFF",
-  },
-  nav_icon_image: {
-    width: 32,
-    height: 32,
-    zIndex: 1,
-  },
-  giveawayText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  giveawayTextSelected: {
-    color: "#FFF",
-  },
-  photoUploadContainer: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    width: "100%",
-  },
-  photoUploadButton: {
-    backgroundColor: "#D4B75F",
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    width: "50%",
-    alignItems: "center",
-    alignSelf: "center",
-  },
-  photoUploadButtonDisabled: {
-    backgroundColor: "#ccc",
-    opacity: 0.6,
-  },
-  photoUploadButtonText: {
-    color: "#FFF",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  photoScrollContainer: {
-    marginBottom: 15,
-    width: "100%",
-    maxHeight: 220,
   },
   photoScrollContent: {
     flexDirection: "row",
     paddingHorizontal: 5,
   },
-  photoWrapper: {
-    marginRight: 10,
-    alignItems: "center",
+  timePicker: {
+    height: 200,
   },
-  photoScrollView: {
-    width: "100%",
-  },
-  imagePreview: {
-    width: 150,
-    height: 150,
-    borderRadius: 12,
-    resizeMode: "cover",
-    marginBottom: 8,
-  },
-  removeImageButton: {
-    backgroundColor: "#FF4D4D",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    alignSelf: "center",
-  },
-  removeImageButtonText: {
-    color: "#FFF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  switchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 15,
-    marginHorizontal: 20,
-    backgroundColor: "#F0F0F0",
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 12,
-  },
-  switchLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+  primaryButton: {
+    marginTop: -15,
+    paddingVertical: 12,
   },
 });

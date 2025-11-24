@@ -20,6 +20,15 @@ import getFromDB from "../GetFromDB";
 import ProfileScreen from "../profile/ProfileScreen";
 import InboxScreen from "../profile/InboxScreen";
 
+// Import shared styles
+import { 
+  Colors, 
+  Spacing, 
+  BorderRadius, 
+  Shadows, 
+  SharedStyles 
+} from "../../styles/sharedStyles";
+
 type NavButton = "home" | "post" | "profile";
 type Screen = "feed" | "chat" | "profile" | "inbox" | "form";
 
@@ -27,7 +36,6 @@ export default function Home() {
   const { user, emailHandle } = useContext(AuthContext);
 
   const [posts, setPosts] = useState<PostProps[]>([]);
-
   const [activeNav, setActiveNav] = useState<NavButton>("home");
   const [toPost, setToPost] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,11 +54,6 @@ export default function Home() {
   const [tempLocation, setTempLocation] = useState(selectedLocation);
   const [tempTime, setTempTime] = useState(selectedTime);
   const [tempTag, setTempTag] = useState(selectedTag);
-  const openFilterModal = () => {
-    setTempLocation(selectedLocation);
-    setTempTime(selectedTime);
-    setShowFilter(true);
-  };
 
   const onRefresh = () => {
     setGetPost(!getPost);
@@ -90,6 +93,7 @@ export default function Home() {
     if (button === "home") {
       onRefresh();
       setScreen("feed");
+      setToPost(false);
     } else if (button === "post") {
       setToPost(true);
       setScreen("form");
@@ -98,93 +102,213 @@ export default function Home() {
     }
   };
 
-  if (screen === "form") {
-    return (
-      <View
-        style={{
-          paddingTop: insets.top,
-          paddingLeft: insets.left,
-          paddingBottom: insets.bottom,
-          paddingRight: insets.right,
-          backgroundColor: "#F5F5F5",
-          flex: 1,
-        }}
+  // Single NavBar Component using SharedStyles
+  const renderNavBar = () => (
+    <View style={SharedStyles.floatingNav}>
+      <Pressable
+        style={SharedStyles.nav_button}
+        onPress={() => handleNavPress("post")}
       >
-        <Form
-          toPost={toPost}
-          setToPost={setToPost}
-          onPostSuccess={() => {
-            setGetPost((prev) => !prev);
-          }}
-          onClose={() => {
-            setToPost(false);
-            setScreen("feed");
-            animateNavButton("home");
-          }}
-          homeAnim={homeAnim}
-          postAnim={postAnim}
-          profileAnim={profileAnim}
-          onNavPress={handleNavPress}
+        <Animated.View
+          style={[
+            SharedStyles.navCircle,
+            {
+              opacity: postAnim,
+              transform: [{ scale: postAnim }],
+            },
+          ]}
         />
-      </View>
-    );
-  }
+        <Animated.Image
+          source={require("../../assets/images/icon-post.png")}
+          style={[
+            SharedStyles.nav_icon_image,
+            {
+              tintColor: postAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [Colors.white, Colors.primary],
+              }),
+            },
+          ]}
+        />
+      </Pressable>
 
-  if (screen === "inbox") {
-    return (
-      <View
-        style={{
-          paddingTop: insets.top,
-          paddingLeft: insets.left,
-          paddingBottom: insets.bottom,
-          paddingRight: insets.right,
-          backgroundColor: "#F5F5F5",
-          flex: 1,
-        }}
+      <Pressable
+        style={SharedStyles.nav_button}
+        onPress={() => handleNavPress("home")}
       >
-        <InboxScreen
-          goBack={() => {
-            setScreen("profile");
-          }}
-          homeAnim={homeAnim}
-          postAnim={postAnim}
-          profileAnim={profileAnim}
-          onNavPress={handleNavPress}
-          activeNav={activeNav}
+        <Animated.View
+          style={[
+            SharedStyles.navCircle,
+            {
+              opacity: homeAnim,
+              transform: [{ scale: homeAnim }],
+            },
+          ]}
         />
-      </View>
-    );
-  }
+        <Animated.Image
+          source={require("../../assets/images/icon-home.png")}
+          style={[
+            SharedStyles.nav_icon_image,
+            {
+              tintColor: homeAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [Colors.white, Colors.primary],
+              }),
+            },
+          ]}
+        />
+      </Pressable>
 
-  if (screen === "profile") {
-    return (
-      <View
-        style={{
-          paddingTop: insets.top,
-          paddingLeft: insets.left,
-          paddingBottom: insets.bottom,
-          paddingRight: insets.right,
-          backgroundColor: "#F5F5F5",
-          flex: 1,
-        }}
+      <Pressable
+        style={SharedStyles.nav_button}
+        onPress={() => handleNavPress("profile")}
       >
-        <ProfileScreen
-          goBack={() => {
-            setScreen("feed");
-            animateNavButton("home");
-          }}
-          onInboxPress={() => {
-            setScreen("inbox");
-          }}
-          homeAnim={homeAnim}
-          postAnim={postAnim}
-          profileAnim={profileAnim}
-          onNavPress={handleNavPress}
-          activeNav={activeNav}
+        <Animated.View
+          style={[
+            SharedStyles.navCircle,
+            {
+              opacity: profileAnim,
+              transform: [{ scale: profileAnim }],
+            },
+          ]}
         />
-      </View>
-    );
-  }
+        <Animated.Image
+          source={require("../../assets/images/profile-icon.png")}
+          style={[
+            SharedStyles.nav_icon_image,
+            {
+              tintColor: profileAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [Colors.white, Colors.primary],
+              }),
+            },
+          ]}
+        />
+      </Pressable>
+    </View>
+  );
+
+  // Render different screens based on state
+  const renderScreen = () => {
+    switch (screen) {
+      case "form":
+        return (
+          <Form
+            toPost={toPost}
+            setToPost={setToPost}
+            onPostSuccess={() => {
+              setGetPost((prev) => !prev);
+            }}
+            onClose={() => {
+              setToPost(false);
+              setScreen("feed");
+              animateNavButton("home");
+            }}
+          />
+        );
+
+      case "inbox":
+        return (
+          <InboxScreen
+            goBack={() => {
+              setScreen("profile");
+            }}
+          />
+        );
+
+      case "profile":
+        return (
+          <ProfileScreen
+            goBack={() => {
+              setScreen("feed");
+              animateNavButton("home");
+            }}
+            onInboxPress={() => {
+              setScreen("inbox");
+            }}
+          />
+        );
+
+      case "feed":
+      default:
+        return (
+          <View style={styles.container}>
+            <View style={styles.navbar}>
+              <View style={styles.search_bar_container}>
+                <Pressable style={styles.filterButton} onPress={() => setShowFilter(!showFilter)}>
+                  <Text style={styles.filterButtonText}>
+                    {showFilter ? "Hide Filters ▲" : "Show Filters ▼"}
+                  </Text>
+                </Pressable>
+
+                <Modal
+                  visible={showFilter}
+                  animationType="slide"
+                  transparent={false}
+                  onRequestClose={() => setShowFilter(false)}
+                >
+                  <View style={{ flex: 1, backgroundColor: Colors.white }}>
+                    <View style={styles.filterHeader}>
+                      <Pressable onPress={() => setShowFilter(false)}>
+                        <Text style={styles.filterActionText}>Cancel</Text>
+                      </Pressable>
+                      <Text style={styles.filterTitle}>Filter Posts</Text>
+                      <Pressable
+                        onPress={() => {
+                          setSelectedLocation(tempLocation);
+                          setSelectedTime(tempTime);
+                          setShowFilter(false);
+                        }}
+                      >
+                        <Text style={styles.filterActionText}>Done</Text>
+                      </Pressable>
+                    </View>
+                    <ScrollView
+                      style={{ flex: 1, padding: 15 }}
+                      contentContainerStyle={{ paddingBottom: 50 }}
+                    >
+                      <Filter
+                        selectedLocation={tempLocation}
+                        setSelectedLocation={setTempLocation}
+                        selectedTime={tempTime}
+                        setSelectedTime={setTempTime}
+                        selectedTag={tempTag}
+                        setSelectedTag={setTempTag}
+                      />
+                    </ScrollView>
+                  </View>
+                </Modal>
+              </View>
+            </View>
+
+            <ScrollView
+              style={SharedStyles.scroller}
+              contentContainerStyle={SharedStyles.scrollContent}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+            >
+              {posts.map((post) => {
+                return (
+                  <Post
+                    key={post.id}
+                    id={post.id}
+                    location={post.location}
+                    startTime={post.startTime}
+                    endTime={post.endTime}
+                    name={post.name}
+                    isPoster={false}
+                    fromScreen={"feed"}
+                    isFoodGiveaway={post.isFoodGiveaway}
+                    photoUrls={post.photoUrls}
+                  />
+                );
+              })}
+            </ScrollView>
+          </View>
+        );
+    }
+  };
 
   return (
     <View
@@ -193,188 +317,18 @@ export default function Home() {
         paddingLeft: insets.left,
         paddingBottom: insets.bottom,
         paddingRight: insets.right,
-        backgroundColor: "#F5F5F5",
+        backgroundColor: Colors.background,
+        flex: 1,
       }}
     >
-      <View style={styles.container}>
-        <View style={styles.navbar}>
-          <View style={styles.search_bar_container}>
-            {/* Filter Open Button */}
-            <Pressable
-              style={{
-                backgroundColor: "#E8E8E8",
-                padding: 10,
-                marginTop: 10,
-                marginHorizontal: 15,
-                borderRadius: 8,
-                alignItems: "center",
-              }}
-              onPress={() => setShowFilter(!showFilter)}
-            >
-              <Text style={{ fontSize: 16, fontWeight: "600" }}>
-                {showFilter ? "Hide Filters ▲" : "Show Filters ▼"}
-              </Text>
-            </Pressable>
-            {/* Filter Screen */}
-            <Modal
-              visible={showFilter}
-              animationType="slide"
-              transparent={false} // false means it takes full screen
-              onRequestClose={() => setShowFilter(false)}
-            >
-              <View style={{ flex: 1, backgroundColor: "#fff" }}>
-                {/* Header Title and Buttons */}
-                <View style={styles.filterHeader}>
-                  <Pressable onPress={() => setShowFilter(false)}>
-                    <Text style={{ fontSize: 18, color: "#007AFF" }}>
-                      Cancel
-                    </Text>
-                  </Pressable>
-                  <Text style={{ fontSize: 18, fontWeight: "bold" }}>
-                    Filter Posts
-                  </Text>
-                  <Pressable
-                    onPress={() => {
-                      setSelectedLocation(tempLocation);
-                      setSelectedTime(tempTime);
-                      setShowFilter(false);
-                    }}
-                  >
-                    <Text style={{ fontSize: 18, color: "#007AFF" }}>Done</Text>
-                  </Pressable>
-                </View>
-                {/* Scrollable filter options */}
-                <ScrollView
-                  style={{ flex: 1, padding: 15 }}
-                  contentContainerStyle={{ paddingBottom: 50 }}
-                >
-                  <Filter
-                    selectedLocation={tempLocation}
-                    setSelectedLocation={setTempLocation}
-                    selectedTime={tempTime}
-                    setSelectedTime={setTempTime}
-                    selectedTag={tempTag}
-                    setSelectedTag={setTempTag}
-                  />
-                </ScrollView>
-              </View>
-            </Modal>
-          </View>
-        </View>
-
-        <ScrollView
-          style={styles.scroller}
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        >
-          {posts.map((post) => {
-            return (
-              <Post
-                key={post.id}
-                id={post.id}
-                location={post.location}
-                startTime={post.startTime}
-                endTime={post.endTime}
-                name={post.name}
-                isPoster={false}
-                fromScreen={"feed"}
-                isFoodGiveaway={post.isFoodGiveaway}
-                photoUrls={post.photoUrls}
-              />
-            );
-          })}
-        </ScrollView>
-
-        <View style={styles.floatingNav}>
-          <Pressable
-            style={styles.nav_button}
-            onPress={() => handleNavPress("post")}
-          >
-            <Animated.View
-              style={[
-                styles.navCircle,
-                {
-                  opacity: postAnim,
-                  transform: [{ scale: postAnim }],
-                },
-              ]}
-            />
-            <Animated.Image
-              source={require("../../assets/images/icon-post.png")}
-              style={[
-                styles.nav_icon_image,
-                {
-                  tintColor: postAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["#FFF", "#D4B75F"],
-                  }),
-                },
-              ]}
-            />
-          </Pressable>
-
-          <Pressable
-            style={styles.nav_button}
-            onPress={() => handleNavPress("home")}
-          >
-            <Animated.View
-              style={[
-                styles.navCircle,
-                {
-                  opacity: homeAnim,
-                  transform: [{ scale: homeAnim }],
-                },
-              ]}
-            />
-            <Animated.Image
-              source={require("../../assets/images/icon-home.png")}
-              style={[
-                styles.nav_icon_image,
-                {
-                  tintColor: homeAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["#FFF", "#D4B75F"],
-                  }),
-                },
-              ]}
-            />
-          </Pressable>
-
-          <Pressable
-            style={styles.nav_button}
-            onPress={() => handleNavPress("profile")}
-          >
-            <Animated.View
-              style={[
-                styles.navCircle,
-                {
-                  opacity: profileAnim,
-                  transform: [{ scale: profileAnim }],
-                },
-              ]}
-            />
-            <Animated.Image
-              source={require("../../assets/images/profile-icon.png")}
-              style={[
-                styles.nav_icon_image,
-                {
-                  tintColor: profileAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["#FFF", "#D4B75F"],
-                  }),
-                },
-              ]}
-            />
-          </Pressable>
-        </View>
-        <StatusBar style="auto" />
-      </View>
+      {renderScreen()}
+      {renderNavBar()}
+      <StatusBar style="auto" />
     </View>
   );
 }
 
+// Component-specific styles with overrides to match original
 const styles = StyleSheet.create({
   container: {
     display: "flex",
@@ -385,11 +339,11 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   navbar: {
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.background,
     position: "absolute" as const,
     top: 0,
     width: "100%",
-    paddingTop: 10,
+    paddingTop: Spacing.sm,
     zIndex: 10,
   },
   search_bar_container: {
@@ -400,93 +354,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  floatingSearchBar: {
-    position: "absolute" as const,
-    top: 17,
-    width: 350,
-    height: 45,
+  filterButton: {
     backgroundColor: "#E8E8E8",
-    borderColor: "#cacaca",
-    borderWidth: 2,
-    borderRadius: 15,
-    flexDirection: "row",
+    padding: 10,
+    marginTop: 10,
+    marginHorizontal: 15,
+    borderRadius: BorderRadius.sm,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 5,
-    zIndex: 10,
   },
-  search_input: {
-    flex: 1,
-    fontSize: 20,
-    color: "#333",
-    paddingLeft: 15,
-  },
-  searchButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  searchIcon: {
-    width: 24,
-    height: 24,
-    tintColor: "#999",
-    paddingRight: 5,
-  },
-  scroller: {
-    backgroundColor: "#F5F5F5",
-    position: "absolute" as const,
-    width: "100%",
-    top: 75,
-    bottom: 0,
-  },
-  scrollContent: {
-    paddingTop: 10,
-    paddingBottom: 100,
-  },
-  floatingNav: {
-    position: "absolute" as const,
-    bottom: 10,
-    height: 70,
-    width: 390,
-    backgroundColor: "#D4B75F",
-    borderRadius: 20,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 10,
-  },
-  nav_button: {
-    width: 60,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  navCircle: {
-    position: "absolute",
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "#FFF",
-  },
-  nav_icon_image: {
-    width: 32,
-    height: 32,
-    zIndex: 1,
+  filterButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   filterHeader: {
     paddingTop: 60,
@@ -497,5 +375,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  filterActionText: {
+    fontSize: 18,
+    color: "#007AFF",
+  },
+  filterTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });
