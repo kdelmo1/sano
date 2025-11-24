@@ -88,7 +88,8 @@ export default function Home() {
       selectedLocation,
       selectedDate,
       selectedStartTime,
-      selectedEndTime
+      selectedEndTime,
+      selectedTag
     );
   }, [
     getPost,
@@ -96,6 +97,7 @@ export default function Home() {
     selectedDate,
     selectedStartTime,
     selectedEndTime,
+    selectedTag,
   ]);
 
   const animateNavButton = (button: NavButton) => {
@@ -121,11 +123,13 @@ export default function Home() {
 
     if (button === "home") {
       onRefresh();
+      setToPost(false);
       setScreen("feed");
     } else if (button === "post") {
       setToPost(true);
       setScreen("form");
     } else if (button === "profile") {
+      setToPost(false);
       setScreen("profile");
     }
     /*else if (button === "filter") {

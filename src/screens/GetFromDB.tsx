@@ -7,7 +7,8 @@ export default async function getFromDB(
   selectedLocation: string = "",
   selectedDate: Date | null = null,
   selectedStartTime: Date | null = null,
-  selectedEndTime: Date | null = null
+  selectedEndTime: Date | null = null,
+  selectedTag: string | null = null
 ) {
   const email = emailHandle + "@ucsc.edu";
 
@@ -72,6 +73,11 @@ export default async function getFromDB(
 
       if (S) query = query.gte("endTime", S);
       if (E) query = query.lte("startTime", E);
+    }
+
+    console.log(selectedTag);
+    if (selectedTag && selectedTag !== "All Tags") {
+      query = query.lte("is_food_giveaway", selectedTag === "Food Giveaway");
     }
   } else if (fromScreen === "inbox") {
     query = query.contains("reservation", [emailHandle]);
