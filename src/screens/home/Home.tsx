@@ -16,7 +16,6 @@ import AuthContext from "../../../src/context/AuthContext";
 import Post from "./post";
 import Form from "./form";
 import Filter from "./filter";
-import Filter2 from "./filter2";
 import getFromDB from "../GetFromDB";
 import ProfileScreen from "../profile/ProfileScreen";
 import InboxScreen from "../profile/InboxScreen";
@@ -283,7 +282,7 @@ export default function Home() {
               </Text>
             </Pressable>
             {/* Filter Screen */}
-            <Filter2
+            <Filter
               showFilter={showFilter}
               selectedLocation={selectedLocation}
               selectedDate={selectedDate}
@@ -291,21 +290,7 @@ export default function Home() {
               selectedEndTime={selectedEndTime}
               selectedTag={selectedTag}
               onClose={handleCloseFilter}
-              onApplyFilter={(
-                selectedLocation,
-                selectedDate,
-                selectedStartTime,
-                selectedEndTime,
-                selectedTag
-              ) =>
-                handleApplyFilter(
-                  selectedLocation,
-                  selectedDate,
-                  selectedStartTime,
-                  selectedEndTime,
-                  selectedTag
-                )
-              }
+              onApplyFilter={handleApplyFilter}
             />
           </View>
         </View>

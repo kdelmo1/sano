@@ -80,7 +80,6 @@ export default async function getFromDB(
   }
 
   const { data, error } = await query;
-  console.log(await query);
 
   if (error) {
     console.log("err", error);

@@ -44,12 +44,23 @@ export default function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  // return (
+  //   <AuthContext.Provider value={{ isLoggedIn, user, emailHandle }}>
+  //     <StrictMode>
+  //       <SafeAreaProvider>
+  //         <View style={styles.container}>
+  //           {isLoggedIn ? <Home /> : <LoginScreen onLoginSuccess={() => {}} />}
+  //         </View>
+  //       </SafeAreaProvider>
+  //     </StrictMode>
+  //   </AuthContext.Provider>
+  // );
   return (
     <AuthContext.Provider value={{ isLoggedIn, user, emailHandle }}>
       <StrictMode>
         <SafeAreaProvider>
           <View style={styles.container}>
-            {isLoggedIn ? <Home /> : <LoginScreen onLoginSuccess={() => {}} />}
+            <Home />
           </View>
         </SafeAreaProvider>
       </StrictMode>
