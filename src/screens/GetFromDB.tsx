@@ -54,12 +54,12 @@ export default async function getFromDB(
       .select("email, rating, number_of_raters")
       .in("email", [...posterEmailSet]);
     const posterRatingRecord = posterRatings?.reduce((rating, student) => {
-      if (student["number_of_raters"] != 0)
+      if (student["number_of_raters"] >= 5)
         rating[student["email"]] =
           (student["rating"] / student["number_of_raters"]) * 10;
-      else rating[student["email"]] = 0.0;
+      else rating[student["email"]] = "X";
       return rating;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, number | "X">);
 
     // Filter out posts created by the current user so they don't appear in the main feed
     if (ratingError) console.error(ratingError);
@@ -87,7 +87,7 @@ export default async function getFromDB(
             fromScreen: fromScreen,
             isFoodGiveaway: val["is_food_giveaway"] || false,
             photoUrls: photoUrls,
-            posterRating: posterRatingRecord?.[val["studentEmail"]] || 0.0,
+            posterRating: posterRatingRecord?.[val["studentEmail"]] || "X",
             reservePostInit: val["reservation"].includes(emailHandle),
             refreshHome: () => {},
           };

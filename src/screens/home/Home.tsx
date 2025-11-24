@@ -270,6 +270,7 @@ export default function Home() {
           }
         >
           {posts.map((post) => {
+            console.log(post);
             return (
               <Post
                 key={post.id}

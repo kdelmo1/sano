@@ -39,7 +39,7 @@ export default function ProfileScreen({
   };
 
   const [yourPosts, setYourPosts] = useState<PostProps[]>([]);
-  const [yourRating, setYourRating] = useState(0);
+  const [yourRating, setYourRating] = useState<number | "X">("X");
 
   useEffect(() => {
     getFromDB("profile", emailHandle, "", "", setYourPosts);
@@ -58,9 +58,11 @@ export default function ProfileScreen({
         .single();
       if (error) console.error(error);
       else {
-        setYourRating((data["rating"] / data["number_of_raters"]) * 10);
+        if (data["number_of_raters"] >= 5)
+          setYourRating((data["rating"] / data["number_of_raters"]) * 10);
       }
     }
+    getRating();
   }, []);
 
   return (
@@ -80,7 +82,8 @@ export default function ProfileScreen({
         {/* User Name */}
         <Text style={styles.userName}>{displayName}</Text>
         <Text style={{ fontSize: 20, padding: 10 }}>
-          {yourRating.toFixed(1)}
+          Rating:{" "}
+          {typeof yourRating === "string" ? yourRating : yourRating.toFixed(1)}
         </Text>
       </View>
 

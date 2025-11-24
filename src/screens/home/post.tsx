@@ -25,7 +25,7 @@ declare global {
     fromScreen: "feed" | "inbox" | "profile";
     isFoodGiveaway: boolean;
     photoUrls: string[];
-    posterRating: number;
+    posterRating: number | "X";
     reservePostInit: boolean;
     refreshHome: () => void;
   }
@@ -174,8 +174,11 @@ export default function Post({
                 />
               </View>
               <Text style={styles.username}>{name}</Text>
-              {fromScreen !== "profile" && (
+              {fromScreen !== "profile" && typeof posterRating === "number" && (
                 <Text>{posterRating.toFixed(1)}</Text>
+              )}
+              {fromScreen !== "profile" && typeof posterRating === "string" && (
+                <Text>{posterRating}</Text>
               )}
             </View>
             {fromScreen === "inbox" && (
