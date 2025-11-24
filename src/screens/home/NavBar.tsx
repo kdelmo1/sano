@@ -10,21 +10,36 @@ import {
   Image,
   Switch,
 } from "react-native";
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
+
+type NavButton = "home" | "post" | "profile";
 
 interface NavBarProps {
-  homeAnim: any;
-  postAnim: any;
-  profileAnim: any;
   onNavPress: (button: "home" | "post" | "profile") => void;
+  button: NavButton;
 }
 
-export default function NavBar({
-  homeAnim,
-  postAnim,
-  profileAnim,
-  onNavPress,
-}: NavBarProps) {
+export default function NavBar({ onNavPress, button }: NavBarProps) {
+  const homeAnim = useRef(new Animated.Value(1)).current;
+  const postAnim = useRef(new Animated.Value(0)).current;
+  const profileAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animations = {
+      home: homeAnim,
+      post: postAnim,
+      profile: profileAnim,
+    };
+
+    Object.entries(animations).forEach(([key, anim]) => {
+      Animated.timing(anim, {
+        toValue: key === button ? 1 : 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, [button]);
+
   return (
     <View style={styles.floatingNav}>
       <Pressable style={styles.nav_button} onPress={() => onNavPress("post")}>
@@ -325,11 +340,11 @@ const styles = StyleSheet.create({
     height: 200,
   },
   floatingNav: {
-    position: "absolute" as const,
+    position: "absolute",
     bottom: "5%",
     alignSelf: "center",
     height: 70,
-    width: "95%",
+    width: "90%",
     backgroundColor: "#D4B75F",
     borderRadius: 20,
     flexDirection: "row",

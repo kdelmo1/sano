@@ -5,8 +5,6 @@ import {
   ScrollView,
   Pressable,
   RefreshControl,
-  Animated,
-  Modal,
 } from "react-native";
 import Post from "./post";
 import Filter from "./filter";

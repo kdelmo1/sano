@@ -16,21 +16,9 @@ import NavBar from "../home/NavBar";
 
 interface InboxScreenProps {
   goBack: () => void;
-  homeAnim: Animated.Value;
-  postAnim: Animated.Value;
-  profileAnim: Animated.Value;
-  onNavPress: (button: "home" | "post" | "profile") => void;
-  activeNav: "home" | "post" | "profile";
 }
 
-export default function InboxScreen({
-  goBack,
-  homeAnim,
-  postAnim,
-  profileAnim,
-  onNavPress,
-  activeNav,
-}: InboxScreenProps) {
+export default function InboxScreen({ goBack }: InboxScreenProps) {
   const [posts, setPosts] = useState<PostProps[]>([]);
   const { emailHandle } = useContext(AuthContext);
 

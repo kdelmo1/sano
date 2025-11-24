@@ -22,20 +22,9 @@ const MAX_PHOTOS = 5;
 interface FormProps {
   onPostSuccess: () => void;
   onClose: () => void;
-  homeAnim: any;
-  postAnim: any;
-  profileAnim: any;
-  onNavPress: (button: "home" | "post" | "profile") => void;
 }
 
-export default function Form({
-  onPostSuccess,
-  onClose,
-  homeAnim,
-  postAnim,
-  profileAnim,
-  onNavPress,
-}: FormProps) {
+export default function Form({ onPostSuccess, onClose }: FormProps) {
   const { user, emailHandle } = useContext(AuthContext);
 
   const [location, setLocation] = useState("");

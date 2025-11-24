@@ -1,22 +1,9 @@
 import { StatusBar } from "expo-status-bar";
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  Pressable,
-  RefreshControl,
-  Animated,
-  Modal,
-} from "react-native";
+import { StyleSheet, View, Animated } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import React, { useEffect, useState, useRef, useContext } from "react";
-import { supabase } from "../../lib/supabase";
+import React, { useState, useRef, useContext } from "react";
 import AuthContext from "../../../src/context/AuthContext";
-import Post from "./post";
 import Form from "./form";
-import Filter from "./filter";
-import getFromDB from "../GetFromDB";
 import ProfileScreen from "../profile/ProfileScreen";
 import InboxScreen from "../profile/InboxScreen";
 import NavBar from "./NavBar";
@@ -28,14 +15,8 @@ type Screen = "feed" | "chat" | "profile" | "inbox" | "form";
 export default function Home() {
   const { user, emailHandle } = useContext(AuthContext);
 
-  const [getPost, setGetPost] = useState(false);
-
   const [activeNav, setActiveNav] = useState<NavButton>("home");
   const [screen, setScreen] = useState<Screen>("feed");
-
-  const homeAnim = useRef(new Animated.Value(1)).current;
-  const postAnim = useRef(new Animated.Value(0)).current;
-  const profileAnim = useRef(new Animated.Value(0)).current;
 
   const insets = useSafeAreaInsets();
 
@@ -46,26 +27,8 @@ export default function Home() {
     return combined;
   }
 
-  const animateNavButton = (button: NavButton) => {
-    const animations = {
-      home: homeAnim,
-      post: postAnim,
-      profile: profileAnim,
-    };
-
-    setActiveNav(button);
-
-    Object.entries(animations).forEach(([key, anim]) => {
-      Animated.timing(anim, {
-        toValue: key === button ? 1 : 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    });
-  };
-
   const handleNavPress = (button: NavButton) => {
-    animateNavButton(button);
+    setActiveNav(button);
 
     if (button === "home") {
       setScreen("feed");
@@ -74,113 +37,7 @@ export default function Home() {
     } else if (button === "profile") {
       setScreen("profile");
     }
-    /*else if (button === "filter") {
-      setScreen("filter");
-    }*/
   };
-
-  if (screen === "form") {
-    return (
-      <View
-        style={{
-          paddingTop: insets.top,
-          paddingLeft: insets.left,
-          paddingBottom: insets.bottom,
-          paddingRight: insets.right,
-          backgroundColor: "#F5F5F5",
-          flex: 1,
-        }}
-      >
-        <Form
-          onPostSuccess={() => {
-            setGetPost((prev) => !prev);
-          }}
-          onClose={() => {
-            setScreen("feed");
-            animateNavButton("home");
-          }}
-          homeAnim={homeAnim}
-          postAnim={postAnim}
-          profileAnim={profileAnim}
-          onNavPress={handleNavPress}
-        />
-        <NavBar
-          homeAnim={homeAnim}
-          postAnim={postAnim}
-          profileAnim={profileAnim}
-          onNavPress={handleNavPress}
-        />
-      </View>
-    );
-  }
-
-  if (screen === "inbox") {
-    return (
-      <View
-        style={{
-          paddingTop: insets.top,
-          paddingLeft: insets.left,
-          paddingBottom: insets.bottom,
-          paddingRight: insets.right,
-          backgroundColor: "#F5F5F5",
-          flex: 1,
-        }}
-      >
-        <InboxScreen
-          goBack={() => {
-            setScreen("profile");
-          }}
-          homeAnim={homeAnim}
-          postAnim={postAnim}
-          profileAnim={profileAnim}
-          onNavPress={handleNavPress}
-          activeNav={activeNav}
-        />
-        <NavBar
-          homeAnim={homeAnim}
-          postAnim={postAnim}
-          profileAnim={profileAnim}
-          onNavPress={handleNavPress}
-        />
-      </View>
-    );
-  }
-
-  if (screen === "profile") {
-    return (
-      <View
-        style={{
-          paddingTop: insets.top,
-          paddingLeft: insets.left,
-          paddingBottom: insets.bottom,
-          paddingRight: insets.right,
-          backgroundColor: "#F5F5F5",
-          flex: 1,
-        }}
-      >
-        <ProfileScreen
-          goBack={() => {
-            setScreen("feed");
-            animateNavButton("home");
-          }}
-          onInboxPress={() => {
-            setScreen("inbox");
-          }}
-          homeAnim={homeAnim}
-          postAnim={postAnim}
-          profileAnim={profileAnim}
-          onNavPress={handleNavPress}
-          activeNav={activeNav}
-        />
-        <NavBar
-          homeAnim={homeAnim}
-          postAnim={postAnim}
-          profileAnim={profileAnim}
-          onNavPress={handleNavPress}
-        />
-      </View>
-    );
-  }
 
   return (
     <View
@@ -190,20 +47,75 @@ export default function Home() {
         paddingBottom: insets.bottom,
         paddingRight: insets.right,
         backgroundColor: "#F5F5F5",
+        flex: 1,
       }}
     >
+      <Rendering
+        screen={screen}
+        setScreen={setScreen}
+        setActiveNav={setActiveNav}
+      />
+      <NavBar onNavPress={handleNavPress} button={activeNav} />
+    </View>
+  );
+}
+
+function Rendering({
+  screen,
+  setScreen,
+  setActiveNav,
+}: {
+  screen: string;
+  setScreen: React.Dispatch<React.SetStateAction<Screen>>;
+  setActiveNav: React.Dispatch<React.SetStateAction<NavButton>>;
+}) {
+  const [getPost, setGetPost] = useState(false);
+
+  if (screen === "feed") {
+    return (
       <View style={styles.container}>
         <Feed refresh={getPost} />
         <StatusBar style="auto" />
       </View>
-      <NavBar
-        homeAnim={homeAnim}
-        postAnim={postAnim}
-        profileAnim={profileAnim}
-        onNavPress={handleNavPress}
+    );
+  }
+  if (screen === "form") {
+    return (
+      <Form
+        onPostSuccess={() => {
+          setGetPost((prev) => !prev);
+        }}
+        onClose={() => {
+          setScreen("feed");
+          setActiveNav("home");
+        }}
       />
-    </View>
-  );
+    );
+  }
+
+  if (screen === "inbox") {
+    return (
+      <InboxScreen
+        goBack={() => {
+          setScreen("profile");
+        }}
+      />
+    );
+  }
+
+  if (screen === "profile") {
+    return (
+      <ProfileScreen
+        goBack={() => {
+          setScreen("feed");
+          setActiveNav("home");
+        }}
+        onInboxPress={() => {
+          setScreen("inbox");
+        }}
+      />
+    );
+  }
 }
 
 const styles = StyleSheet.create({
@@ -214,160 +126,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: "100%",
     height: "100%",
-  },
-  navbar: {
-    backgroundColor: "#F5F5F5",
-    position: "absolute" as const,
-    top: 0,
-    width: "100%",
-    paddingTop: 10,
-    zIndex: 10,
-  },
-  search_bar_container: {
-    width: "100%",
-    paddingHorizontal: 20,
-    paddingBottom: 15,
-    paddingTop: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  floatingSearchBar: {
-    position: "absolute" as const,
-    top: 17,
-    width: 350,
-    height: 45,
-    backgroundColor: "#E8E8E8",
-    borderColor: "#cacaca",
-    borderWidth: 2,
-    borderRadius: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 5,
-    zIndex: 10,
-  },
-  search_input: {
-    flex: 1,
-    fontSize: 20,
-    color: "#333",
-    paddingLeft: 15,
-  },
-  searchButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  searchIcon: {
-    width: 24,
-    height: 24,
-    tintColor: "#999",
-    paddingRight: 5,
-  },
-  scroller: {
-    backgroundColor: "#F5F5F5",
-    position: "absolute" as const,
-    width: "100%",
-    top: 75,
-    bottom: 0,
-  },
-  scrollContent: {
-    paddingTop: 10,
-    paddingBottom: 100,
-  },
-  floatingNav: {
-    position: "absolute" as const,
-    bottom: 10,
-    height: 70,
-    width: 390,
-    backgroundColor: "#D4B75F",
-    borderRadius: 20,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 10,
-  },
-  nav_button: {
-    width: 60,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  navCircle: {
-    position: "absolute",
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "#FFF",
-  },
-  nav_icon_image: {
-    width: 32,
-    height: 32,
-    zIndex: 1,
-  },
-  filterHeader: {
-    backgroundColor: "#D4B75F",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalContent: {
-    width: "90%",
-    height: "43%",
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#FFF",
-  },
-  closeButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#FFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  closeButtonText: {
-    fontSize: 20,
-    color: "#D4B75F",
-    fontWeight: "600",
-    lineHeight: 20,
-  },
-  applyButton: {
-    backgroundColor: "#FFF",
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 15,
-  },
-  applyButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#D4B75F",
   },
 });

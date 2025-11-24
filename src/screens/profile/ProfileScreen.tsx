@@ -16,21 +16,11 @@ import getFromDB from "../GetFromDB";
 interface ProfileScreenProps {
   goBack: () => void;
   onInboxPress: () => void; // New prop
-  homeAnim: Animated.Value;
-  postAnim: Animated.Value;
-  profileAnim: Animated.Value;
-  onNavPress: (button: "home" | "post" | "profile") => void;
-  activeNav: "home" | "post" | "profile";
 }
 
 export default function ProfileScreen({
   goBack,
   onInboxPress,
-  homeAnim,
-  postAnim,
-  profileAnim,
-  onNavPress,
-  activeNav,
 }: ProfileScreenProps) {
   const { isLoggedIn, user, emailHandle } = useContext(AuthContext);
 
