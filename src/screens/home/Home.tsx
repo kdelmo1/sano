@@ -40,15 +40,23 @@ export default function Home() {
 
   // Filter values
   const [showFilter, setShowFilter] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState("all");
-  const [selectedTime, setSelectedTime] = useState("all");
-  const [selectedTag, setSelectedTag] = useState("all");
+  
+  const [selectedLocation, setSelectedLocation] = useState("");
   const [tempLocation, setTempLocation] = useState(selectedLocation);
-  const [tempTime, setTempTime] = useState(selectedTime);
+
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [tempDate, setTempDate] = useState<Date | null>(selectedDate);
+  const [selectedStartTime, setSelectedStartTime] = useState<Date | null>(null);
+  const [tempStartTime, setTempStartTime] = useState<Date | null>(selectedStartTime);
+  const [selectedEndTime, setSelectedEndTime] = useState<Date | null>(null);
+  const [tempEndTime, setTempEndTime] = useState<Date | null>(selectedEndTime);
+
+  const [selectedTag, setSelectedTag] = useState("all");
   const [tempTag, setTempTag] = useState(selectedTag);
+
   const openFilterModal = () => {
     setTempLocation(selectedLocation);
-    setTempTime(selectedTime);
+    setTempStartTime(selectedStartTime);
     setShowFilter(true);
   };
 
@@ -63,8 +71,8 @@ export default function Home() {
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    getFromDB("feed", emailHandle, selectedLocation, selectedTime, setPosts);
-  }, [getPost, selectedLocation, selectedTime]);
+    getFromDB("feed", emailHandle, selectedLocation, selectedDate, selectedStartTime, selectedEndTime, setPosts);
+  }, [getPost, selectedLocation, selectedDate, selectedStartTime, selectedEndTime]);
 
   const animateNavButton = (button: NavButton) => {
     const animations = {
@@ -96,6 +104,9 @@ export default function Home() {
     } else if (button === "profile") {
       setScreen("profile");
     }
+    /*else if (button === "filter") {
+      setScreen("filter");
+    }*/
   };
 
   if (screen === "form") {
@@ -186,6 +197,36 @@ export default function Home() {
     );
   }
 
+  /*if (screen === "filter") {
+    return (
+      <View
+        style={{
+          paddingTop: insets.top,
+          paddingLeft: insets.left,
+          paddingBottom: insets.bottom,
+          paddingRight: insets.right,
+          backgroundColor: "#F5F5F5",
+          flex: 1,
+        }}
+      >
+        <Filter
+          selectedLocation={tempLocation}
+          setSelectedLocation={setTempLocation}
+          selectedTime={tempTime}
+          setSelectedTime={setTempTime}
+          selectedTag={tempTag}
+          setSelectedTag={setTempTag}
+        />
+      </View>
+    );
+  }*/
+
+  function combineDateAndTime(date: Date, time: Date) {
+    const combined = new Date(date);
+    combined.setHours(time.getHours(), time.getMinutes(), 0, 0);
+    return combined;
+  }
+
   return (
     <View
       style={{
@@ -210,6 +251,7 @@ export default function Home() {
                 alignItems: "center",
               }}
               onPress={() => setShowFilter(!showFilter)}
+              //onPress={() => handleNavPress("filter")}
             >
               <Text style={{ fontSize: 16, fontWeight: "600" }}>
                 {showFilter ? "Hide Filters ▲" : "Show Filters ▼"}
@@ -218,45 +260,76 @@ export default function Home() {
             {/* Filter Screen */}
             <Modal
               visible={showFilter}
-              animationType="slide"
-              transparent={false} // false means it takes full screen
+              animationType="fade"
+              transparent={true}
               onRequestClose={() => setShowFilter(false)}
             >
-              <View style={{ flex: 1, backgroundColor: "#fff" }}>
+              <View style={styles.modalOverlay}>
                 {/* Header Title and Buttons */}
-                <View style={styles.filterHeader}>
-                  <Pressable onPress={() => setShowFilter(false)}>
-                    <Text style={{ fontSize: 18, color: "#007AFF" }}>
-                      Cancel
-                    </Text>
-                  </Pressable>
-                  <Text style={{ fontSize: 18, fontWeight: "bold" }}>
-                    Filter Posts
-                  </Text>
-                  <Pressable
-                    onPress={() => {
-                      setSelectedLocation(tempLocation);
-                      setSelectedTime(tempTime);
-                      setShowFilter(false);
-                    }}
+                <View style={styles.modalContent}>
+                  <View style={styles.filterHeader}>
+                    <Pressable
+                      style={styles.closeButton}
+                      onPress={() => {
+                        setSelectedLocation("");
+                        setSelectedDate(null);
+                        setSelectedStartTime(null);
+                        setSelectedEndTime(null);
+                        setSelectedTag("");
+                        setShowFilter(false);
+                      }}
+                    >
+                      <Text style={styles.closeButtonText}>x</Text>
+                    </Pressable>
+                    <Text style={styles.headerTitle}>Filter Posts</Text>
+                    <Pressable
+                      style={styles.applyButton}
+                      onPress={() => {
+                        setSelectedLocation(tempLocation);
+                        setSelectedDate(tempDate);
+                        if (tempStartTime && tempDate) {
+                          setSelectedStartTime(combineDateAndTime(tempDate, tempStartTime));
+                        } else if (!tempStartTime) {
+                          setSelectedStartTime(null);
+                        }
+                        if (tempEndTime && tempDate) {
+                          setSelectedEndTime(combineDateAndTime(tempDate, tempEndTime));
+                        } else if (!tempEndTime) {
+                          setSelectedEndTime(null);
+                        }
+                        //setSelectedTag(tempTag); // Tags not implemented yet
+                        setShowFilter(false);
+                      }}
+                    >
+                      <Text style={styles.applyButtonText}>Apply</Text>
+                    </Pressable>
+                  </View>
+
+                  {/* Scrollable filter options */}
+                  <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{ padding: 20, paddingBottom: 50 }}
                   >
-                    <Text style={{ fontSize: 18, color: "#007AFF" }}>Done</Text>
-                  </Pressable>
+                    <Filter
+                      selectedLocation={tempLocation}
+                      setSelectedLocation={setTempLocation}
+                      selectedDate={tempDate}
+                      setSelectedDate={setTempDate}
+                      selectedStartTime={tempStartTime}
+                      setSelectedStartTime={setTempEndTime}
+                      selectedEndTime={tempStartTime}
+                      setSelectedEndTime={setTempEndTime}
+
+                      tempStartTime={tempStartTime}
+                      setTempStartTime={setTempStartTime}
+                      tempEndTime={tempEndTime}
+                      setTempEndTime={setTempEndTime}
+
+                      selectedTag={tempTag}
+                      setSelectedTag={setTempTag}
+                    />
+                  </ScrollView>
                 </View>
-                {/* Scrollable filter options */}
-                <ScrollView
-                  style={{ flex: 1, padding: 15 }}
-                  contentContainerStyle={{ paddingBottom: 50 }}
-                >
-                  <Filter
-                    selectedLocation={tempLocation}
-                    setSelectedLocation={setTempLocation}
-                    selectedTime={tempTime}
-                    setSelectedTime={setTempTime}
-                    selectedTag={tempTag}
-                    setSelectedTag={setTempTag}
-                  />
-                </ScrollView>
               </View>
             </Modal>
           </View>
@@ -493,13 +566,54 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   filterHeader: {
-    paddingTop: 60,
-    paddingHorizontal: 15,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderColor: "#ccc",
+    backgroundColor: "#D4B75F",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalContent: {
+    width: "90%",
+    height: "43%",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#FFF",
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#FFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: "#D4B75F",
+    fontWeight: "600",
+    lineHeight: 20
+  },
+  applyButton: {
+    backgroundColor: "#FFF",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 15,
+  },
+  applyButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#D4B75F",
   },
 });

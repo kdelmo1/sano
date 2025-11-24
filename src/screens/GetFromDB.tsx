@@ -4,7 +4,9 @@ export default async function getFromDB(
   fromScreen: "feed" | "inbox" | "profile",
   emailHandle: string,
   selectedLocation: string,
-  selectedTime: string,
+  selectedDate: Date | null = null,
+  selectedStartTime: Date | null = null,
+  selectedEndTime: Date | null = null,
   setPosts: React.Dispatch<React.SetStateAction<PostProps[]>>
 ) {
   const email = emailHandle + "@ucsc.edu";
@@ -20,18 +22,42 @@ export default async function getFromDB(
   if (fromScreen === "feed") {
     query = query.neq("studentEmail", email).gt("slots", 0);
 
-    if (selectedLocation !== "all") {
+    if (selectedLocation && selectedLocation !== "select location" && selectedLocation !== "All") {
       query = query.eq("location", selectedLocation);
     }
 
-    if (selectedTime !== "all") {
-      const now = new Date();
-      let since = new Date();
-      if (selectedTime === "24h") since.setDate(now.getDate() - 1);
-      if (selectedTime === "7d") since.setDate(now.getDate() - 7);
-      if (selectedTime === "30d") since.setDate(now.getDate() - 30);
-      query = query.gte("startTime", since.toISOString());
-    }
+    // Filter by specific date
+      if (selectedDate) {
+        const startOfDay = new Date(selectedDate);
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(selectedDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        query = query.gte("startTime", startOfDay.toISOString()).lte("startTime", endOfDay.toISOString());
+      }
+
+      // Filter with times
+      if (selectedStartTime || selectedEndTime) {
+        let S: string | null = null;
+        let E: string | null = null;
+
+        if (selectedDate && selectedStartTime) {
+          const d = new Date(selectedDate);
+          d.setHours(selectedStartTime.getHours(), selectedStartTime.getMinutes(), 0, 0);
+          S = d.toISOString();
+        }
+
+        if (selectedDate && selectedEndTime) {
+          const d = new Date(selectedDate);
+          d.setHours(selectedEndTime.getHours(), selectedEndTime.getMinutes(), 0, 0);
+          E = d.toISOString();
+        }
+
+        if (S) query = query.gte("endTime", S);
+        if (E) query = query.lte("startTime", E);
+      }
+
   } else if (fromScreen === "inbox") {
     query = query.contains("reservation", [emailHandle]);
   } else if (fromScreen === "profile") {
