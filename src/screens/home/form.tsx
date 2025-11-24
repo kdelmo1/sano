@@ -20,8 +20,6 @@ import NavBar from "./NavBar";
 const MAX_PHOTOS = 5;
 
 interface FormProps {
-  toPost: boolean;
-  setToPost: React.Dispatch<React.SetStateAction<boolean>>;
   onPostSuccess: () => void;
   onClose: () => void;
   homeAnim: any;
@@ -31,8 +29,6 @@ interface FormProps {
 }
 
 export default function Form({
-  toPost,
-  setToPost,
   onPostSuccess,
   onClose,
   homeAnim,
@@ -241,16 +237,13 @@ export default function Form({
     } else {
       console.log("Post created successfully:", newPost);
       resetForm();
-      setToPost(false);
       onPostSuccess();
       onClose();
     }
   }
 
-  if (!toPost) return null;
-
   return (
-    <View style={styles.fullScreenContainer}>
+    <>
       <View style={styles.screenOverlay}>
         <View style={styles.screenContent}>
           {/* Header */}
@@ -582,7 +575,7 @@ export default function Form({
           </Pressable>
         </Modal>
       )}
-    </View>
+    </>
   );
 }
 

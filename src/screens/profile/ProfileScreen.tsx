@@ -67,7 +67,7 @@ export default function ProfileScreen({
   }, []);
 
   return (
-    <View style={styles.container}>
+    <>
       {/* Profile Card */}
       <View style={styles.profileCard}>
         {/* Profile Picture */}
@@ -132,7 +132,7 @@ export default function ProfileScreen({
         profileAnim={profileAnim}
         onNavPress={onNavPress}
       />
-    </View>
+    </>
   );
 }
 
