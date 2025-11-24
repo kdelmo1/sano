@@ -210,27 +210,6 @@ export default function Post({
 }
 
 const styles = StyleSheet.create({
-  // will delete later
-  screen: {
-    flex: 1,
-    width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  container: {
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    maxWidth: 1152,
-    width: "100%",
-    minHeight: 600,
-    borderRadius: 12,
-    backgroundColor: "#FFF",
-    overflow: "hidden",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  // stops here
   post_container: {
     paddingHorizontal: 16,
     paddingVertical: 8,

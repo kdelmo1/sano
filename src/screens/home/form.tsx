@@ -36,7 +36,9 @@ export default function Form({ onPostSuccess, onClose }: FormProps) {
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [startTime, setStartTime] = useState(new Date());
-  const [endTime, setEndTime] = useState(new Date());
+  const [endTime, setEndTime] = useState(
+    new Date(new Date().getTime() + 30 * 60000)
+  );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
@@ -560,10 +562,6 @@ export default function Form({ onPostSuccess, onClose }: FormProps) {
 }
 
 const styles = StyleSheet.create({
-  fullScreenContainer: {
-    flex: 1,
-    backgroundColor: "#F5F5F5",
-  },
   screenOverlay: {
     flex: 1,
     backgroundColor: "#F5F5F5",
@@ -777,54 +775,6 @@ const styles = StyleSheet.create({
   },
   timePicker: {
     height: 200,
-  },
-  floatingNav: {
-    position: "absolute" as const,
-    bottom: 10,
-    alignSelf: "center",
-    height: 70,
-    width: 390,
-    backgroundColor: "#D4B75F",
-    borderRadius: 20,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 10,
-    zIndex: 1000,
-  },
-  nav_button: {
-    width: 60,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  navCircle: {
-    position: "absolute",
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "#FFF",
-  },
-  nav_icon_image: {
-    width: 32,
-    height: 32,
-    zIndex: 1,
-  },
-  giveawayText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  giveawayTextSelected: {
-    color: "#FFF",
   },
   photoUploadContainer: {
     paddingVertical: 10,
