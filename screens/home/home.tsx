@@ -23,7 +23,17 @@ type NavButton = "home" | "post" | "signout";
 
 export default function Home(data: { user: User | null }) {
   const [posts, setPosts] = React.useState<
-    { id: string; title: string; startTime: string; endTime: string; name: string; content: string }[]
+    {
+      id: string;
+      title: string;
+      startTime: string;
+      endTime: string;
+      name: string;
+      content?: string;
+      studentEmail?: string;
+      maxRSVP?: number;
+      rsvpCount?: number;
+    }[]
   >([]);
 
   const [activeNav, setActiveNav] = useState<NavButton>("home");
@@ -99,6 +109,9 @@ export default function Home(data: { user: User | null }) {
               endTime: val["endTime"] || val["startTime"],
               name: val["name"],
               content: val["content"],
+              studentEmail: val["studentEmail"],
+              maxRSVP: val["maxRSVP"] || 0,
+              rsvpCount: val["rsvpCount"] || 0,
             };
           })
         );
@@ -229,8 +242,13 @@ export default function Home(data: { user: User | null }) {
               startTime={post.startTime}
               endTime={post.endTime}
               name={post.name}
+              studentEmail={post.studentEmail}
+              maxRSVP={post.maxRSVP}
+              rsvpCount={post.rsvpCount}
+              currentUserEmail={data.user?.email}
               openPost={openPost}
               setOpenPost={setOpenPost}
+              onReserve={() => setGetPost((prev) => !prev)}
             />
           ))}
         </ScrollView>

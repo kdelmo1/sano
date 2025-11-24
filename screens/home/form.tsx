@@ -27,6 +27,7 @@ export default function popup(data: {
   const [endTime, setEndTime] = React.useState(new Date());
   const [showStartPicker, setShowStartPicker] = React.useState(false);
   const [showEndPicker, setShowEndPicker] = React.useState(false);
+  const [maxRSVP, setMaxRSVP] = React.useState<number | undefined>(1);
 
   const resetForm = () => {
     setLocation("");
@@ -90,7 +91,9 @@ export default function popup(data: {
       endTime: endTime.toISOString(),
       location: location,
       studentEmail: data.user?.email,
-      studentID: 2,
+      //studentID: 2,
+      maxRSVP: maxRSVP || 0,
+      rsvpCount: 0,
     };
 
     const { error } = await supabase.from("Posts").insert(newPost);
@@ -189,6 +192,24 @@ export default function popup(data: {
                 onChange={onEndTimeChange}
               />
             )}
+
+            {/* Max RSVP Field */}
+            <View style={styles.fieldContainer}>
+              <View style={styles.iconContainer}>
+                <Text style={styles.iconText}>👥</Text>
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="max RSVPs (number)"
+                placeholderTextColor="#999"
+                keyboardType="number-pad"
+                value={maxRSVP?.toString()}
+                onChangeText={(t) => {
+                  const n = parseInt(t, 10);
+                  setMaxRSVP(isNaN(n) ? undefined : n);
+                }}
+              />
+            </View>
           </View>
 
           {/* Post Button */}
