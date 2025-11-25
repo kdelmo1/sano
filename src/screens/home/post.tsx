@@ -116,7 +116,24 @@ export default function Post({
       const isReserved = reservationArray.includes(emailHandle);
 
       if (isReserved) {
-        // Un-reserve
+        // Try RPC unreserve first
+        try {
+          const { error: rpcErr } = await supabase.rpc("unreserve_spot", {
+            post_id: id,
+            applicant_name: emailHandle,
+          });
+          if (!rpcErr) {
+            const newArray = reservationArray.filter((r) => r !== emailHandle);
+            setReservePost(false);
+            setCurrentApplicants(newArray);
+            setMaxSlots(slotsFromDB);
+            return;
+          }
+        } catch (rpcErr) {
+          // fallthrough to non-RPC fallback
+        }
+
+        // Fallback: update array directly
         const newArray = reservationArray.filter((r) => r !== emailHandle);
         const { error: updateErr } = await supabase
           .from("Posts")
@@ -135,6 +152,32 @@ export default function Post({
           alert("This post is full.");
           return;
         }
+
+        // Try RPC reserve first for atomic operation
+        try {
+          const { data: rpcData, error: rpcErr } = await supabase.rpc(
+            "reserve_spot",
+            {
+              post_id: id,
+              applicant_name: emailHandle,
+            }
+          );
+          if (!rpcErr) {
+            // If RPC returns updated reservation list, use it; otherwise append locally
+            const newArray: string[] = rpcData?.reservation || [
+              ...reservationArray,
+              emailHandle,
+            ];
+            setReservePost(true);
+            setCurrentApplicants(newArray);
+            setMaxSlots(slotsFromDB);
+            return;
+          }
+        } catch (rpcErr) {
+          // fallthrough to non-RPC fallback
+        }
+
+        // Fallback: update array directly
         const newArray = [...reservationArray, emailHandle];
         const { error: updateErr } = await supabase
           .from("Posts")
@@ -179,14 +222,29 @@ export default function Post({
 
             {fromScreen === "feed" && (
               <Pressable
-                style={styles.reserveButton}
+                style={[
+                  styles.reserveButton,
+                  currentApplicants.length >= maxSlots && !reservePost
+                    ? styles.reserveButtonDisabled
+                    : null,
+                ]}
                 onPress={() => toggleReservation()}
+                disabled={currentApplicants.length >= maxSlots && !reservePost}
               >
-                {reservePost ? (
+                <Text
+                  style={[
+                    styles.iconLarge,
+                    currentApplicants.length >= maxSlots && !reservePost
+                      ? styles.iconDisabled
+                      : null,
+                  ]}
+                >
+                  {reservePost ? (
                   <Text style={styles.iconLarge}>✔️</Text>
-                ) : (
-                  <Text style={styles.iconLarge}>➕</Text>
-                )}
+                  ) : (
+                    <Text style={styles.iconLarge}>➕</Text>
+                  )}
+                </Text>
               </Pressable>
             )}
           </View>
@@ -198,6 +256,13 @@ export default function Post({
             {isCurrentlyActive && (
               <Text style={styles.nowIndicator}> (now)</Text>
             )}
+          </Text>
+
+          <Text style={styles.spotsText}>
+            {currentApplicants.length} / {maxSlots} spots filled • {Math.max(
+              0,
+              maxSlots - currentApplicants.length
+            )} left
           </Text>
 
           <View style={styles.userBadgeContainer}>
@@ -269,6 +334,20 @@ const styles = StyleSheet.create({
   nowIndicator: {
     color: Colors.primary,
     fontWeight: "600",
+  },
+  spotsText: {
+    fontSize: FontSizes.md,
+    color: Colors.textLighter,
+    marginLeft: -5,
+    marginBottom: 8,
+    fontWeight: "600",
+  },
+  reserveButtonDisabled: {
+    opacity: 0.5,
+  },
+  iconDisabled: {
+    color: Colors.textLighter,
+    opacity: 0.6,
   },
   userBadgeContainer: {
     alignItems: "flex-end",
