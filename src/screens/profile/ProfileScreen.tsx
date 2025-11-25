@@ -65,6 +65,7 @@ export default function ProfileScreen({
                 startTime={p.startTime}
                 endTime={p.endTime}
                 name={p.name}
+                slots={p.slots}
                 isPoster={true}
                 fromScreen={"profile"}
                 isFoodGiveaway={p.isFoodGiveaway}

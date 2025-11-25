@@ -19,6 +19,7 @@ declare global {
     startTime: string;
     endTime: string;
     name: string;
+    slots: number;
     isPoster: boolean;
     fromScreen: "feed" | "inbox" | "profile";
     isFoodGiveaway: boolean;
@@ -32,6 +33,7 @@ export default function Post({
   startTime,
   endTime,
   name,
+  slots,
   isPoster,
   fromScreen,
   isFoodGiveaway,
@@ -41,19 +43,24 @@ export default function Post({
 
   const [openChat, setOpenChat] = useState(false);
   const [reservePost, setReservePost] = useState(false);
+  const [currentApplicants, setCurrentApplicants] = useState<string[]>([]);
+  const [maxSlots, setMaxSlots] = useState<number>(slots);
 
   useEffect(() => {
   const checkReservationStatus = async () => {
     // Fetch the post data to check if current user has reserved
     const { data, error } = await supabase
       .from('Posts') // Your table is named 'Posts'
-      .select('reservation')
+      .select('reservation, slots')
       .eq('postID', id) // Using postID as the primary key
       .single();
     
     if (data && !error) {
       // Check if the reservation field contains the current user's email
-      const isReserved = data.reservation?.includes(emailHandle);
+      const reservationArray: string[] = data.reservation || [];
+      const isReserved = reservationArray.includes(emailHandle);
+      setCurrentApplicants(reservationArray);
+      setMaxSlots(data.slots ?? slots);
       setReservePost(isReserved || false);
     }
   };
@@ -86,21 +93,65 @@ export default function Post({
   const endDataTime = new Date(endTime);
 
   const isCurrentlyActive = now >= startDataTime && now <= endDataTime;
-
+  /*
   useEffect(() => {
-    const reserve = async (id: string, select: boolean) => {
-      const func = "append_array";
-      const { error } = await supabase.rpc(func, {
-        post_id: id,
-        applicant_name: emailHandle,
-        poster_name: name,
-      });
-      return error ? false : true;
-    };
-    if (reservePost && fromScreen === "feed") {
-      reserve(id, false);
+    // Reservation is handled explicitly when the user presses the reserve button.
+  }, []);
+  */
+  const toggleReservation = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("Posts")
+        .select("reservation, slots")
+        .eq("postID", id)
+        .single();
+
+      if (error) {
+        console.log("Error fetching reservation:", error);
+        return;
+      }
+
+      const reservationArray: string[] = data?.reservation || [];
+      const slotsFromDB: number = data?.slots ?? slots;
+      const isReserved = reservationArray.includes(emailHandle);
+
+      if (isReserved) {
+        // Un-reserve
+        const newArray = reservationArray.filter((r) => r !== emailHandle);
+        const { error: updateErr } = await supabase
+          .from("Posts")
+          .update({ reservation: newArray })
+          .eq("postID", id);
+        if (!updateErr) {
+          setReservePost(false);
+          setCurrentApplicants(newArray);
+          setMaxSlots(slotsFromDB);
+        } else {
+          console.log("Failed to unreserve:", updateErr);
+        }
+      } else {
+        // Reserve only if not full
+        if (reservationArray.length >= slotsFromDB) {
+          alert("This post is full.");
+          return;
+        }
+        const newArray = [...reservationArray, emailHandle];
+        const { error: updateErr } = await supabase
+          .from("Posts")
+          .update({ reservation: newArray })
+          .eq("postID", id);
+        if (!updateErr) {
+          setReservePost(true);
+          setCurrentApplicants(newArray);
+          setMaxSlots(slotsFromDB);
+        } else {
+          console.log("Failed to reserve:", updateErr);
+        }
+      }
+    } catch (err) {
+      console.log("toggleReservation error:", err);
     }
-  }, [reservePost]);
+  };
 
   return (
     <Pressable onPress={() => setOpenChat(true)}>
@@ -129,7 +180,7 @@ export default function Post({
             {fromScreen === "feed" && (
               <Pressable
                 style={styles.reserveButton}
-                onPress={() => setReservePost(true)}
+                onPress={() => toggleReservation()}
               >
                 {reservePost ? (
                   <Text style={styles.iconLarge}>✔️</Text>

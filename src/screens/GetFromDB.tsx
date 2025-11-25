@@ -65,6 +65,7 @@ export default async function getFromDB(
           startTime: val["startTime"],
           endTime: val["endTime"] || val["startTime"],
           name: val["name"],
+          slots: val["slots"] || 1,
           isPoster: fromScreen === "profile",
           fromScreen: fromScreen,
           isFoodGiveaway: val["is_food_giveaway"] || false,
