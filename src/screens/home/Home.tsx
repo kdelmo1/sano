@@ -46,6 +46,7 @@ export default function Home() {
   const [tempLocation, setTempLocation] = useState(selectedLocation);
   const [tempTime, setTempTime] = useState(selectedTime);
   const [tempTag, setTempTag] = useState(selectedTag);
+  const [unreadMessages, setUnreadMessages] = useState(false);
   const openFilterModal = () => {
     setTempLocation(selectedLocation);
     setTempTime(selectedTime);
@@ -65,6 +66,53 @@ export default function Home() {
   useEffect(() => {
     getFromDB("feed", emailHandle, selectedLocation, selectedTime, setPosts);
   }, [getPost, selectedLocation, selectedTime]);
+
+  useEffect(() => {
+    const channelName = `notification:${emailHandle}`;
+    const room = supabase.channel(channelName, {
+      config: {
+        broadcast: {
+          self: true,
+        },
+        presence: {
+          key: user?.id,
+        }
+      }
+    });
+    const initNotification = async () => {
+      const {data, error} = await supabase
+      .from("chat")
+      .select()
+      .eq("receiver", emailHandle)
+      .eq("read", false);
+      if (error){
+        console.log("error notification");
+      } else if (data.length !== 0) {
+        setUnreadMessages(true);
+      }
+    } 
+
+    initNotification();
+
+    room.on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+          schema: "public",
+          table: "chat",
+          filter: `receiver=eq.${emailHandle}`,
+      },(payload) => {
+        setUnreadMessages(true);
+      });
+
+      room.subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await room.track({
+            id: user?.id,
+          });
+        }
+      });
+  });
 
   const animateNavButton = (button: NavButton) => {
     const animations = {
