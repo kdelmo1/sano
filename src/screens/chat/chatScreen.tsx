@@ -22,9 +22,7 @@ interface ChatScreenProps {
   goBack: () => void;
   openChat: boolean;
   postID: string;
-  posterName: string | undefined;
-  applicantName: string | undefined;
-  isPoster: boolean;
+  receiver: string;
   fromScreen?: "feed" | "inbox" | "profile";
 }
 
@@ -32,19 +30,15 @@ export default function ChatScreen({
   goBack,
   openChat,
   postID,
-  posterName,
-  applicantName,
-  isPoster,
   fromScreen,
+  receiver
 }: ChatScreenProps) {
-  const { isLoggedIn, user } = useContext(AuthContext);
+  const {user, emailHandle } = useContext(AuthContext);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
 
-  //const applicantName = user?.email?.split("@")[0];
-
   useEffect(() => {
-    const channelName = `chat:${postID}:${posterName}:${applicantName}`;
+    const channelName = `chat:${postID}:${receiver}:${emailHandle}`;
 
     const roomOne = supabase.channel(channelName, {
       config: {
@@ -61,11 +55,10 @@ export default function ChatScreen({
         // Get all messages for this post where user is involved
         const { data, error } = await supabase
           .from("chat")
-          .select("id,poster,applicant,message")
+          .select("id,sender,receiver,message")
           .eq("postID", postID)
-          .eq("poster", posterName)
-          .eq("applicant", applicantName);
-
+          .or(`sender.eq.${receiver},sender.eq.${emailHandle}`)
+          .or(`receiver.eq.${receiver},receiver.eq.${emailHandle}`);
         if (error) {
           console.log("Error fetching messages:", error);
         } else {
@@ -74,7 +67,7 @@ export default function ChatScreen({
               return {
                 message: val["message"],
                 id: val["id"],
-                sender: val["poster"],
+                sender: val["sender"],
               };
             })
           );
@@ -92,23 +85,29 @@ export default function ChatScreen({
           filter: `postID=eq.${postID}`,
         },
         (payload) => {
-          // Accept messages where the conversation involves both parties
-          const isRelevantMessage =
-            payload.new.poster === posterName &&
-            payload.new.applicant === applicantName;
+          // const isRelevantMessage =
+          //   payload.new.poster === posterName &&
+          //   payload.new.applicant === applicantName;
 
-          if (isRelevantMessage) {
-            setMessages((prev) => {
+          // if (isRelevantMessage) {
+          //   setMessages((prev) => {
+          //     const newMess = {
+          //       message: payload.new["message"],
+          //       id: payload.new["id"],
+          //       sender: payload.new["sender"],
+          //     };
+          //     return [...prev, newMess];
+          //   });
+          // }
+          setMessages((prev) => {
               const newMess = {
                 message: payload.new["message"],
                 id: payload.new["id"],
-                sender: payload.new["poster"],
+                sender: payload.new["sender"],
               };
-              return [...prev, newMess];
-            });
-          }
-        }
-      );
+              return [...prev, newMess];   
+        });
+      });
 
       roomOne.subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
@@ -126,8 +125,8 @@ export default function ChatScreen({
   const sendMessage = async () => {
     const { error } = await supabase.from("chat").insert({
       postID: postID,
-      poster: posterName,
-      applicant: applicantName,
+      receiver: receiver,
+      sender: emailHandle,
       message: newMessage,
     });
     if (error) console.log(error);
@@ -140,7 +139,6 @@ export default function ChatScreen({
     </View>
   );
 
-  // Determine back button text based on where user came from
   const backButtonText = `Back to ${fromScreen}`;
 
   return (
@@ -152,7 +150,7 @@ export default function ChatScreen({
               <Text style={styles.backText}>{backButtonText}</Text>
             </Pressable>
             <Text style={styles.headerTitle}>
-              Chat with {isPoster ? applicantName : posterName}
+              Chat with {receiver}
             </Text>
           </View>
           <FlatList

@@ -46,7 +46,9 @@ export default function Home() {
   const [tempLocation, setTempLocation] = useState(selectedLocation);
   const [tempTime, setTempTime] = useState(selectedTime);
   const [tempTag, setTempTag] = useState(selectedTag);
+
   const [unreadMessages, setUnreadMessages] = useState(false);
+
   const openFilterModal = () => {
     setTempLocation(selectedLocation);
     setTempTime(selectedTime);
@@ -80,17 +82,17 @@ export default function Home() {
       }
     });
     const initNotification = async () => {
-      const {data, error} = await supabase
-      .from("chat")
-      .select()
-      .eq("receiver", emailHandle)
-      .eq("read", false);
-      if (error){
+      const { data, error } = await supabase
+        .from("chat")
+        .select()
+        .eq("receiver", emailHandle)
+        .eq("read", false);
+      if (error) {
         console.log("error notification");
       } else if (data.length !== 0) {
         setUnreadMessages(true);
       }
-    } 
+    }
 
     initNotification();
 
@@ -98,21 +100,38 @@ export default function Home() {
       "postgres_changes",
       {
         event: "INSERT",
-          schema: "public",
-          table: "chat",
-          filter: `receiver=eq.${emailHandle}`,
-      },(payload) => {
+        schema: "public",
+        table: "chat",
+        filter: `sender=eq.${emailHandle}`,
+      }, (payload) => {
+        console.log(payload);
         setUnreadMessages(true);
       });
 
-      room.subscribe(async (status) => {
-        if (status === "SUBSCRIBED") {
-          await room.track({
-            id: user?.id,
-          });
+    room.subscribe(async (status) => {
+      console.log(status);
+      if (status === "SUBSCRIBED") {
+        await room.track({
+          id: user?.id,
+        });
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (screen === 'inbox') {
+      const markRead = async () => {
+        const { data, error } = await supabase
+          .from("chat")
+          .update({ read: true })
+          .eq("sender", emailHandle)
+        if (error) {
+          console.log("error on read message");
         }
-      });
-  });
+      }
+      markRead();
+    }
+  }, [screen]);
 
   const animateNavButton = (button: NavButton) => {
     const animations = {
@@ -394,6 +413,7 @@ export default function Home() {
             style={styles.nav_button}
             onPress={() => handleNavPress("profile")}
           >
+            {unreadMessages && <Text>Notification</Text>}
             <Animated.View
               style={[
                 styles.navCircle,

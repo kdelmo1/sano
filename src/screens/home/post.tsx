@@ -102,9 +102,7 @@ export default function Post({
           goBack={() => setOpenChat(false)}
           openChat={openChat}
           postID={id}
-          posterName={name}
-          applicantName={emailHandle}
-          isPoster={false}
+          receiver={name}
           fromScreen={fromScreen}
         />
       )}

@@ -46,9 +46,7 @@ export default function PosterView({
           goBack={() => setOpenChat(false)}
           openChat={openChat}
           postID={id}
-          posterName={emailHandle}
-          applicantName={applicant}
-          isPoster={true}
+          receiver={applicant}
           fromScreen={"inbox"}
         />
       </Pressable>
