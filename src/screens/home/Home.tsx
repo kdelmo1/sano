@@ -274,11 +274,11 @@ export default function Home() {
           ]}
         />
       </Pressable>
-
       <Pressable
         style={SharedStyles.nav_button}
         onPress={() => handleNavPress("profile")}
       >
+        {unreadMessages && <Text>Notification</Text>}
         <Animated.View
           style={[
             SharedStyles.navCircle,
