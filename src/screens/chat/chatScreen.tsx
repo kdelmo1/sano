@@ -38,7 +38,7 @@ export default function ChatScreen({
   const [newMessage, setNewMessage] = useState("");
 
   useEffect(() => {
-    const channelName = `chat:${postID}:${receiver}:${emailHandle}`;
+    const channelName = `chat:${postID}`;
 
     const roomOne = supabase.channel(channelName, {
       config: {

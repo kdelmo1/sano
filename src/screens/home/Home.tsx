@@ -102,7 +102,7 @@ export default function Home() {
         event: "INSERT",
         schema: "public",
         table: "chat",
-        filter: `sender=eq.${emailHandle}`,
+        filter: `receiver=eq.${emailHandle}`,
       }, (payload) => {
         console.log(payload);
         setUnreadMessages(true);
@@ -116,17 +116,23 @@ export default function Home() {
         });
       }
     });
+
+    return () => {
+      room.unsubscribe();
+    }
   }, []);
 
   useEffect(() => {
-    if (screen === 'inbox') {
+    if (screen === 'profile') {
       const markRead = async () => {
         const { data, error } = await supabase
           .from("chat")
           .update({ read: true })
-          .eq("sender", emailHandle)
+          .eq("receiver", emailHandle)
         if (error) {
           console.log("error on read message");
+        } else {
+          setUnreadMessages(false);
         }
       }
       markRead();
