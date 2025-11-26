@@ -46,6 +46,8 @@ export default function Home() {
   const postAnim = useRef(new Animated.Value(0)).current;
   const profileAnim = useRef(new Animated.Value(0)).current;
 
+  const [unreadMessages, setUnreadMessages] = useState(false);
+
   // Filter values
   const [showFilter, setShowFilter] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState("");
@@ -107,6 +109,76 @@ export default function Home() {
     selectedEndTime,
     selectedTag,
   ]);
+
+  useEffect(() => {
+    const channelName = `notification:${emailHandle}`;
+    const room = supabase.channel(channelName, {
+      config: {
+        broadcast: {
+          self: true,
+        },
+        presence: {
+          key: user?.id,
+        }
+      }
+    });
+    const initNotification = async () => {
+      const { data, error } = await supabase
+        .from("chat")
+        .select()
+        .eq("receiver", emailHandle)
+        .eq("read", false);
+      if (error) {
+        console.log("error notification");
+      } else if (data.length !== 0) {
+        setUnreadMessages(true);
+      }
+    }
+
+    initNotification();
+
+    room.on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "chat",
+        filter: `receiver=eq.${emailHandle}`,
+      }, (payload) => {
+        console.log(payload);
+        setUnreadMessages(true);
+      });
+
+    room.subscribe(async (status) => {
+      console.log(status);
+      if (status === "SUBSCRIBED") {
+        await room.track({
+          id: user?.id,
+        });
+      }
+    });
+
+    return () => {
+      room.unsubscribe();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (screen === 'profile') {
+      const markRead = async () => {
+        const { data, error } = await supabase
+          .from("chat")
+          .update({ read: true })
+          .eq("receiver", emailHandle)
+        if (error) {
+          console.log("error on read message");
+        } else {
+          setUnreadMessages(false);
+        }
+      }
+      markRead();
+    }
+  }, [screen]);
 
   const animateNavButton = (button: NavButton) => {
     const animations = {
@@ -202,11 +274,11 @@ export default function Home() {
           ]}
         />
       </Pressable>
-
       <Pressable
         style={SharedStyles.nav_button}
         onPress={() => handleNavPress("profile")}
       >
+        {unreadMessages && <Text>Notification</Text>}
         <Animated.View
           style={[
             SharedStyles.navCircle,
