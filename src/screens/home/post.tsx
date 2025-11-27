@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import { StyleSheet, Text, View, Pressable, Image, ScrollView } from "react-native";
+import { StyleSheet, Text, View, Pressable, Image, ScrollView, Alert } from "react-native";
 import ChatScreen from "../chat/chatScreen";
 import PosterView from "../chat/posterView";
 import AuthContext from "../../context/AuthContext";
@@ -196,8 +196,21 @@ export default function Post({
     }
   };
 
+  const handleOpenChat = () => {
+    // Allow opening chat only if user is poster or has reserved
+    if (isPoster || reservePost) {
+      setOpenChat(true);
+    } else {
+      Alert.alert(
+        "Reservation required",
+        "You must reserve a spot to join this chat. Tap the + button to reserve.",
+        [{ text: "OK" }]
+      );
+    }
+  };
+
   return (
-    <Pressable onPress={() => setOpenChat(true)}>
+    <Pressable onPress={handleOpenChat}>
       {isPoster ? (
         <PosterView
           id={id}
