@@ -30,9 +30,7 @@ interface ChatScreenProps {
   goBack: () => void;
   openChat: boolean;
   postID: string;
-  posterName: string | undefined;
-  applicantName: string | undefined;
-  isPoster: boolean;
+  receiver: string;
   fromScreen?: "feed" | "inbox" | "profile";
 }
 
@@ -40,17 +38,15 @@ export default function ChatScreen({
   goBack,
   openChat,
   postID,
-  posterName,
-  applicantName,
-  isPoster,
   fromScreen,
+  receiver,
 }: ChatScreenProps) {
-  const { isLoggedIn, user } = useContext(AuthContext);
+  const { user, emailHandle } = useContext(AuthContext);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
 
   useEffect(() => {
-    const channelName = `chat:${postID}:${posterName}:${applicantName}`;
+    const channelName = `chat:${postID}`;
 
     const roomOne = supabase.channel(channelName, {
       config: {
@@ -66,11 +62,10 @@ export default function ChatScreen({
       const initChat = async () => {
         const { data, error } = await supabase
           .from("chat")
-          .select("id,poster,applicant,message,sender")
+          .select("id,sender,receiver,message")
           .eq("postID", postID)
-          .eq("poster", posterName)
-          .eq("applicant", applicantName);
-
+          .or(`sender.eq.${receiver},sender.eq.${emailHandle}`)
+          .or(`receiver.eq.${receiver},receiver.eq.${emailHandle}`);
         if (error) {
           console.log("Error fetching messages:", error);
         } else {
@@ -97,20 +92,28 @@ export default function ChatScreen({
           filter: `postID=eq.${postID}`,
         },
         (payload) => {
-          const isRelevantMessage =
-            payload.new.poster === posterName &&
-            payload.new.applicant === applicantName;
+          // const isRelevantMessage =
+          //   payload.new.poster === posterName &&
+          //   payload.new.applicant === applicantName;
 
-          if (isRelevantMessage) {
-            setMessages((prev) => {
-              const newMess = {
-                message: payload.new["message"],
-                id: payload.new["id"],
-                sender: payload.new["sender"],
-              };
-              return [...prev, newMess];
-            });
-          }
+          // if (isRelevantMessage) {
+          //   setMessages((prev) => {
+          //     const newMess = {
+          //       message: payload.new["message"],
+          //       id: payload.new["id"],
+          //       sender: payload.new["sender"],
+          //     };
+          //     return [...prev, newMess];
+          //   });
+          // }
+          setMessages((prev) => {
+            const newMess = {
+              message: payload.new["message"],
+              id: payload.new["id"],
+              sender: payload.new["sender"],
+            };
+            return [...prev, newMess];
+          });
         }
       );
 
@@ -132,19 +135,18 @@ export default function ChatScreen({
     if (!newMessage.trim()) {
       return;
     }
-    
+
     const currentUsername = user?.email?.split("@")[0];
     const { error } = await supabase.from("chat").insert({
       postID: postID,
-      poster: posterName,
-      applicant: applicantName,
-      message: newMessage.trim(),
-      sender: currentUsername,
+      receiver: receiver,
+      sender: emailHandle,
+      message: newMessage,
     });
     if (error) console.log(error);
     setNewMessage("");
   };
-  
+
   const renderMessage = ({ item }: ListRenderItemInfo<Message>) => {
     const currentUsername = user?.email?.split("@")[0];
     const isMyMessage = item.sender === currentUsername;
@@ -153,7 +155,9 @@ export default function ChatScreen({
       <View
         style={[
           styles.messageContainer,
-          isMyMessage ? styles.myMessageContainer : styles.theirMessageContainer,
+          isMyMessage
+            ? styles.myMessageContainer
+            : styles.theirMessageContainer,
         ]}
       >
         <View
@@ -185,9 +189,7 @@ export default function ChatScreen({
             <Pressable onPress={goBack} style={SharedStyles.backButton}>
               <Text style={SharedStyles.backText}>{backButtonText}</Text>
             </Pressable>
-            <Text style={styles.headerTitle}>
-              Chat with {isPoster ? applicantName : posterName}
-            </Text>
+            <Text style={styles.headerTitle}>Chat with {receiver}</Text>
             <View style={SharedStyles.placeholder} />
           </View>
           <FlatList

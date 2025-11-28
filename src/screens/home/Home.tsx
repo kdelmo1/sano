@@ -315,6 +315,7 @@ export default function Home() {
                     startTime={post.startTime}
                     endTime={post.endTime}
                     name={post.name}
+                    slots={post.slots}
                     isPoster={false}
                     fromScreen={"feed"}
                     isFoodGiveaway={post.isFoodGiveaway}

@@ -21,7 +21,8 @@ export default async function getFromDB(
     .gt("endTime", now);
 
   if (fromScreen === "feed") {
-    query = query.neq("studentEmail", email).gt("slots", 0);
+    // Filter out posts created by the current user so they don't appear in the main feed
+    query = query.neq("studentEmail", email);
 
     if (
       selectedLocation &&
@@ -75,7 +76,6 @@ export default async function getFromDB(
       if (E) query = query.lte("startTime", E);
     }
 
-    console.log(selectedTag);
     if (selectedTag && selectedTag !== "All Tags") {
       query = query.lte("is_food_giveaway", selectedTag === "Food Giveaway");
     }
@@ -108,7 +108,6 @@ export default async function getFromDB(
       return rating;
     }, {} as Record<string, number | "X">);
 
-    // Filter out posts created by the current user so they don't appear in the main feed
     if (ratingError) console.error(ratingError);
     else {
       setPosts(
@@ -130,6 +129,7 @@ export default async function getFromDB(
             startTime: val["startTime"],
             endTime: val["endTime"] || val["startTime"],
             name: val["name"],
+            slots: val["slots"] || 1,
             isPoster: fromScreen === "profile",
             fromScreen: fromScreen,
             isFoodGiveaway: val["is_food_giveaway"] || false,
