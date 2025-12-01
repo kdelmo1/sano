@@ -11,6 +11,13 @@ import {
 import { Picker } from "@react-native-picker/picker";
 import { supabase } from "../../lib/supabase";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import {
+  SharedStyles,
+  Colors,
+  Spacing,
+  BorderRadius,
+  Typography,
+} from "../../styles/sharedStyles";
 
 interface FormProps {
   showFilter: boolean;
@@ -29,7 +36,7 @@ interface FormProps {
   ) => void;
 }
 
-export default function Filter2({
+export default function Filter({
   showFilter,
   selectedLocation,
   selectedDate,
@@ -51,7 +58,7 @@ export default function Filter2({
 
   const [tempLocation, setTempLocation] = useState(selectedLocation);
 
-  const [tempDate, setTempDate] = useState<Date | null>(selectedDate);
+  const [tempDate, setTempDate] = useState<Date>(selectedDate || new Date());
   const [tempStartTime, setTempStartTime] = useState<Date | null>(
     selectedStartTime
   );
@@ -110,7 +117,12 @@ export default function Filter2({
   };
 
   return (
-    <Modal visible={showFilter} animationType="fade" transparent={true}>
+    <Modal
+      key="filter"
+      visible={showFilter}
+      animationType="fade"
+      transparent={true}
+    >
       <View style={styles.modalOverlay}>
         {/* Header Title and Buttons */}
         <View style={styles.modalContent}>
@@ -288,29 +300,29 @@ export default function Filter2({
 
       {showDatePicker && (
         <Modal
+          key="date filter"
           transparent={true}
           visible={showDatePicker}
           animationType="slide"
         >
           <Pressable
-            style={styles.timePickerModalOverlay}
+            style={SharedStyles.timePickerModalOverlay}
             onPress={() => setShowDatePicker(false)}
           >
             <Pressable
-              style={styles.timePickerModal}
+              style={SharedStyles.timePickerModal}
               onPress={(e) => e.stopPropagation()}
             >
-              <View style={styles.timePickerHeader}>
+              <View style={SharedStyles.timePickerHeader}>
                 <Pressable onPress={() => setShowDatePicker(false)}>
-                  <Text style={styles.timePickerDone}>Done</Text>
+                  <Text style={SharedStyles.timePickerDone}>Done</Text>
                 </Pressable>
               </View>
               <DateTimePicker
-                value={tempDate || new Date()}
+                value={tempDate}
                 mode="date"
                 display="spinner"
                 onChange={(event, date) => {
-                  setShowStartPicker(Platform.OS === "ios");
                   if (date) setTempDate(date);
                 }}
                 style={styles.timePicker}
@@ -325,6 +337,7 @@ export default function Filter2({
 
       {showStartPicker && (
         <Modal
+          key="start time filter"
           transparent={true}
           visible={showStartPicker}
           animationType="slide"
@@ -360,7 +373,12 @@ export default function Filter2({
       )}
 
       {showEndPicker && (
-        <Modal transparent={true} visible={showEndPicker} animationType="slide">
+        <Modal
+          key="end time filter"
+          transparent={true}
+          visible={showEndPicker}
+          animationType="slide"
+        >
           <Pressable
             style={styles.timePickerModalOverlay}
             onPress={() => setShowEndPicker(false)}

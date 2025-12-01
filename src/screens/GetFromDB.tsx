@@ -77,7 +77,7 @@ export default async function getFromDB(
     }
 
     if (selectedTag && selectedTag !== "All Tags") {
-      query = query.lte("is_food_giveaway", selectedTag === "Food Giveaway");
+      query = query.eq("is_food_giveaway", selectedTag === "Food Giveaway");
     }
   } else if (fromScreen === "inbox") {
     query = query.contains("reservation", [emailHandle]);
