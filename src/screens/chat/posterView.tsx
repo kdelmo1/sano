@@ -39,7 +39,13 @@ export default function PosterView({
         .from("Posts")
         .select("reservation")
         .eq("postID", id)
-        .single();
+        .maybeSingle();
+
+      if (!data) {
+        console.log("Post not found");
+        return;
+      }
+      
       if (error) {
         console.log("Error fetching applicants:", error);
       } else {

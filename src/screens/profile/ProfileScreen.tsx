@@ -49,7 +49,13 @@ export default function ProfileScreen({
         .from("student")
         .select("rating, number_of_raters")
         .eq("email", user?.email)
-        .single();
+        .maybeSingle();
+
+      if (!data) {
+        console.log("Post not found");
+        return;
+      }
+      
       if (error) console.error(error);
       else {
         if (data["number_of_raters"] >= 5)
