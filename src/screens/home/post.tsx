@@ -72,7 +72,12 @@ export default function Post({
         .from("Posts") // Your table is named 'Posts'
         .select("reservation, slots")
         .eq("postID", id) // Using postID as the primary key
-        .single();
+        .maybeSingle();
+
+      if (!data) {
+        console.log("Post not found");
+        return;
+      }
 
       if (data && !error) {
         // Check if the reservation field contains the current user's email
@@ -123,7 +128,12 @@ export default function Post({
         .from("Posts")
         .select("reservation, slots")
         .eq("postID", id)
-        .single();
+        .maybeSingle();
+
+      if (!data) {
+        console.log("Post not found");
+        return;
+      }
 
       if (error) {
         console.log("Error fetching reservation:", error);
