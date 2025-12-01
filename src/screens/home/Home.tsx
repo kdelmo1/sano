@@ -165,6 +165,23 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    if (screen === "profile") {
+      const markRead = async () => {
+        const { data, error } = await supabase
+          .from("chat")
+          .update({ read: true })
+          .eq("receiver", emailHandle);
+        if (error) {
+          console.log("error on read message");
+        } else {
+          setUnreadMessages(false);
+        }
+      };
+      markRead();
+    }
+  }, [screen]);
+
   const animateNavButton = (button: NavButton) => {
     const animations = {
       home: homeAnim,
