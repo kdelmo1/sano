@@ -59,6 +59,7 @@ sano/
 ## Tech stack.
 - **Framework**: Expo.
 - **Language**: TypeScript.
+- **Frontend**: React Native.
 - **Backend**: Supabase.
 
 ## Development.
