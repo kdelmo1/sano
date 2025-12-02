@@ -91,8 +91,20 @@ export default async function getFromDB(
     console.log("err", error);
     setPosts([]);
   } else if (data) {
+    // Filter out posts that are full for users who haven't reserved (only in feed)
+    const filteredData = data.filter((val) => {
+      if (fromScreen !== "feed") return true;
+      const reservationArray: string[] = Array.isArray(val["reservation"]) ? val["reservation"] : [];
+      const slots: number = val["slots"] || 1;
+      // Keep the post if there is space or if the current user is already reserved
+      if (reservationArray.length >= slots && !reservationArray.includes(emailHandle)) {
+        return false; // hide from feed for users not reserved
+      }
+      return true;
+    });
+
     const posterEmailSet = new Set(
-      data.map((val) => {
+      filteredData.map((val) => {
         return val["studentEmail"];
       })
     );
@@ -111,7 +123,7 @@ export default async function getFromDB(
     if (ratingError) console.error(ratingError);
     else {
       setPosts(
-        data.map((val) => {
+        filteredData.map((val) => {
           let photoUrls: string[] = [];
           if (val["photo_url"]) {
             try {
@@ -123,6 +135,7 @@ export default async function getFromDB(
               photoUrls = [];
             }
           }
+          //const reservationArray: string[] = Array.isArray(val["reservation"]) ? val["reservation"] : [];
           return {
             id: val["postID"],
             location: val["location"],
@@ -135,6 +148,7 @@ export default async function getFromDB(
             isFoodGiveaway: val["is_food_giveaway"] || false,
             photoUrls: photoUrls,
             posterRating: posterRatingRecord?.[val["studentEmail"]] || "X",
+            //reservePostInit: reservationArray.includes(emailHandle),
             reservePostInit: val["reservation"].includes(emailHandle),
             refreshHome: () => {},
           };
