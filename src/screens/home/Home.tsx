@@ -146,13 +146,12 @@ export default function Home() {
         filter: `receiver=eq.${emailHandle}`,
       },
       (payload) => {
-        console.log(payload);
         setUnreadMessages(true);
       }
     );
 
     room.subscribe(async (status) => {
-      console.log(status);
+      console.log("status", status);
       if (status === "SUBSCRIBED") {
         await room.track({
           id: user?.id,
@@ -163,7 +162,7 @@ export default function Home() {
     return () => {
       room.unsubscribe();
     };
-  }, []);
+  }, [screen]);
 
   useEffect(() => {
     if (screen === "profile") {
