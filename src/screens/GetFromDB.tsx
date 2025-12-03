@@ -7,73 +7,51 @@ export default async function getFromDB(
   selectedLocation: string = "",
   selectedDate: Date | null = null,
   selectedStartTime: Date | null = null,
-  selectedEndTime: Date | null = null,
   selectedTag: string | null = null
 ) {
   const email = emailHandle + "@ucsc.edu";
 
-  const now = new Date().toISOString();
+  const toLocalISOWithTimezone = (date: Date) => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+
+    const offset = -date.getTimezoneOffset();
+    const sign = offset >= 0 ? "+" : "-";
+    const absOffset = Math.abs(offset);
+
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+      date.getDate()
+    )}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(
+      date.getSeconds()
+    )}${sign}${pad(Math.floor(absOffset / 60))}:${pad(absOffset % 60)}`;
+  };
+
+  const [nowDate, nowTime] = toLocalISOWithTimezone(new Date()).split("T");
 
   let query = supabase
     .from("Posts")
     .select()
-    .order("startTime", { ascending: true })
-    .gt("endTime", now);
+    .order("date", { ascending: true })
+    .order("endTime", { ascending: true })
+    .or(`date.gt.${nowDate},and(date.eq.${nowDate},endTime.gt.${nowTime})`);
 
   if (fromScreen === "feed") {
     // Filter out posts created by the current user so they don't appear in the main feed
     query = query.neq("studentEmail", email);
 
-    if (
-      selectedLocation &&
-      selectedLocation !== "select location" &&
-      selectedLocation !== "All"
-    ) {
+    if (selectedLocation && selectedLocation !== "All Location") {
       query = query.eq("location", selectedLocation);
     }
 
     // Filter by specific date
     if (selectedDate) {
-      const startOfDay = new Date(selectedDate);
-      startOfDay.setHours(0, 0, 0, 0);
-
-      const endOfDay = new Date(selectedDate);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      query = query
-        .gte("startTime", startOfDay.toISOString())
-        .lte("startTime", endOfDay.toISOString());
+      query = query.eq("date", toLocalISOWithTimezone(selectedDate).split("T"));
     }
 
     // Filter with times
-    if (selectedStartTime || selectedEndTime) {
-      let S: string | null = null;
-      let E: string | null = null;
-
-      if (selectedDate && selectedStartTime) {
-        const d = new Date(selectedDate);
-        d.setHours(
-          selectedStartTime.getHours(),
-          selectedStartTime.getMinutes(),
-          0,
-          0
-        );
-        S = d.toISOString();
-      }
-
-      if (selectedDate && selectedEndTime) {
-        const d = new Date(selectedDate);
-        d.setHours(
-          selectedEndTime.getHours(),
-          selectedEndTime.getMinutes(),
-          0,
-          0
-        );
-        E = d.toISOString();
-      }
-
-      if (S) query = query.gte("endTime", S);
-      if (E) query = query.lte("startTime", E);
+    if (selectedStartTime) {
+      const startTime = toLocalISOWithTimezone(selectedStartTime).split("T");
+      query = query.lte("startTime", startTime);
+      query = query.gte("endTime", startTime);
     }
 
     if (selectedTag && selectedTag !== "All Tags") {
@@ -94,10 +72,15 @@ export default async function getFromDB(
     // Filter out posts that are full for users who haven't reserved (only in feed)
     const filteredData = data.filter((val) => {
       if (fromScreen !== "feed") return true;
-      const reservationArray: string[] = Array.isArray(val["reservation"]) ? val["reservation"] : [];
+      const reservationArray: string[] = Array.isArray(val["reservation"])
+        ? val["reservation"]
+        : [];
       const slots: number = val["slots"] || 1;
       // Keep the post if there is space or if the current user is already reserved
-      if (reservationArray.length >= slots && !reservationArray.includes(emailHandle)) {
+      if (
+        reservationArray.length >= slots &&
+        !reservationArray.includes(emailHandle)
+      ) {
         return false; // hide from feed for users not reserved
       }
       return true;
@@ -135,19 +118,22 @@ export default async function getFromDB(
               photoUrls = [];
             }
           }
+
           //const reservationArray: string[] = Array.isArray(val["reservation"]) ? val["reservation"] : [];
           return {
             id: val["postID"],
             location: val["location"],
-            startTime: val["startTime"],
-            endTime: val["endTime"] || val["startTime"],
+            startTime: `${val["date"]}T${val["startTime"]}:00`,
+            endTime:
+              `${val["date"]}T${val["endTime"]}:00` ||
+              `${val["date"]}T${val["startTime"]}:00`,
             name: val["name"],
             slots: val["slots"] || 1,
             isPoster: fromScreen === "profile",
             fromScreen: fromScreen,
             isFoodGiveaway: val["is_food_giveaway"] || false,
             photoUrls: photoUrls,
-            posterRating: posterRatingRecord?.[val["studentEmail"]] || "X",
+            posterRating: posterRatingRecord?.[val["studentEmail"]],
             //reservePostInit: reservationArray.includes(emailHandle),
             reservePostInit: val["reservation"].includes(emailHandle),
             refreshHome: () => {},

@@ -24,14 +24,12 @@ interface FormProps {
   selectedLocation: string;
   selectedDate: Date | null;
   selectedStartTime: Date | null;
-  selectedEndTime: Date | null;
   selectedTag: string;
   onClose: () => void;
   onApplyFilter: (
     selectedLocation: string,
     selectedDate: Date | null,
     selectedStartTime: Date | null,
-    selectedEndTime: Date | null,
     selectedTag: string
   ) => void;
 }
@@ -41,7 +39,6 @@ export default function Filter({
   selectedLocation,
   selectedDate,
   selectedStartTime,
-  selectedEndTime,
   selectedTag,
   onClose,
   onApplyFilter,
@@ -51,18 +48,16 @@ export default function Filter({
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
-  const [showEndPicker, setShowEndPicker] = useState(false);
 
   const [showTagPicker, setShowTagPicker] = useState(false);
   const tagOptions = ["All Tags", "Slug Points", "Food Giveaway"];
 
   const [tempLocation, setTempLocation] = useState(selectedLocation);
 
-  const [tempDate, setTempDate] = useState<Date>(selectedDate || new Date());
+  const [tempDate, setTempDate] = useState<Date | null>(selectedDate);
   const [tempStartTime, setTempStartTime] = useState<Date | null>(
     selectedStartTime
   );
-  const [tempEndTime, setTempEndTime] = useState<Date | null>(selectedEndTime);
 
   const [tempTag, setTempTag] = useState(selectedTag);
 
@@ -99,7 +94,7 @@ export default function Filter({
   };
 
   const formatDate = (date: Date | null) => {
-    if (!date) return "Select date";
+    if (!date) return "Select Date";
     return date.toLocaleDateString(undefined, {
       weekday: "short",
       month: "short",
@@ -114,6 +109,37 @@ export default function Filter({
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const resetFilter = () => {
+    setTempLocation("");
+    setTempTag("");
+    setTempDate(null);
+    setTempStartTime(null);
+  };
+
+  const oneHotOpen = (openPicker: string) => {
+    setShowLocationDropdown(false);
+    setShowTagPicker(false);
+    setShowDatePicker(false);
+    setShowStartPicker(false);
+
+    switch (openPicker) {
+      case "Location":
+        setShowLocationDropdown(true);
+        return;
+      case "Tag":
+        setShowTagPicker(true);
+        return;
+      case "Date":
+        setShowDatePicker(true);
+        return;
+      case "Start":
+        setShowStartPicker(true);
+        return;
+      default:
+        return;
+    }
   };
 
   return (
@@ -139,13 +165,7 @@ export default function Filter({
             <Pressable
               style={styles.applyButton}
               onPress={() => {
-                onApplyFilter(
-                  tempLocation,
-                  tempDate,
-                  tempStartTime,
-                  tempEndTime,
-                  tempTag
-                );
+                onApplyFilter(tempLocation, tempDate, tempStartTime, tempTag);
               }}
             >
               <Text style={styles.applyButtonText}>Apply</Text>
@@ -166,9 +186,10 @@ export default function Filter({
                 <View style={styles.dropdownWrapper}>
                   <Pressable
                     style={styles.dropdownButton}
-                    onPress={() =>
-                      setShowLocationDropdown(!showLocationDropdown)
-                    }
+                    onPress={() => {
+                      if (showLocationDropdown) oneHotOpen("");
+                      else oneHotOpen("Location");
+                    }}
                   >
                     <Text
                       style={[
@@ -176,7 +197,7 @@ export default function Filter({
                         !tempLocation && styles.placeholderText,
                       ]}
                     >
-                      {tempLocation === "" ? "select location" : tempLocation}
+                      {tempLocation === "" ? "Select Location" : tempLocation}
                     </Text>
                     <Text style={styles.dropdownArrow}>
                       {showLocationDropdown ? "▲" : "▼"}
@@ -211,7 +232,10 @@ export default function Filter({
                 <View style={styles.dropdownWrapper}>
                   <Pressable
                     style={styles.dropdownButton}
-                    onPress={() => setShowTagPicker(!showTagPicker)}
+                    onPress={() => {
+                      if (showTagPicker) oneHotOpen("");
+                      else oneHotOpen("Tag");
+                    }}
                   >
                     <Text
                       style={[
@@ -219,7 +243,7 @@ export default function Filter({
                         !tempTag && styles.placeholderText,
                       ]}
                     >
-                      {tempTag === "All" ? "All Tags" : tempTag || "Select tag"}
+                      {tempTag === "All" ? "All Tags" : tempTag || "Select Tag"}
                     </Text>
                     <Text style={styles.dropdownArrow}>
                       {showTagPicker ? "▲" : "▼"}
@@ -253,48 +277,54 @@ export default function Filter({
                 </View>
                 <Pressable
                   style={styles.dateButton}
-                  onPress={() => setShowDatePicker(!showDatePicker)}
+                  onPress={() => {
+                    if (showDatePicker) oneHotOpen("");
+                    else oneHotOpen("Date");
+                  }}
                 >
-                  <Text style={styles.dateValue}>{formatDate(tempDate)}</Text>
+                  <Text
+                    style={[
+                      styles.dateValue,
+                      !tempDate && styles.placeholderText,
+                    ]}
+                  >
+                    {formatDate(tempDate)}
+                  </Text>
                 </Pressable>
               </View>
 
-              {/* Time Pick */}
-              <View style={styles.timeRowContainer}>
-                {/* Start Time */}
-                <View style={styles.timeFieldContainer}>
-                  <View style={styles.iconContainer}>
-                    <Text style={styles.iconText}>🕐</Text>
-                  </View>
-                  <Pressable
-                    style={styles.timeButton}
-                    onPress={() => setShowStartPicker(true)}
-                  >
-                    <Text style={styles.timeLabel}>Start</Text>
-                    <Text style={styles.timeValue}>
-                      {formatTime(tempStartTime)}
-                    </Text>
-                  </Pressable>
+              {/* Start Time */}
+              <View style={styles.fieldContainer}>
+                <View style={styles.iconContainer}>
+                  <Text style={styles.iconText}>🕐</Text>
                 </View>
-
-                {/* End Time */}
-                <View style={styles.timeFieldContainer}>
-                  <View style={styles.iconContainer}>
-                    <Text style={styles.iconText}>🕐</Text>
-                  </View>
-                  <Pressable
-                    style={styles.timeButton}
-                    onPress={() => setShowEndPicker(true)}
+                <Pressable
+                  style={styles.dateButton}
+                  onPress={() => {
+                    if (showStartPicker) oneHotOpen("");
+                    else oneHotOpen("Start");
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.timeValue,
+                      !tempStartTime && styles.placeholderText,
+                    ]}
                   >
-                    <Text style={styles.timeLabel}>End</Text>
-                    <Text style={styles.timeValue}>
-                      {formatTime(tempEndTime)}
-                    </Text>
-                  </Pressable>
-                </View>
+                    {formatTime(tempStartTime)}
+                  </Text>
+                </Pressable>
               </View>
             </View>
           </ScrollView>
+          <View style={styles.postButtonContainer}>
+            <Pressable
+              style={[SharedStyles.primaryButton, styles.primaryButton]}
+              onPress={resetFilter}
+            >
+              <Text style={SharedStyles.primaryButtonText}>Clear</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -314,12 +344,19 @@ export default function Filter({
               onPress={(e) => e.stopPropagation()}
             >
               <View style={SharedStyles.timePickerHeader}>
-                <Pressable onPress={() => setShowDatePicker(false)}>
+                <Pressable
+                  onPress={() => {
+                    setShowDatePicker(false);
+                    if (!tempDate) {
+                      setTempDate(new Date());
+                    }
+                  }}
+                >
                   <Text style={SharedStyles.timePickerDone}>Done</Text>
                 </Pressable>
               </View>
               <DateTimePicker
-                value={tempDate}
+                value={tempDate || new Date()}
                 mode="date"
                 display="spinner"
                 onChange={(event, date) => {
@@ -351,7 +388,14 @@ export default function Filter({
               onPress={(e) => e.stopPropagation()}
             >
               <View style={styles.timePickerHeader}>
-                <Pressable onPress={() => setShowStartPicker(false)}>
+                <Pressable
+                  onPress={() => {
+                    setShowStartPicker(false);
+                    if (!tempStartTime) {
+                      setTempStartTime(new Date());
+                    }
+                  }}
+                >
                   <Text style={styles.timePickerDone}>Done</Text>
                 </Pressable>
               </View>
@@ -362,43 +406,6 @@ export default function Filter({
                 onChange={(event, date) => {
                   setShowStartPicker(Platform.OS === "ios");
                   if (date) setTempStartTime(date);
-                }}
-                style={styles.timePicker}
-                textColor="#000000"
-                themeVariant="light"
-              />
-            </Pressable>
-          </Pressable>
-        </Modal>
-      )}
-
-      {showEndPicker && (
-        <Modal
-          key="end time filter"
-          transparent={true}
-          visible={showEndPicker}
-          animationType="slide"
-        >
-          <Pressable
-            style={styles.timePickerModalOverlay}
-            onPress={() => setShowEndPicker(false)}
-          >
-            <Pressable
-              style={styles.timePickerModal}
-              onPress={(e) => e.stopPropagation()}
-            >
-              <View style={styles.timePickerHeader}>
-                <Pressable onPress={() => setShowEndPicker(false)}>
-                  <Text style={styles.timePickerDone}>Done</Text>
-                </Pressable>
-              </View>
-              <DateTimePicker
-                value={tempEndTime || new Date()}
-                mode="time"
-                display="spinner"
-                onChange={(event, date) => {
-                  setShowEndPicker(Platform.OS === "ios");
-                  if (date) setTempEndTime(date);
                 }}
                 style={styles.timePicker}
                 textColor="#000000"
@@ -427,6 +434,15 @@ const styles = StyleSheet.create({
   },
   iconText: {
     fontSize: 28,
+  },
+  postButtonContainer: {
+    marginTop: 10,
+    padding: Spacing.xl,
+    alignItems: "flex-end",
+  },
+  primaryButton: {
+    marginTop: -15,
+    paddingVertical: 12,
   },
   dropdownWrapper: {
     flex: 1,
@@ -492,7 +508,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dateValue: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#333",
     fontWeight: "500",
   },
@@ -521,7 +537,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   timeValue: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#333",
     fontWeight: "500",
   },
@@ -533,7 +549,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: "90%",
-    height: "43%",
+    height: "50%",
     backgroundColor: "#FFF",
     borderRadius: 12,
     overflow: "hidden",

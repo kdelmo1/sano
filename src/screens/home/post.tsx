@@ -33,7 +33,7 @@ declare global {
     fromScreen: "feed" | "inbox" | "profile";
     isFoodGiveaway: boolean;
     photoUrls: string[];
-    posterRating: number | "X";
+    posterRating: any;
     reservePostInit: boolean;
     refreshHome: () => void;
   }

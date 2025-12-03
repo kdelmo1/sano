@@ -160,6 +160,20 @@ export default function Form({
     return today;
   };
 
+  const toLocalISOWithTimezone = (date: Date) => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+
+    const offset = -date.getTimezoneOffset();
+    const sign = offset >= 0 ? "+" : "-";
+    const absOffset = Math.abs(offset);
+
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+      date.getDate()
+    )}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(
+      date.getSeconds()
+    )}${sign}${pad(Math.floor(absOffset / 60))}:${pad(absOffset % 60)}`;
+  };
+
   async function insertToDB() {
     if (!location.trim()) {
       alert("Location is required.");
@@ -227,8 +241,9 @@ export default function Form({
     const newPost = {
       location: location,
       name: emailHandle,
-      startTime: startDateTime.toISOString(),
-      endTime: endDateTime.toISOString(),
+      date: toLocalISOWithTimezone(selectedDate).split("T")[0],
+      startTime: toLocalISOWithTimezone(startTime).split("T")[1],
+      endTime: toLocalISOWithTimezone(endTime).split("T")[1],
       studentEmail: user?.email,
       slots: slots,
       is_food_giveaway: isFoodGiveaway,
@@ -483,7 +498,10 @@ export default function Form({
 
             {/* Post Button */}
             <View style={styles.postButtonContainer}>
-              <Pressable style={[SharedStyles.primaryButton, styles.primaryButton]} onPress={insertToDB}>
+              <Pressable
+                style={[SharedStyles.primaryButton, styles.primaryButton]}
+                onPress={insertToDB}
+              >
                 <Text style={SharedStyles.primaryButtonText}>post ✓</Text>
               </Pressable>
             </View>

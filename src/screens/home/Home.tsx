@@ -53,8 +53,7 @@ export default function Home() {
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedStartTime, setSelectedStartTime] = useState<Date | null>(null);
-  const [selectedEndTime, setSelectedEndTime] = useState<Date | null>(null);
-  const [selectedTag, setSelectedTag] = useState("all");
+  const [selectedTag, setSelectedTag] = useState("");
 
   const onRefresh = () => {
     setGetPost(!getPost);
@@ -68,24 +67,17 @@ export default function Home() {
     selectedLocation: string,
     selectedDate: Date | null,
     selectedStartTime: Date | null,
-    selectedEndTime: Date | null,
     selectedTag: string
   ) => {
     setShowFilter(false);
     setSelectedLocation(selectedLocation);
     setSelectedDate(selectedDate);
     setSelectedStartTime(selectedStartTime);
-    setSelectedEndTime(selectedEndTime);
     setSelectedTag(selectedTag);
   };
 
   const handleCloseFilter = () => {
     setShowFilter(false);
-    setSelectedLocation("");
-    setSelectedDate(null);
-    setSelectedStartTime(null);
-    setSelectedEndTime(null);
-    setSelectedTag("");
   };
 
   const insets = useSafeAreaInsets();
@@ -98,17 +90,9 @@ export default function Home() {
       selectedLocation,
       selectedDate,
       selectedStartTime,
-      selectedEndTime,
       selectedTag
     );
-  }, [
-    getPost,
-    selectedLocation,
-    selectedDate,
-    selectedStartTime,
-    selectedEndTime,
-    selectedTag,
-  ]);
+  }, [getPost, selectedLocation, selectedDate, selectedStartTime, selectedTag]);
 
   useEffect(() => {
     const channelName = `notification:${emailHandle}`;
@@ -365,7 +349,6 @@ export default function Home() {
                   selectedLocation={selectedLocation}
                   selectedDate={selectedDate}
                   selectedStartTime={selectedStartTime}
-                  selectedEndTime={selectedEndTime}
                   selectedTag={selectedTag}
                   onClose={handleCloseFilter}
                   onApplyFilter={handleApplyFilter}
