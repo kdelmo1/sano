@@ -3,60 +3,21 @@ import { supabase } from "../lib/supabase";
 export default async function getFromDB(
   fromScreen: "feed" | "inbox" | "profile",
   emailHandle: string,
-  setPosts: React.Dispatch<React.SetStateAction<PostProps[]>>,
-  selectedLocation: string = "",
-  selectedDate: Date | null = null,
-  selectedStartTime: Date | null = null,
-  selectedTag: string | null = null
+  setPosts: React.Dispatch<React.SetStateAction<PostProps[]>>
 ) {
   const email = emailHandle + "@ucsc.edu";
 
-  const toLocalISOWithTimezone = (date: Date) => {
-    const pad = (n: number) => String(n).padStart(2, "0");
-
-    const offset = -date.getTimezoneOffset();
-    const sign = offset >= 0 ? "+" : "-";
-    const absOffset = Math.abs(offset);
-
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-      date.getDate()
-    )}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(
-      date.getSeconds()
-    )}${sign}${pad(Math.floor(absOffset / 60))}:${pad(absOffset % 60)}`;
-  };
-
-  const [nowDate, nowTime] = toLocalISOWithTimezone(new Date()).split("T");
+  const now = new Date().toISOString();
 
   let query = supabase
     .from("Posts")
     .select()
-    .order("date", { ascending: true })
-    .order("endTime", { ascending: true })
-    .or(`date.gt.${nowDate},and(date.eq.${nowDate},endTime.gt.${nowTime})`);
+    .order("startTime", { ascending: true })
+    .gt("endTime", now);
 
   if (fromScreen === "feed") {
     // Filter out posts created by the current user so they don't appear in the main feed
-    query = query.neq("studentEmail", email);
-
-    if (selectedLocation && selectedLocation !== "All Location") {
-      query = query.eq("location", selectedLocation);
-    }
-
-    // Filter by specific date
-    if (selectedDate) {
-      query = query.eq("date", toLocalISOWithTimezone(selectedDate).split("T"));
-    }
-
-    // Filter with times
-    if (selectedStartTime) {
-      const startTime = toLocalISOWithTimezone(selectedStartTime).split("T");
-      query = query.lte("startTime", startTime);
-      query = query.gte("endTime", startTime);
-    }
-
-    if (selectedTag && selectedTag !== "All Tags") {
-      query = query.eq("is_food_giveaway", selectedTag === "Food Giveaway");
-    }
+    //query = query.neq("studentEmail", email);
   } else if (fromScreen === "inbox") {
     query = query.contains("reservation", [emailHandle]);
   } else if (fromScreen === "profile") {
@@ -123,10 +84,8 @@ export default async function getFromDB(
           return {
             id: val["postID"],
             location: val["location"],
-            startTime: `${val["date"]}T${val["startTime"]}:00`,
-            endTime:
-              `${val["date"]}T${val["endTime"]}:00` ||
-              `${val["date"]}T${val["startTime"]}:00`,
+            startTime: val["startTime"],
+            endTime: val["endTime"] || val["startTime"],
             name: val["name"],
             slots: val["slots"] || 1,
             isPoster: fromScreen === "profile",

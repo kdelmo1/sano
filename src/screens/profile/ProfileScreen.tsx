@@ -41,7 +41,7 @@ export default function ProfileScreen({
     getFromDB("profile", emailHandle, setYourPosts);
   }, []);
 
-  const displayName = user?.user_metadata?.name;
+  const displayName = emailHandle;
 
   useEffect(() => {
     async function getRating() {
@@ -55,7 +55,7 @@ export default function ProfileScreen({
         console.log("Post not found");
         return;
       }
-      
+
       if (error) console.error(error);
       else {
         if (data["number_of_raters"] >= 5)

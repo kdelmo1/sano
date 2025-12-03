@@ -21,10 +21,6 @@ import {
 
 interface FormProps {
   showFilter: boolean;
-  selectedLocation: string;
-  selectedDate: Date | null;
-  selectedStartTime: Date | null;
-  selectedTag: string;
   onClose: () => void;
   onApplyFilter: (
     selectedLocation: string,
@@ -36,10 +32,6 @@ interface FormProps {
 
 export default function Filter({
   showFilter,
-  selectedLocation,
-  selectedDate,
-  selectedStartTime,
-  selectedTag,
   onClose,
   onApplyFilter,
 }: FormProps) {
@@ -52,14 +44,12 @@ export default function Filter({
   const [showTagPicker, setShowTagPicker] = useState(false);
   const tagOptions = ["All Tags", "Slug Points", "Food Giveaway"];
 
-  const [tempLocation, setTempLocation] = useState(selectedLocation);
+  const [tempLocation, setTempLocation] = useState("");
 
-  const [tempDate, setTempDate] = useState<Date | null>(selectedDate);
-  const [tempStartTime, setTempStartTime] = useState<Date | null>(
-    selectedStartTime
-  );
+  const [tempDate, setTempDate] = useState<Date | null>(null);
+  const [tempStartTime, setTempStartTime] = useState<Date | null>(null);
 
-  const [tempTag, setTempTag] = useState(selectedTag);
+  const [tempTag, setTempTag] = useState("");
 
   useEffect(() => {
     async function getLocationFromDB() {

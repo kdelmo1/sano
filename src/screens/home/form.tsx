@@ -57,7 +57,9 @@ export default function Form({
   const [imageUris, setImageUris] = useState<string[]>([]);
   const [isPosting, setIsPosting] = useState(false);
 
-  const slotsOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const [slotsOptions, setSlotsOptions] = useState([
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+  ]);
 
   useEffect(() => {
     async function getLocationFromDB() {
@@ -160,20 +162,6 @@ export default function Form({
     return today;
   };
 
-  const toLocalISOWithTimezone = (date: Date) => {
-    const pad = (n: number) => String(n).padStart(2, "0");
-
-    const offset = -date.getTimezoneOffset();
-    const sign = offset >= 0 ? "+" : "-";
-    const absOffset = Math.abs(offset);
-
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-      date.getDate()
-    )}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(
-      date.getSeconds()
-    )}${sign}${pad(Math.floor(absOffset / 60))}:${pad(absOffset % 60)}`;
-  };
-
   async function insertToDB() {
     if (!location.trim()) {
       alert("Location is required.");
@@ -183,11 +171,11 @@ export default function Form({
     const startDateTime = new Date(selectedDate);
     startDateTime.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
 
-    const endDateTime = new Date(selectedDate);
+    let endDateTime = new Date(selectedDate);
     endDateTime.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
 
-    if (endDateTime <= startDateTime) {
-      alert("End time must be after start time.");
+    if (endTime < startTime) {
+      alert("End time cannot be less than start time.");
       return;
     }
 
@@ -241,9 +229,8 @@ export default function Form({
     const newPost = {
       location: location,
       name: emailHandle,
-      date: toLocalISOWithTimezone(selectedDate).split("T")[0],
-      startTime: toLocalISOWithTimezone(startTime).split("T")[1],
-      endTime: toLocalISOWithTimezone(endTime).split("T")[1],
+      startTime: startDateTime.toISOString(),
+      endTime: endDateTime.toISOString(),
       studentEmail: user?.email,
       slots: slots,
       is_food_giveaway: isFoodGiveaway,
