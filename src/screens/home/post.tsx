@@ -7,6 +7,7 @@ import {
   Image,
   ScrollView,
   Alert,
+  Modal,
 } from "react-native";
 import ChatScreen from "../chat/chatScreen";
 import PosterView from "../chat/posterView";
@@ -64,6 +65,7 @@ export default function Post({
   const [reservePost, setReservePost] = useState(false);
   const [currentApplicants, setCurrentApplicants] = useState<string[]>([]);
   const [maxSlots, setMaxSlots] = useState<number>(slots);
+  const [enlargedPhotoUrl, setEnlargedPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const checkReservationStatus = async () => {
@@ -239,7 +241,7 @@ export default function Post({
   };
 
   return (
-    <Pressable onPress={handleOpenChat}>
+    <View>
       {isPoster ? (
         <PosterView
           id={id}
@@ -255,7 +257,7 @@ export default function Post({
           fromScreen={fromScreen}
         />
       )}
-      <View style={SharedStyles.postContainer}>
+      <Pressable onPress={handleOpenChat} style={SharedStyles.postContainer}>
         <View style={SharedStyles.postCard}>
           <View style={styles.headerRow}>
             <Text style={[Typography.title, styles.title]}>{location}</Text>
@@ -298,7 +300,29 @@ export default function Post({
             )}
           </Text>
 
-          {fromScreen !== "inbox" && (
+          {isFoodGiveaway && photoUrls.length > 0 && (
+            <View style={SharedStyles.postPhotoContainer}>
+              {photoUrls.map((photoUrl, index) => (
+                <Pressable
+                  key={index}
+                  onPress={() => setEnlargedPhotoUrl(photoUrl)}
+                  style={{
+                    flex: 1,
+                    marginRight: index < photoUrls.length - 1 ? Spacing.sm : 0,
+                  }}
+                >
+                  <Image
+                    source={{ uri: photoUrl }}
+                    style={SharedStyles.postImage}
+                  />
+                </Pressable>
+              ))}
+            </View>
+          )}
+
+          {/* Conditional rendering for capacity*/}
+
+          {fromScreen !== "inbox" && !isFoodGiveaway && (
             <Text style={styles.spotsText}>
               {currentApplicants.length} / {maxSlots} spots filled •{" "}
               {Math.max(0, maxSlots - currentApplicants.length)} left
@@ -331,26 +355,29 @@ export default function Post({
             )}
           </View>
         </View>
-        {isFoodGiveaway && photoUrls.length > 0 && (
-          <View style={SharedStyles.postPhotoContainer}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              scrollEventThrottle={16}
-              style={SharedStyles.postPhotoScrollContainer}
-            >
-              {photoUrls.map((photoUrl, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: photoUrl }}
-                  style={SharedStyles.postImage}
-                />
-              ))}
-            </ScrollView>
+      </Pressable>
+
+      <Modal
+        visible={enlargedPhotoUrl !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setEnlargedPhotoUrl(null)}
+      >
+        <Pressable
+          style={styles.enlargedPhotoOverlay}
+          onPress={() => setEnlargedPhotoUrl(null)}
+        >
+          <View style={styles.enlargedPhotoContainer}>
+            {enlargedPhotoUrl && (
+              <Image
+                source={{ uri: enlargedPhotoUrl }}
+                style={styles.enlargedPhoto}
+              />
+            )}
           </View>
-        )}
-      </View>
-    </Pressable>
+        </Pressable>
+      </Modal>
+    </View>
   );
 }
 
@@ -381,7 +408,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontStyle: "italic",
     color: Colors.textLighter,
-    marginBottom: 50,
+    marginBottom: 30,
     marginTop: -3,
     marginLeft: -5,
   },
@@ -424,5 +451,22 @@ const styles = StyleSheet.create({
     marginLeft: -5,
     flex: 1, // Add this to allow text to wrap and not push button
     flexShrink: 1, // Add this to allow text to shrink if needed
+  },
+  enlargedPhotoOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  enlargedPhotoContainer: {
+    width: "90%",
+    height: "80%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  enlargedPhoto: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "contain",
   },
 });

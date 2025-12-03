@@ -76,7 +76,7 @@ export default async function getFromDB(
       if (E) query = query.lte("startTime", E);
     }
 
-    if (selectedTag && selectedTag !== "All Tags") {
+    if (selectedTag && selectedTag !== "all" && selectedTag !== "") {
       query = query.eq("is_food_giveaway", selectedTag === "Food Giveaway");
     }
   } else if (fromScreen === "inbox") {

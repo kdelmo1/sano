@@ -11,7 +11,7 @@ const BASE_HEIGHT = 926;
 const scaleWidth = (size: number) => (SCREEN_WIDTH / BASE_WIDTH) * size;
 const scaleHeight = (size: number) => (SCREEN_HEIGHT / BASE_HEIGHT) * size;
 const scale = (size: number) => (SCREEN_WIDTH / BASE_WIDTH) * size;
-const moderateScale = (size: number, factor = 0.5) => 
+const moderateScale = (size: number, factor = 0.5) =>
   size + (scale(size) - size) * factor;
 
 // ==================== COLOR CONSTANTS ====================
@@ -582,19 +582,22 @@ export const SharedStyles = StyleSheet.create({
 
   // ========== Post Images (ADAPTIVE) ==========
   postImage: {
-    width: moderateScale(200),
+    flex: 1,
     height: moderateScale(150),
-    borderRadius: BorderRadius.sm,
+    borderRadius: BorderRadius.md,
     resizeMode: "cover",
-    marginRight: Spacing.md,
   },
   postPhotoContainer: {
     width: "100%",
-    marginBottom: Spacing.xxl,
+    height: moderateScale(150),
+    marginBottom: Spacing.sm,
+    //marginTop: Spacing.xs,
+    paddingHorizontal: Spacing.lg,
+    flexDirection: "row",
     overflow: "hidden",
   },
   postPhotoScrollContainer: {
-    height: moderateScale(170),
+    height: moderateScale(200),
   },
 
   // ========== Placeholder ==========
