@@ -65,7 +65,8 @@ export default function ChatScreen({
           .select("id,sender,receiver,message")
           .eq("postID", postID)
           .or(`sender.eq.${receiver},sender.eq.${emailHandle}`)
-          .or(`receiver.eq.${receiver},receiver.eq.${emailHandle}`);
+          .or(`receiver.eq.${receiver},receiver.eq.${emailHandle}`)
+          .order("created_at", { ascending: true });
         if (error) {
           console.log("Error fetching messages:", error);
         } else {
@@ -92,28 +93,26 @@ export default function ChatScreen({
           filter: `postID=eq.${postID}`,
         },
         (payload) => {
-          // const isRelevantMessage =
-          //   payload.new.poster === posterName &&
-          //   payload.new.applicant === applicantName;
-
-          // if (isRelevantMessage) {
-          //   setMessages((prev) => {
-          //     const newMess = {
-          //       message: payload.new["message"],
-          //       id: payload.new["id"],
-          //       sender: payload.new["sender"],
-          //     };
-          //     return [...prev, newMess];
-          //   });
-          // }
-          setMessages((prev) => {
-            const newMess = {
-              message: payload.new["message"],
-              id: payload.new["id"],
-              sender: payload.new["sender"],
-            };
-            return [...prev, newMess];
-          });
+          console.log(
+            payload.new["receiver"],
+            payload.new["sender"],
+            emailHandle
+          );
+          if (
+            (payload.new["receiver"] === emailHandle &&
+              payload.new["sender"] === receiver) ||
+            (payload.new["receiver"] === receiver &&
+              payload.new["sender"] === emailHandle)
+          ) {
+            setMessages((prev) => {
+              const newMess = {
+                message: payload.new["message"],
+                id: payload.new["id"],
+                sender: payload.new["sender"],
+              };
+              return [...prev, newMess];
+            });
+          }
         }
       );
 

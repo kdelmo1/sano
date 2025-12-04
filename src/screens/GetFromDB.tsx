@@ -18,7 +18,6 @@ export default async function getFromDB(
   if (fromScreen === "feed") {
     // Filter out posts created by the current user so they don't appear in the main feed
     query = query.neq("studentEmail", email);
-
   } else if (fromScreen === "inbox") {
     query = query.contains("reservation", [emailHandle]);
   } else if (fromScreen === "profile") {
@@ -58,7 +57,7 @@ export default async function getFromDB(
       .select("email, rating, number_of_raters")
       .in("email", [...posterEmailSet]);
     const posterRatingRecord = posterRatings?.reduce((rating, student) => {
-      if (student["number_of_raters"] >= 5)
+      if (student["number_of_raters"] >= 1)
         rating[student["email"]] =
           (student["rating"] / student["number_of_raters"]) * 10;
       else rating[student["email"]] = "X";

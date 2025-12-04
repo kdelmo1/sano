@@ -61,7 +61,7 @@ export default function ProfileScreen({
 
       if (error) console.error(error);
       else {
-        if (data["number_of_raters"] >= 5)
+        if (data["number_of_raters"] >= 1)
           setYourRating((data["rating"] / data["number_of_raters"]) * 10);
       }
     }
@@ -78,7 +78,7 @@ export default function ProfileScreen({
       .maybeSingle();
 
     if (data && !error) {
-      if (data["number_of_raters"] >= 5) {
+      if (data["number_of_raters"] >= 1) {
         setYourRating((data["rating"] / data["number_of_raters"]) * 10);
       } else {
         setYourRating("X");
@@ -109,7 +109,9 @@ export default function ProfileScreen({
         <View style={styles.ratingContainer}>
           <Text style={{ fontSize: 20, padding: 10 }}>
             Rating:{" "}
-            {typeof yourRating === "string" ? yourRating : yourRating.toFixed(1)}
+            {typeof yourRating === "string"
+              ? yourRating
+              : yourRating.toFixed(1)}
           </Text>
 
           <Pressable
