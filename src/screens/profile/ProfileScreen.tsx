@@ -6,6 +6,8 @@ import {
   Pressable,
   Image,
   ScrollView,
+  RefreshControl, // Add this
+  ActivityIndicator, // Add this for loading spinner
 } from "react-native";
 import { supabase } from "../../lib/supabase";
 import AuthContext from "../../context/AuthContext";
@@ -36,12 +38,13 @@ export default function ProfileScreen({
 
   const [yourPosts, setYourPosts] = useState<PostProps[]>([]);
   const [yourRating, setYourRating] = useState<number | "X">("X");
+  const [refreshingRating, setRefreshingRating] = useState(false); // Add this
 
   useEffect(() => {
     getFromDB("profile", emailHandle, setYourPosts);
   }, []);
 
-  const displayName = emailHandle;
+  const displayName = user?.user_metadata?.name;
 
   useEffect(() => {
     async function getRating() {
@@ -65,6 +68,26 @@ export default function ProfileScreen({
     getRating();
   }, []);
 
+  const onRefreshRating = async () => {
+    setRefreshingRating(true);
+
+    const { data, error } = await supabase
+      .from("student")
+      .select("rating, number_of_raters")
+      .eq("email", user?.email)
+      .maybeSingle();
+
+    if (data && !error) {
+      if (data["number_of_raters"] >= 5) {
+        setYourRating((data["rating"] / data["number_of_raters"]) * 10);
+      } else {
+        setYourRating("X");
+      }
+    }
+
+    setRefreshingRating(false);
+  };
+
   return (
     <View style={styles.container}>
       {/* Profile Card */}
@@ -82,10 +105,25 @@ export default function ProfileScreen({
         <Text style={[Typography.userName, styles.userName]}>
           {displayName}
         </Text>
-        <Text style={{ fontSize: 20, padding: 10 }}>
-          Rating:{" "}
-          {typeof yourRating === "string" ? yourRating : yourRating.toFixed(1)}
-        </Text>
+
+        <View style={styles.ratingContainer}>
+          <Text style={{ fontSize: 20, padding: 10 }}>
+            Rating:{" "}
+            {typeof yourRating === "string" ? yourRating : yourRating.toFixed(1)}
+          </Text>
+
+          <Pressable
+            style={styles.refreshButton}
+            onPress={onRefreshRating}
+            disabled={refreshingRating}
+          >
+            {refreshingRating ? (
+              <ActivityIndicator size="small" color={Colors.text} />
+            ) : (
+              <Text style={styles.refreshIcon}>↻</Text>
+            )}
+          </Pressable>
+        </View>
       </View>
 
       {/* Your Posts Section */}
@@ -165,5 +203,24 @@ const styles = StyleSheet.create({
   userName: {
     marginBottom: -10,
     marginTop: -10,
+  },
+  ratingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  refreshButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.inputBg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: -5,
+  },
+  refreshIcon: {
+    fontSize: 20,
+    color: Colors.text,
+    fontWeight: "bold",
   },
 });
