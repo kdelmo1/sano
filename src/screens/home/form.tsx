@@ -57,7 +57,9 @@ export default function Form({
   const [imageUris, setImageUris] = useState<string[]>([]);
   const [isPosting, setIsPosting] = useState(false);
 
-  const slotsOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const [slotsOptions, setSlotsOptions] = useState([
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+  ]);
 
   useEffect(() => {
     async function getLocationFromDB() {
@@ -169,11 +171,11 @@ export default function Form({
     const startDateTime = new Date(selectedDate);
     startDateTime.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
 
-    const endDateTime = new Date(selectedDate);
+    let endDateTime = new Date(selectedDate);
     endDateTime.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
 
-    if (endDateTime <= startDateTime) {
-      alert("End time must be after start time.");
+    if (endTime < startTime) {
+      alert("End time cannot be less than start time.");
       return;
     }
 
@@ -483,7 +485,10 @@ export default function Form({
 
             {/* Post Button */}
             <View style={styles.postButtonContainer}>
-              <Pressable style={[SharedStyles.primaryButton, styles.primaryButton]} onPress={insertToDB}>
+              <Pressable
+                style={[SharedStyles.primaryButton, styles.primaryButton]}
+                onPress={insertToDB}
+              >
                 <Text style={SharedStyles.primaryButtonText}>post ✓</Text>
               </Pressable>
             </View>

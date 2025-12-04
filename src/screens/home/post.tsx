@@ -28,11 +28,12 @@ declare global {
     startTime: string;
     endTime: string;
     name: string;
+    slots: number;
     isPoster: boolean;
     fromScreen: "feed" | "inbox" | "profile";
     isFoodGiveaway: boolean;
     photoUrls: string[];
-    posterRating: number | "X";
+    posterRating: any;
     reservePostInit: boolean;
     refreshHome: () => void;
   }
@@ -48,6 +49,7 @@ export default function Post({
   startTime,
   endTime,
   name,
+  slots,
   isPoster,
   fromScreen,
   isFoodGiveaway,
@@ -59,20 +61,30 @@ export default function Post({
   const { emailHandle } = useContext(AuthContext);
 
   const [openChat, setOpenChat] = useState(false);
-  const [reservePost, setReservePost] = useState(reservePostInit);
+  const [reservePost, setReservePost] = useState(false);
+  const [currentApplicants, setCurrentApplicants] = useState<string[]>([]);
+  const [maxSlots, setMaxSlots] = useState<number>(slots);
 
   useEffect(() => {
     const checkReservationStatus = async () => {
       // Fetch the post data to check if current user has reserved
       const { data, error } = await supabase
         .from("Posts") // Your table is named 'Posts'
-        .select("reservation")
+        .select("reservation, slots")
         .eq("postID", id) // Using postID as the primary key
-        .single();
+        .maybeSingle();
+
+      if (!data) {
+        console.log("Post not found");
+        return;
+      }
 
       if (data && !error) {
         // Check if the reservation field contains the current user's email
-        const isReserved = data.reservation?.includes(emailHandle);
+        const reservationArray: string[] = data.reservation || [];
+        const isReserved = reservationArray.includes(emailHandle);
+        setCurrentApplicants(reservationArray);
+        setMaxSlots(data.slots ?? slots);
         setReservePost(isReserved || false);
       }
     };
@@ -105,32 +117,129 @@ export default function Post({
   const endDataTime = new Date(endTime);
 
   const isCurrentlyActive = now >= startDataTime && now <= endDataTime;
-
+  /*
   useEffect(() => {
-    const reserve = async (id: string, select: boolean) => {
-      const func = "append_array";
-      const { error } = await supabase.rpc(func, {
-        post_id: id,
-        poster_name: name,
-        applicant_name: emailHandle,
-      });
-      if (error) {
-        console.error(error);
-        setReservePost(false);
-        refreshHome();
-        alert("Offer is already full");
+    // Reservation is handled explicitly when the user presses the reserve button.
+  }, []);
+  */
+  const toggleReservation = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("Posts")
+        .select("reservation, slots")
+        .eq("postID", id)
+        .maybeSingle();
+
+      if (!data) {
+        console.log("Post not found");
+        return;
       }
-      // if (func === "decrement" && error) {
-      //   refresh or something...?
-      // }
-    };
-    if (reservePost && fromScreen === "feed") {
-      reserve(id, false);
+
+      if (error) {
+        console.log("Error fetching reservation:", error);
+        return;
+      }
+
+      const reservationArray: string[] = data?.reservation || [];
+      const slotsFromDB: number = data?.slots ?? slots;
+      const isReserved = reservationArray.includes(emailHandle);
+
+      if (isReserved) {
+        // Try RPC unreserve first
+        try {
+          const { error: rpcErr } = await supabase.rpc("unreserve_spot", {
+            post_id: id,
+            applicant_name: emailHandle,
+          });
+          if (!rpcErr) {
+            const newArray = reservationArray.filter((r) => r !== emailHandle);
+            setReservePost(false);
+            setCurrentApplicants(newArray);
+            setMaxSlots(slotsFromDB);
+            return;
+          }
+        } catch (rpcErr) {
+          // fallthrough to non-RPC fallback
+        }
+
+        // Fallback: update array directly
+        const newArray = reservationArray.filter((r) => r !== emailHandle);
+        const { error: updateErr } = await supabase
+          .from("Posts")
+          .update({ reservation: newArray })
+          .eq("postID", id);
+        if (!updateErr) {
+          setReservePost(false);
+          setCurrentApplicants(newArray);
+          setMaxSlots(slotsFromDB);
+        } else {
+          console.log("Failed to unreserve:", updateErr);
+        }
+      } else {
+        // Reserve only if not full
+        if (reservationArray.length >= slotsFromDB) {
+          alert("This post is full.");
+          return;
+        }
+
+        // Try RPC reserve first for atomic operation
+        try {
+          const { data: rpcData, error: rpcErr } = await supabase.rpc(
+            "reserve_spot",
+            {
+              post_id: id,
+              applicant_name: emailHandle,
+            }
+          );
+          if (!rpcErr) {
+            // If RPC returns updated reservation list, use it; otherwise append locally
+            const newArray: string[] = rpcData?.reservation || [
+              ...reservationArray,
+              emailHandle,
+            ];
+            setReservePost(true);
+            setCurrentApplicants(newArray);
+            setMaxSlots(slotsFromDB);
+            return;
+          }
+        } catch (rpcErr) {
+          // fallthrough to non-RPC fallback
+        }
+
+        // Fallback: update array directly
+        const newArray = [...reservationArray, emailHandle];
+        const { error: updateErr } = await supabase
+          .from("Posts")
+          .update({ reservation: newArray })
+          .eq("postID", id);
+        if (!updateErr) {
+          setReservePost(true);
+          setCurrentApplicants(newArray);
+          setMaxSlots(slotsFromDB);
+        } else {
+          console.log("Failed to reserve:", updateErr);
+        }
+      }
+    } catch (err) {
+      console.log("toggleReservation error:", err);
     }
-  }, [reservePost]);
+  };
+
+  const handleOpenChat = () => {
+    // Allow opening chat only if user is poster or has reserved
+    if (isPoster || reservePost) {
+      setOpenChat(true);
+    } else {
+      Alert.alert(
+        "Reservation required",
+        "You must reserve a spot to join this chat. Tap the + button to reserve.",
+        [{ text: "OK" }]
+      );
+    }
+  };
 
   return (
-    <Pressable onPress={() => setOpenChat(true)}>
+    <Pressable onPress={handleOpenChat}>
       {isPoster ? (
         <PosterView
           id={id}
@@ -153,14 +262,29 @@ export default function Post({
 
             {fromScreen === "feed" && (
               <Pressable
-                style={styles.reserveButton}
-                onPress={() => setReservePost(true)}
+                style={[
+                  styles.reserveButton,
+                  currentApplicants.length >= maxSlots && !reservePost
+                    ? styles.reserveButtonDisabled
+                    : null,
+                ]}
+                onPress={() => toggleReservation()}
+                disabled={currentApplicants.length >= maxSlots && !reservePost}
               >
-                {reservePost ? (
-                  <Text style={styles.iconLarge}>✔️</Text>
-                ) : (
-                  <Text style={styles.iconLarge}>➕</Text>
-                )}
+                <Text
+                  style={[
+                    styles.iconLarge,
+                    currentApplicants.length >= maxSlots && !reservePost
+                      ? styles.iconDisabled
+                      : null,
+                  ]}
+                >
+                  {reservePost ? (
+                    <Text style={styles.iconLarge}>✔️</Text>
+                  ) : (
+                    <Text style={styles.iconLarge}>➕</Text>
+                  )}
+                </Text>
               </Pressable>
             )}
           </View>
@@ -173,6 +297,13 @@ export default function Post({
               <Text style={styles.nowIndicator}> (now)</Text>
             )}
           </Text>
+
+          {fromScreen !== "inbox" && (
+            <Text style={styles.spotsText}>
+              {currentApplicants.length} / {maxSlots} spots filled •{" "}
+              {Math.max(0, maxSlots - currentApplicants.length)} left
+            </Text>
+          )}
 
           <View
             style={[
@@ -257,6 +388,20 @@ const styles = StyleSheet.create({
   nowIndicator: {
     color: Colors.primary,
     fontWeight: "600",
+  },
+  spotsText: {
+    fontSize: FontSizes.md,
+    color: Colors.textLighter,
+    marginLeft: -5,
+    marginBottom: 8,
+    fontWeight: "600",
+  },
+  reserveButtonDisabled: {
+    opacity: 0.5,
+  },
+  iconDisabled: {
+    color: Colors.textLighter,
+    opacity: 0.6,
   },
   userBadgeContainer: {
     alignItems: "flex-end",

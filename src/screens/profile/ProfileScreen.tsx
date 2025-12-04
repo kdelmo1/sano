@@ -41,7 +41,7 @@ export default function ProfileScreen({
     getFromDB("profile", emailHandle, setYourPosts);
   }, []);
 
-  const displayName = user?.user_metadata?.name;
+  const displayName = emailHandle;
 
   useEffect(() => {
     async function getRating() {
@@ -49,7 +49,13 @@ export default function ProfileScreen({
         .from("student")
         .select("rating, number_of_raters")
         .eq("email", user?.email)
-        .single();
+        .maybeSingle();
+
+      if (!data) {
+        console.log("Post not found");
+        return;
+      }
+
       if (error) console.error(error);
       else {
         if (data["number_of_raters"] >= 5)
@@ -99,6 +105,7 @@ export default function ProfileScreen({
                 startTime={post.startTime}
                 endTime={post.endTime}
                 name={post.name}
+                slots={post.slots}
                 isPoster={true}
                 fromScreen={"profile"}
                 isFoodGiveaway={post.isFoodGiveaway}

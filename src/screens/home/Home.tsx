@@ -36,6 +36,8 @@ export default function Home() {
   const { user, emailHandle } = useContext(AuthContext);
 
   const [posts, setPosts] = useState<PostProps[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<PostProps[]>([]);
+
   const [activeNav, setActiveNav] = useState<NavButton>("home");
   const [toPost, setToPost] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -50,11 +52,6 @@ export default function Home() {
 
   // Filter values
   const [showFilter, setShowFilter] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState("");
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedStartTime, setSelectedStartTime] = useState<Date | null>(null);
-  const [selectedEndTime, setSelectedEndTime] = useState<Date | null>(null);
-  const [selectedTag, setSelectedTag] = useState("all");
 
   const onRefresh = () => {
     setGetPost(!getPost);
@@ -64,51 +61,198 @@ export default function Home() {
     }, 1000);
   };
 
+  const toLocalISOWithTimezone = (date: Date) => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+
+    const offset = -date.getTimezoneOffset();
+    const sign = offset >= 0 ? "+" : "-";
+    const absOffset = Math.abs(offset);
+
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+      date.getDate()
+    )}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(
+      date.getSeconds()
+    )}${sign}${pad(Math.floor(absOffset / 60))}:${pad(absOffset % 60)}`;
+  };
+
   const handleApplyFilter = (
     selectedLocation: string,
     selectedDate: Date | null,
     selectedStartTime: Date | null,
-    selectedEndTime: Date | null,
     selectedTag: string
   ) => {
+    setFilteredPosts(posts);
+    if (selectedLocation && selectedLocation !== "All Location") {
+      setFilteredPosts((prev) =>
+        prev.filter((post) => post.location === selectedLocation)
+      );
+    }
+
+    // Filter by specific date time
+    if (selectedDate && selectedStartTime) {
+      const selectedDateTime = new Date(
+        `${selectedDate.toISOString().split("T")[0]}T${
+          selectedStartTime.toISOString().split("T")[1]
+        }`
+      );
+      setFilteredPosts((prev) =>
+        prev.filter((post) => {
+          const postStartDate = new Date(post.startTime);
+          const postEndDate = new Date(post.endTime);
+          return (
+            postStartDate <= selectedDate && postEndDate >= selectedDateTime
+          );
+        })
+      );
+    }
+    // Filter by specific date
+    else if (selectedDate) {
+      const localSelectedDate =
+        toLocalISOWithTimezone(selectedDate).split("T")[0];
+      setFilteredPosts((prev) =>
+        prev.filter((post) => {
+          const postStartDate = toLocalISOWithTimezone(
+            new Date(post.startTime)
+          ).split("T")[0];
+          const postEndDate = toLocalISOWithTimezone(
+            new Date(post.endTime)
+          ).split("T")[0];
+          return (
+            localSelectedDate === postStartDate ||
+            localSelectedDate === postEndDate
+          );
+        })
+      );
+      //eq("date", toLocalISOWithTimezone(selectedDate).split("T"));
+    }
+
+    /*
+12/3T1:38am-5:08pm
+12/3T2:38am-3:08pm
+12/3T3:38am-5:08pm
+12/4T2:38am-3:08pm
+*/
+
+    // Filter with times
+    else if (selectedStartTime) {
+      const selectedHour = selectedStartTime.getHours();
+      const selectedMinute = selectedStartTime.getMinutes();
+      const selectedTimeInMinutes = selectedHour * 60 + selectedMinute;
+      setFilteredPosts((prev) =>
+        prev.filter((post) => {
+          const postStartTime = new Date(post.startTime);
+          const postEndTime = new Date(post.endTime);
+
+          const startHours = postStartTime.getHours();
+          const startMinutes = postStartTime.getMinutes();
+          const startTimeInMinutes = startHours * 60 + startMinutes;
+
+          const differenceInMinutes =
+            (postEndTime.getTime() - postStartTime.getTime()) / 60000;
+
+          return (
+            selectedTimeInMinutes >= startTimeInMinutes &&
+            selectedTimeInMinutes <= startTimeInMinutes + differenceInMinutes
+          );
+        })
+      );
+    }
+
+    if (selectedTag && selectedTag !== "All Tags") {
+      setFilteredPosts((prev) =>
+        prev.filter(
+          (post) => (selectedTag === "Food Giveaway") === post.isFoodGiveaway
+        )
+      );
+    }
+
     setShowFilter(false);
-    setSelectedLocation(selectedLocation);
-    setSelectedDate(selectedDate);
-    setSelectedStartTime(selectedStartTime);
-    setSelectedEndTime(selectedEndTime);
-    setSelectedTag(selectedTag);
   };
 
   const handleCloseFilter = () => {
     setShowFilter(false);
-    setSelectedLocation("");
-    setSelectedDate(null);
-    setSelectedStartTime(null);
-    setSelectedEndTime(null);
-    setSelectedTag("");
   };
 
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    getFromDB(
-      "feed",
-      emailHandle,
-      setPosts,
-      selectedLocation,
-      selectedDate,
-      selectedStartTime,
-      selectedEndTime,
-      selectedTag
+    getFromDB("feed", emailHandle, setPosts);
+  }, [getPost]);
+
+  useEffect(() => {
+    setFilteredPosts(posts);
+  }, [posts]);
+
+  useEffect(() => {
+    const channelName = `notification:${emailHandle}`;
+    const room = supabase.channel(channelName, {
+      config: {
+        broadcast: {
+          self: true,
+        },
+        presence: {
+          key: user?.id,
+        },
+      },
+    });
+    const initNotification = async () => {
+      const { data, error } = await supabase
+        .from("chat")
+        .select()
+        .eq("receiver", emailHandle)
+        .eq("read", false);
+      if (error) {
+        console.log("error notification");
+      } else if (data.length !== 0) {
+        setUnreadMessages(true);
+      }
+    };
+
+    initNotification();
+
+    room.on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "chat",
+        filter: `receiver=eq.${emailHandle}`,
+      },
+      (payload) => {
+        setUnreadMessages(true);
+      }
     );
-  }, [
-    getPost,
-    selectedLocation,
-    selectedDate,
-    selectedStartTime,
-    selectedEndTime,
-    selectedTag,
-  ]);
+
+    room.subscribe(async (status) => {
+      //console.log("status", status);
+      if (status === "SUBSCRIBED") {
+        await room.track({
+          id: user?.id,
+        });
+      }
+    });
+
+    return () => {
+      room.unsubscribe();
+    };
+  }, [screen]);
+
+  useEffect(() => {
+    if (screen === "profile") {
+      const markRead = async () => {
+        const { data, error } = await supabase
+          .from("chat")
+          .update({ read: true })
+          .eq("receiver", emailHandle);
+        if (error) {
+          console.log("error on read message");
+        } else {
+          setUnreadMessages(false);
+        }
+      };
+      markRead();
+    }
+  }, [screen]);
 
   useEffect(() => {
     const channelName = `notification:${emailHandle}`;
@@ -360,11 +504,6 @@ export default function Home() {
                 </Pressable>
                 <Filter
                   showFilter={showFilter}
-                  selectedLocation={selectedLocation}
-                  selectedDate={selectedDate}
-                  selectedStartTime={selectedStartTime}
-                  selectedEndTime={selectedEndTime}
-                  selectedTag={selectedTag}
                   onClose={handleCloseFilter}
                   onApplyFilter={handleApplyFilter}
                 />
@@ -378,7 +517,7 @@ export default function Home() {
                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
               }
             >
-              {posts.map((post) => {
+              {filteredPosts.map((post) => {
                 return (
                   <Post
                     key={post.id}
@@ -387,6 +526,7 @@ export default function Home() {
                     startTime={post.startTime}
                     endTime={post.endTime}
                     name={post.name}
+                    slots={post.slots}
                     isPoster={false}
                     fromScreen={"feed"}
                     isFoodGiveaway={post.isFoodGiveaway}

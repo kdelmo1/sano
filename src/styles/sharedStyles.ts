@@ -1,4 +1,18 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Dimensions } from "react-native";
+
+// ==================== RESPONSIVE UTILITIES ====================
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+// Base dimensions (iPhone 13 Pro Max)
+const BASE_WIDTH = 428;
+const BASE_HEIGHT = 926;
+
+// Scaling functions
+const scaleWidth = (size: number) => (SCREEN_WIDTH / BASE_WIDTH) * size;
+const scaleHeight = (size: number) => (SCREEN_HEIGHT / BASE_HEIGHT) * size;
+const scale = (size: number) => (SCREEN_WIDTH / BASE_WIDTH) * size;
+const moderateScale = (size: number, factor = 0.5) => 
+  size + (scale(size) - size) * factor;
 
 // ==================== COLOR CONSTANTS ====================
 export const Colors = {
@@ -22,40 +36,40 @@ export const Colors = {
   linkBlue: "#007AFF",
 };
 
-// ==================== SPACING CONSTANTS ====================
+// ==================== SPACING CONSTANTS (ADAPTIVE) ====================
 export const Spacing = {
-  xs: 5,
-  sm: 8,
-  md: 10,
-  base: 12,
-  lg: 15,
-  xl: 20,
-  xxl: 30,
-  xxxl: 40,
+  xs: moderateScale(5),
+  sm: moderateScale(8),
+  md: moderateScale(10),
+  base: moderateScale(12),
+  lg: moderateScale(15),
+  xl: moderateScale(20),
+  xxl: moderateScale(30),
+  xxxl: moderateScale(40),
 };
 
-// ==================== BORDER RADIUS CONSTANTS ====================
+// ==================== BORDER RADIUS CONSTANTS (ADAPTIVE) ====================
 export const BorderRadius = {
-  xs: 5,
-  sm: 8,
-  md: 10,
-  lg: 12,
-  xl: 15,
-  round: 20,
-  circle: 25,
-  full: 50,
+  xs: moderateScale(5),
+  sm: moderateScale(8),
+  md: moderateScale(10),
+  lg: moderateScale(12),
+  xl: moderateScale(15),
+  round: moderateScale(20),
+  circle: moderateScale(25),
+  full: moderateScale(50),
 };
 
-// ==================== FONT SIZES ====================
+// ==================== FONT SIZES (ADAPTIVE) ====================
 export const FontSizes = {
-  xs: 12,
-  sm: 14,
-  base: 16,
-  md: 18,
-  lg: 20,
-  xl: 28,
-  xxl: 40,
-  xxxl: 42,
+  xs: moderateScale(12),
+  sm: moderateScale(14),
+  base: moderateScale(16),
+  md: moderateScale(18),
+  lg: moderateScale(20),
+  xl: moderateScale(28),
+  xxl: moderateScale(40),
+  xxxl: moderateScale(42),
 };
 
 // ==================== SHADOWS ====================
@@ -174,13 +188,13 @@ export const SharedStyles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
 
-  // ========== Navigation Bar ==========
+  // ========== Navigation Bar (ADAPTIVE) ==========
   floatingNav: {
     position: "absolute",
-    bottom: 30,
+    bottom: moderateScale(30),
     alignSelf: "center",
-    height: 70,
-    width: 390,
+    height: moderateScale(70),
+    width: Math.min(scaleWidth(390), SCREEN_WIDTH * 0.95),
     backgroundColor: Colors.primary,
     borderRadius: BorderRadius.round,
     flexDirection: "row",
@@ -190,22 +204,22 @@ export const SharedStyles = StyleSheet.create({
     zIndex: 1000,
   },
   nav_button: {
-    width: 60,
-    height: 60,
+    width: moderateScale(60),
+    height: moderateScale(60),
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
   },
   navCircle: {
     position: "absolute",
-    width: 50,
-    height: 50,
+    width: moderateScale(50),
+    height: moderateScale(50),
     borderRadius: BorderRadius.circle,
     backgroundColor: Colors.white,
   },
   nav_icon_image: {
-    width: 32,
-    height: 32,
+    width: moderateScale(32),
+    height: moderateScale(32),
     zIndex: 1,
   },
 
@@ -230,7 +244,7 @@ export const SharedStyles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.primary,
     ...Shadows.small,
-    marginBottom: 15,
+    marginBottom: moderateScale(15),
   },
   secondaryButtonText: {
     fontSize: FontSizes.lg,
@@ -238,9 +252,9 @@ export const SharedStyles = StyleSheet.create({
     color: Colors.primary,
   },
   closeButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: moderateScale(30),
+    height: moderateScale(30),
+    borderRadius: moderateScale(15),
     backgroundColor: Colors.white,
     alignItems: "center",
     justifyContent: "center",
@@ -266,8 +280,8 @@ export const SharedStyles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
+    width: moderateScale(40),
+    height: moderateScale(40),
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.md,
@@ -277,7 +291,7 @@ export const SharedStyles = StyleSheet.create({
   },
   inputField: {
     flex: 1,
-    height: 50,
+    height: moderateScale(50),
     backgroundColor: Colors.inputBg,
     borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.lg,
@@ -291,7 +305,7 @@ export const SharedStyles = StyleSheet.create({
     zIndex: 1000,
   },
   dropdownButton: {
-    height: 50,
+    height: moderateScale(50),
     backgroundColor: Colors.inputBg,
     borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.lg,
@@ -312,12 +326,12 @@ export const SharedStyles = StyleSheet.create({
   },
   dropdownMenu: {
     position: "absolute",
-    top: 55,
+    top: moderateScale(55),
     left: 0,
     right: 0,
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.lg,
-    maxHeight: 200,
+    maxHeight: moderateScale(200),
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -326,7 +340,7 @@ export const SharedStyles = StyleSheet.create({
     zIndex: 1001,
   },
   dropdownScroll: {
-    maxHeight: 200,
+    maxHeight: moderateScale(200),
   },
   dropdownItem: {
     paddingVertical: Spacing.base,
@@ -342,7 +356,7 @@ export const SharedStyles = StyleSheet.create({
   // ========== Date/Time Buttons ==========
   dateButton: {
     flex: 1,
-    height: 50,
+    height: moderateScale(50),
     backgroundColor: Colors.inputBg,
     borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.lg,
@@ -364,15 +378,15 @@ export const SharedStyles = StyleSheet.create({
     backgroundColor: Colors.background,
     position: "absolute",
     width: "100%",
-    top: 75,
+    top: moderateScale(75),
     bottom: 0,
   },
   scrollContent: {
     paddingTop: Spacing.md,
-    paddingBottom: 100,
+    paddingBottom: moderateScale(100),
   },
 
-  // ========== Cards ==========
+  // ========== Cards (ADAPTIVE) ==========
   card: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.md,
@@ -381,14 +395,14 @@ export const SharedStyles = StyleSheet.create({
   },
   profileCard: {
     width: "90%",
-    maxWidth: 360,
+    maxWidth: moderateScale(360),
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.md,
     padding: Spacing.xxl,
     alignItems: "center",
     ...Shadows.card,
-    marginBottom: 30,
-    marginTop: -40,
+    marginBottom: moderateScale(30),
+    marginTop: moderateScale(-40),
   },
 
   // ========== Post Card ==========
@@ -400,8 +414,8 @@ export const SharedStyles = StyleSheet.create({
     ...Shadows.card,
   },
   postContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: moderateScale(16),
+    paddingVertical: moderateScale(8),
   },
 
   // ========== Modals ==========
@@ -443,52 +457,52 @@ export const SharedStyles = StyleSheet.create({
     color: Colors.primary,
   },
 
-  // ========== Profile Elements ==========
+  // ========== Profile Elements (ADAPTIVE) ==========
   profilePictureContainer: {
     marginBottom: Spacing.xl,
   },
   profilePicture: {
-    width: 100,
-    height: 100,
+    width: moderateScale(100),
+    height: moderateScale(100),
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.profileBg,
     alignItems: "center",
     justifyContent: "center",
   },
   profileIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: moderateScale(24),
+    height: moderateScale(24),
+    borderRadius: moderateScale(12),
     backgroundColor: Colors.white,
     alignItems: "center",
     justifyContent: "center",
   },
   profileIconImage: {
-    width: 16,
-    height: 16,
+    width: moderateScale(16),
+    height: moderateScale(16),
     tintColor: Colors.textLight,
   },
   profileIconLarge: {
-    width: 75,
-    height: 75,
+    width: moderateScale(75),
+    height: moderateScale(75),
     tintColor: Colors.white,
   },
 
-  // ========== User Badge ==========
+  // ========== User Badge (ADAPTIVE) ==========
   userBadge: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.badgeBg,
     borderRadius: BorderRadius.md,
-    paddingVertical: 6,
-    paddingLeft: 6,
+    paddingVertical: moderateScale(6),
+    paddingLeft: moderateScale(6),
     paddingRight: Spacing.base,
     gap: Spacing.sm,
     borderWidth: 1.5,
     borderColor: Colors.borderDark,
   },
   username: {
-    fontSize: 17,
+    fontSize: moderateScale(17),
     fontWeight: "500",
     fontFamily: "System",
     color: Colors.textMedium,
@@ -512,7 +526,7 @@ export const SharedStyles = StyleSheet.create({
     color: Colors.text,
   },
 
-  // ========== Photo Upload ==========
+  // ========== Photo Upload (ADAPTIVE) ==========
   photoUploadContainer: {
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xl,
@@ -540,22 +554,22 @@ export const SharedStyles = StyleSheet.create({
   photoScrollContainer: {
     marginBottom: Spacing.lg,
     width: "100%",
-    maxHeight: 220,
+    maxHeight: moderateScale(220),
   },
   photoWrapper: {
     marginRight: Spacing.md,
     alignItems: "center",
   },
   imagePreview: {
-    width: 150,
-    height: 150,
+    width: moderateScale(150),
+    height: moderateScale(150),
     borderRadius: BorderRadius.lg,
     resizeMode: "cover",
     marginBottom: Spacing.sm,
   },
   removeImageButton: {
     backgroundColor: Colors.error,
-    paddingVertical: 6,
+    paddingVertical: moderateScale(6),
     paddingHorizontal: Spacing.md,
     borderRadius: Spacing.xs,
     alignSelf: "center",
@@ -566,10 +580,10 @@ export const SharedStyles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // ========== Post Images ==========
+  // ========== Post Images (ADAPTIVE) ==========
   postImage: {
-    width: 200,
-    height: 150,
+    width: moderateScale(200),
+    height: moderateScale(150),
     borderRadius: BorderRadius.sm,
     resizeMode: "cover",
     marginRight: Spacing.md,
@@ -580,12 +594,12 @@ export const SharedStyles = StyleSheet.create({
     overflow: "hidden",
   },
   postPhotoScrollContainer: {
-    height: 170,
+    height: moderateScale(170),
   },
 
   // ========== Placeholder ==========
   placeholder: {
-    width: 50,
+    width: moderateScale(50),
   },
 
   // ========== Empty States ==========
@@ -594,3 +608,13 @@ export const SharedStyles = StyleSheet.create({
     fontSize: FontSizes.base,
   },
 });
+
+// Export responsive utilities for use in other components
+export const ResponsiveUtils = {
+  scaleWidth,
+  scaleHeight,
+  scale,
+  moderateScale,
+  SCREEN_WIDTH,
+  SCREEN_HEIGHT,
+};

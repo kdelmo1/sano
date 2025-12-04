@@ -39,9 +39,9 @@ export default function ChatScreen({
   openChat,
   postID,
   fromScreen,
-  receiver
+  receiver,
 }: ChatScreenProps) {
-  const {user, emailHandle } = useContext(AuthContext);
+  const { user, emailHandle } = useContext(AuthContext);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
 
@@ -107,14 +107,15 @@ export default function ChatScreen({
           //   });
           // }
           setMessages((prev) => {
-              const newMess = {
-                message: payload.new["message"],
-                id: payload.new["id"],
-                sender: payload.new["sender"],
-              };
-              return [...prev, newMess];   
-        });
-      });
+            const newMess = {
+              message: payload.new["message"],
+              id: payload.new["id"],
+              sender: payload.new["sender"],
+            };
+            return [...prev, newMess];
+          });
+        }
+      );
 
       roomOne.subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
@@ -134,7 +135,7 @@ export default function ChatScreen({
     if (!newMessage.trim()) {
       return;
     }
-    
+
     const currentUsername = user?.email?.split("@")[0];
     const { error } = await supabase.from("chat").insert({
       postID: postID,
@@ -145,7 +146,7 @@ export default function ChatScreen({
     if (error) console.log(error);
     setNewMessage("");
   };
-  
+
   const renderMessage = ({ item }: ListRenderItemInfo<Message>) => {
     const currentUsername = user?.email?.split("@")[0];
     const isMyMessage = item.sender === currentUsername;
@@ -154,7 +155,9 @@ export default function ChatScreen({
       <View
         style={[
           styles.messageContainer,
-          isMyMessage ? styles.myMessageContainer : styles.theirMessageContainer,
+          isMyMessage
+            ? styles.myMessageContainer
+            : styles.theirMessageContainer,
         ]}
       >
         <View
@@ -186,9 +189,7 @@ export default function ChatScreen({
             <Pressable onPress={goBack} style={SharedStyles.backButton}>
               <Text style={SharedStyles.backText}>{backButtonText}</Text>
             </Pressable>
-            <Text style={styles.headerTitle}>
-              Chat with {receiver}
-            </Text>
+            <Text style={styles.headerTitle}>Chat with {receiver}</Text>
             <View style={SharedStyles.placeholder} />
           </View>
           <FlatList
