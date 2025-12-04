@@ -17,7 +17,8 @@ export default async function getFromDB(
 
   if (fromScreen === "feed") {
     // Filter out posts created by the current user so they don't appear in the main feed
-    //query = query.neq("studentEmail", email);
+    query = query.neq("studentEmail", email);
+
   } else if (fromScreen === "inbox") {
     query = query.contains("reservation", [emailHandle]);
   } else if (fromScreen === "profile") {
