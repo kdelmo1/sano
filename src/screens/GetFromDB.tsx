@@ -17,7 +17,63 @@ export default async function getFromDB(
 
   if (fromScreen === "feed") {
     // Filter out posts created by the current user so they don't appear in the main feed
-    //query = query.neq("studentEmail", email);
+    query = query.neq("studentEmail", email);
+
+    if (
+      selectedLocation &&
+      selectedLocation !== "select location" &&
+      selectedLocation !== "All"
+    ) {
+      query = query.eq("location", selectedLocation);
+    }
+
+    // Filter by specific date
+    if (selectedDate) {
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      query = query
+        .gte("startTime", startOfDay.toISOString())
+        .lte("startTime", endOfDay.toISOString());
+    }
+
+    // Filter with times
+    if (selectedStartTime || selectedEndTime) {
+      let S: string | null = null;
+      let E: string | null = null;
+
+      if (selectedDate && selectedStartTime) {
+        const d = new Date(selectedDate);
+        d.setHours(
+          selectedStartTime.getHours(),
+          selectedStartTime.getMinutes(),
+          0,
+          0
+        );
+        S = d.toISOString();
+      }
+
+      if (selectedDate && selectedEndTime) {
+        const d = new Date(selectedDate);
+        d.setHours(
+          selectedEndTime.getHours(),
+          selectedEndTime.getMinutes(),
+          0,
+          0
+        );
+        E = d.toISOString();
+      }
+
+      if (S) query = query.gte("endTime", S);
+      if (E) query = query.lte("startTime", E);
+    }
+
+    if (selectedTag && selectedTag !== "all" && selectedTag !== "") {
+      query = query.eq("is_food_giveaway", selectedTag === "Food Giveaway");
+    }
   } else if (fromScreen === "inbox") {
     query = query.contains("reservation", [emailHandle]);
   } else if (fromScreen === "profile") {

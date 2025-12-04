@@ -22,7 +22,7 @@ import {
   Typography,
 } from "../../styles/sharedStyles";
 
-const MAX_PHOTOS = 5;
+const MAX_PHOTOS = 3;
 
 interface FormProps {
   toPost: boolean;
@@ -82,6 +82,7 @@ export default function Form({
 
   const resetForm = () => {
     setLocation("");
+    setSlots(1);
     setSelectedDate(new Date());
     const now = new Date();
     setStartTime(now);
@@ -168,6 +169,15 @@ export default function Form({
       return;
     }
 
+    // Prevent multiple submissions
+    if (isPosting) {
+      return;
+    }
+
+    setIsPosting(true);
+
+    const postSlots = isFoodGiveaway ? 1 : slots;
+
     const startDateTime = new Date(selectedDate);
     startDateTime.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
 
@@ -176,12 +186,14 @@ export default function Form({
 
     if (endTime < startTime) {
       alert("End time cannot be less than start time.");
+      setIsPosting(false);
       return;
     }
 
     const currentTime = new Date();
     if (endDateTime <= currentTime) {
       alert("Cannot post an expired post.");
+      setIsPosting(false);
       return;
     }
 
@@ -211,6 +223,7 @@ export default function Form({
 
           if (uploadError) {
             alert("Failed to upload image: " + uploadError.message);
+            setIsPosting(false);
             return;
           }
 
@@ -221,6 +234,7 @@ export default function Form({
           photoUrls.push(urlData.publicUrl);
         } catch (err) {
           alert("Failed to upload image");
+          setIsPosting(false);
           return;
         }
       }
@@ -242,12 +256,14 @@ export default function Form({
     if (error) {
       console.error("Supabase Insert Error:", error);
       alert("Failed to post: " + error.message);
+      setIsPosting(false);
     } else {
       console.log("Post created successfully:", newPost);
       resetForm();
       setToPost(false);
       onPostSuccess();
       onClose();
+      setIsPosting(false);
     }
   }
 
@@ -321,48 +337,50 @@ export default function Form({
                 </View>
               </View>
 
-              {/* Slots Dropdown */}
-              <View style={SharedStyles.fieldContainer}>
-                <View style={SharedStyles.iconContainer}>
-                  <Text style={SharedStyles.iconText}>#</Text>
-                </View>
-                <View style={[SharedStyles.dropdownWrapper, { zIndex: 998 }]}>
-                  <Pressable
-                    style={SharedStyles.dropdownButton}
-                    onPress={() => setShowSlotsDropdown(!showSlotsDropdown)}
-                  >
-                    <Text
-                      style={[
-                        SharedStyles.dropdownButtonText,
-                        !slots && SharedStyles.placeholderText,
-                      ]}
+              {/* Slots Dropdown (Only if it is not a food giveaway*/}
+              {!isFoodGiveaway && (
+                <View style={SharedStyles.fieldContainer}>
+                  <View style={SharedStyles.iconContainer}>
+                    <Text style={SharedStyles.iconText}>#</Text>
+                  </View>
+                  <View style={[SharedStyles.dropdownWrapper, { zIndex: 998 }]}>
+                    <Pressable
+                      style={SharedStyles.dropdownButton}
+                      onPress={() => setShowSlotsDropdown(!showSlotsDropdown)}
                     >
-                      {slots || "select number"}
-                    </Text>
-                    <Text style={SharedStyles.dropdownArrow}>
-                      {showSlotsDropdown ? "▲" : "▼"}
-                    </Text>
-                  </Pressable>
+                      <Text
+                        style={[
+                          SharedStyles.dropdownButtonText,
+                          !slots && SharedStyles.placeholderText,
+                        ]}
+                      >
+                        {slots || "select number"}
+                      </Text>
+                      <Text style={SharedStyles.dropdownArrow}>
+                        {showSlotsDropdown ? "▲" : "▼"}
+                      </Text>
+                    </Pressable>
 
-                  {showSlotsDropdown && (
-                    <View style={SharedStyles.dropdownMenu}>
-                      <ScrollView style={SharedStyles.dropdownScroll}>
-                        {slotsOptions.map((option, index) => (
-                          <Pressable
-                            key={index}
-                            style={SharedStyles.dropdownItem}
-                            onPress={() => handleSlotsSelect(option)}
-                          >
-                            <Text style={SharedStyles.dropdownItemText}>
-                              {option}
-                            </Text>
-                          </Pressable>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
+                    {showSlotsDropdown && (
+                      <View style={SharedStyles.dropdownMenu}>
+                        <ScrollView style={SharedStyles.dropdownScroll}>
+                          {slotsOptions.map((option, index) => (
+                            <Pressable
+                              key={index}
+                              style={SharedStyles.dropdownItem}
+                              onPress={() => handleSlotsSelect(option)}
+                            >
+                              <Text style={SharedStyles.dropdownItemText}>
+                                {option}
+                              </Text>
+                            </Pressable>
+                          ))}
+                        </ScrollView>
+                      </View>
+                    )}
+                  </View>
                 </View>
-              </View>
+              )}
 
               {/* Date Picker */}
               <View style={SharedStyles.fieldContainer}>
@@ -421,7 +439,9 @@ export default function Form({
                 value={isFoodGiveaway}
                 onValueChange={(value) => {
                   setIsFoodGiveaway(value);
-                  if (!value) {
+                  if (value) {
+                    setSlots(1);
+                  } else {
                     setImageUris([]);
                   }
                 }}
@@ -486,10 +506,13 @@ export default function Form({
             {/* Post Button */}
             <View style={styles.postButtonContainer}>
               <Pressable
-                style={[SharedStyles.primaryButton, styles.primaryButton]}
+                style={[SharedStyles.primaryButton, styles.primaryButton, isPosting && { opacity: 0.5 }]}
                 onPress={insertToDB}
+                disabled={isPosting}
               >
-                <Text style={SharedStyles.primaryButtonText}>post ✓</Text>
+                <Text style={SharedStyles.primaryButtonText}>
+                  {isPosting ? "posting..." : "post ✓"}
+                </Text>
               </Pressable>
             </View>
           </ScrollView>
