@@ -91,8 +91,7 @@ export default function Home() {
     // Filter by specific date time
     if (selectedDate && selectedStartTime) {
       const selectedDateTime = new Date(
-        `${selectedDate.toISOString().split("T")[0]}T${
-          selectedStartTime.toISOString().split("T")[1]
+        `${selectedDate.toISOString().split("T")[0]}T${selectedStartTime.toISOString().split("T")[1]
         }`
       );
       setFilteredPosts((prev) =>
@@ -422,7 +421,11 @@ export default function Home() {
         style={SharedStyles.nav_button}
         onPress={() => handleNavPress("profile")}
       >
-        {unreadMessages && <Text>Notification</Text>}
+        {unreadMessages && (
+          <View style={styles.notificationBadge}>
+            <View style={styles.redDot} />
+          </View>
+        )}
         <Animated.View
           style={[
             SharedStyles.navCircle,
@@ -620,5 +623,17 @@ const styles = StyleSheet.create({
   filterTitle: {
     fontSize: 18,
     fontWeight: "bold",
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 2,
+  },
+  redDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 10,
+    backgroundColor: Colors.error,
   },
 });
