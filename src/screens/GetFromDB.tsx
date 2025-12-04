@@ -3,12 +3,7 @@ import { supabase } from "../lib/supabase";
 export default async function getFromDB(
   fromScreen: "feed" | "inbox" | "profile",
   emailHandle: string,
-  setPosts: React.Dispatch<React.SetStateAction<PostProps[]>>,
-  selectedLocation: string = "",
-  selectedDate: Date | null = null,
-  selectedStartTime: Date | null = null,
-  selectedEndTime: Date | null = null,
-  selectedTag: string | null = null
+  setPosts: React.Dispatch<React.SetStateAction<PostProps[]>>
 ) {
   const email = emailHandle + "@ucsc.edu";
 
@@ -21,64 +16,8 @@ export default async function getFromDB(
     .gt("endTime", now);
 
   if (fromScreen === "feed") {
-    query = query.neq("studentEmail", email).gt("slots", 0);
-
-    if (
-      selectedLocation &&
-      selectedLocation !== "select location" &&
-      selectedLocation !== "All"
-    ) {
-      query = query.eq("location", selectedLocation);
-    }
-
-    // Filter by specific date
-    if (selectedDate) {
-      const startOfDay = new Date(selectedDate);
-      startOfDay.setHours(0, 0, 0, 0);
-
-      const endOfDay = new Date(selectedDate);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      query = query
-        .gte("startTime", startOfDay.toISOString())
-        .lte("startTime", endOfDay.toISOString());
-    }
-
-    // Filter with times
-    if (selectedStartTime || selectedEndTime) {
-      let S: string | null = null;
-      let E: string | null = null;
-
-      if (selectedDate && selectedStartTime) {
-        const d = new Date(selectedDate);
-        d.setHours(
-          selectedStartTime.getHours(),
-          selectedStartTime.getMinutes(),
-          0,
-          0
-        );
-        S = d.toISOString();
-      }
-
-      if (selectedDate && selectedEndTime) {
-        const d = new Date(selectedDate);
-        d.setHours(
-          selectedEndTime.getHours(),
-          selectedEndTime.getMinutes(),
-          0,
-          0
-        );
-        E = d.toISOString();
-      }
-
-      if (S) query = query.gte("endTime", S);
-      if (E) query = query.lte("startTime", E);
-    }
-
-    console.log(selectedTag);
-    if (selectedTag && selectedTag !== "All Tags") {
-      query = query.lte("is_food_giveaway", selectedTag === "Food Giveaway");
-    }
+    // Filter out posts created by the current user so they don't appear in the main feed
+    //query = query.neq("studentEmail", email);
   } else if (fromScreen === "inbox") {
     query = query.contains("reservation", [emailHandle]);
   } else if (fromScreen === "profile") {
@@ -91,8 +30,25 @@ export default async function getFromDB(
     console.log("err", error);
     setPosts([]);
   } else if (data) {
+    // Filter out posts that are full for users who haven't reserved (only in feed)
+    const filteredData = data.filter((val) => {
+      if (fromScreen !== "feed") return true;
+      const reservationArray: string[] = Array.isArray(val["reservation"])
+        ? val["reservation"]
+        : [];
+      const slots: number = val["slots"] || 1;
+      // Keep the post if there is space or if the current user is already reserved
+      if (
+        reservationArray.length >= slots &&
+        !reservationArray.includes(emailHandle)
+      ) {
+        return false; // hide from feed for users not reserved
+      }
+      return true;
+    });
+
     const posterEmailSet = new Set(
-      data.map((val) => {
+      filteredData.map((val) => {
         return val["studentEmail"];
       })
     );
@@ -108,11 +64,10 @@ export default async function getFromDB(
       return rating;
     }, {} as Record<string, number | "X">);
 
-    // Filter out posts created by the current user so they don't appear in the main feed
     if (ratingError) console.error(ratingError);
     else {
       setPosts(
-        data.map((val) => {
+        filteredData.map((val) => {
           let photoUrls: string[] = [];
           if (val["photo_url"]) {
             try {
@@ -124,17 +79,21 @@ export default async function getFromDB(
               photoUrls = [];
             }
           }
+
+          //const reservationArray: string[] = Array.isArray(val["reservation"]) ? val["reservation"] : [];
           return {
             id: val["postID"],
             location: val["location"],
             startTime: val["startTime"],
             endTime: val["endTime"] || val["startTime"],
             name: val["name"],
+            slots: val["slots"] || 1,
             isPoster: fromScreen === "profile",
             fromScreen: fromScreen,
             isFoodGiveaway: val["is_food_giveaway"] || false,
             photoUrls: photoUrls,
-            posterRating: posterRatingRecord?.[val["studentEmail"]] || "X",
+            posterRating: posterRatingRecord?.[val["studentEmail"]],
+            //reservePostInit: reservationArray.includes(emailHandle),
             reservePostInit: val["reservation"].includes(emailHandle),
             refreshHome: () => {},
           };

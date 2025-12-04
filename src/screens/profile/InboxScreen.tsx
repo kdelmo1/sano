@@ -45,6 +45,7 @@ export default function InboxScreen({ goBack }: InboxScreenProps) {
               startTime={post.startTime}
               endTime={post.endTime}
               name={post.name}
+              slots={post.slots}
               isPoster={post.isPoster}
               fromScreen={"inbox"}
               isFoodGiveaway={post.isFoodGiveaway}
