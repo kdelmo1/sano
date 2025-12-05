@@ -1,0 +1,48 @@
+.
+├── assets
+│   ├── adaptive-icon.png
+│   ├── favicon.png
+│   ├── icon.png
+│   ├── images
+│   │   ├── button-bg.png
+│   │   ├── filter-tag.png
+│   │   ├── form-calendar.png
+│   │   ├── form-location.png
+│   │   ├── form-profile.png
+│   │   ├── form-time.png
+│   │   ├── icon-home.png
+│   │   ├── icon-post.png
+│   │   ├── icon-search.png
+│   │   ├── icon-signout.png
+│   │   ├── icon-thumbs-down.png
+│   │   ├── icon-thumbs-up.png
+│   │   ├── log-in with google.png
+│   │   ├── profile-icon.png
+│   │   └── sano-logo.png
+│   └── splash-icon.png
+├── context
+│   └── AuthContext.tsx
+├── hierarchy.txt
+├── lib
+│   └── supabase.ts
+├── screens
+│   ├── GetFromDB.tsx
+│   ├── auth
+│   │   └── loginScreen.tsx
+│   ├── chat
+│   │   ├── chatScreen.tsx
+│   │   └── posterView.tsx
+│   ├── home
+│   │   ├── Home.tsx
+│   │   ├── NavBar.tsx
+│   │   ├── RateUser.tsx
+│   │   ├── filter.tsx
+│   │   ├── form.tsx
+│   │   └── post.tsx
+│   └── profile
+│       ├── InboxScreen.tsx
+│       └── ProfileScreen.tsx
+└── styles
+    └── sharedStyles.ts
+
+11 directories, 35 files

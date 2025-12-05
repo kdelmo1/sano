@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -6,7 +6,11 @@ import {
   Pressable,
   Modal,
   ScrollView,
+  Image,
+  RefreshControl,
 } from "react-native";
+// 1. Import hook for precise safe area measurements
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ChatScreen from "./chatScreen";
 import AuthContext from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
@@ -14,11 +18,12 @@ import {
   SharedStyles,
   Colors,
   Spacing,
-  FontSizes,
-  BorderRadius,
   Typography,
+  BorderRadius,
 } from "../../styles/sharedStyles";
 import RateUser from "../home/RateUser";
+
+const profileIconImg = require("../../assets/images/form-profile.png");
 
 export default function PosterView({
   id,
@@ -30,33 +35,62 @@ export default function PosterView({
   goBack: () => void;
 }) {
   const { emailHandle } = useContext(AuthContext);
+  const insets = useSafeAreaInsets(); // Get precise safe area values
 
   const [applicants, setApplicants] = useState<string[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchApplicants = async () => {
+    const { error, data } = await supabase
+      .from("Posts")
+      .select("reservation")
+      .eq("postID", id)
+      .maybeSingle();
+
+    if (!data) {
+      return;
+    }
+
+    if (error) {
+    } else {
+      setApplicants(data["reservation"] || []);
+    }
+  };
 
   useEffect(() => {
-    const getFromDB = async () => {
-      const { error, data } = await supabase
-        .from("Posts")
-        .select("reservation")
-        .eq("postID", id)
-        .maybeSingle();
+    if (showOpt) {
+      fetchApplicants();
+    }
+  }, [id, showOpt]);
 
-      if (!data) {
-        console.log("Post not found");
-        return;
-      }
-      
-      if (error) {
-        console.log("Error fetching applicants:", error);
-      } else {
-        setApplicants(data["reservation"] || []);
-      }
-    };
-    getFromDB();
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchApplicants();
+    setRefreshing(false);
   }, [id]);
 
   const RenderApplicant = ({ applicant }: { applicant: string }) => {
     const [openChat, setOpenChat] = useState(false);
+    const [applicantRating, setApplicantRating] = useState<number | null>(null);
+
+    useEffect(() => {
+      const fetchRating = async () => {
+        // 2. FIXED: Changed 'stars' to 'rating' to match your schema
+        const { data, error } = await supabase
+          .from("ratings")
+          .select("rating") 
+          .eq("rated_email", applicant);
+
+        if (!error && data && data.length > 0) {
+          // 3. FIXED: Summing 'curr.rating' instead of 'curr.stars'
+          const total = data.reduce((acc, curr) => acc + (curr.rating || 0), 0);
+          setApplicantRating(total / data.length);
+        }
+      };
+
+      fetchRating();
+    }, [applicant]);
+
     return (
       <>
         <Pressable
@@ -65,12 +99,24 @@ export default function PosterView({
         >
           <View style={SharedStyles.userBadge}>
             <View style={SharedStyles.profileIcon}>
-              <Text style={styles.profileIconText}>👤</Text>
+              <Image
+                source={profileIconImg}
+                style={SharedStyles.profileIconImage}
+              />
             </View>
             <Text style={SharedStyles.username}>{applicant}</Text>
+            
+            {/* Display rating */}
+            {applicantRating !== null && (
+              <Text style={styles.ratingText}>
+                {applicantRating.toFixed(1)}
+              </Text>
+            )}
           </View>
+
           <RateUser id={id} ratedEmailHandle={applicant} />
         </Pressable>
+
         <ChatScreen
           goBack={() => setOpenChat(false)}
           openChat={openChat}
@@ -83,10 +129,15 @@ export default function PosterView({
   };
 
   return (
-    <Modal visible={showOpt}>
-      <View style={styles.screen}>
-        <View style={styles.container}>
-          <View style={styles.header}>
+    <Modal visible={showOpt} animationType="none">
+      {/* 4. FIXED: Layout structure for white status bar */}
+      <View style={{ flex: 1, backgroundColor: Colors.white }}>
+        {/* Spacer View: fills the status bar area with white */}
+        <View style={{ height: insets.top, backgroundColor: Colors.white }} />
+        
+        {/* Main Container */}
+        <View style={SharedStyles.container}>
+          <View style={SharedStyles.headerWithBorder}>
             <Pressable onPress={goBack} style={SharedStyles.backButton}>
               <Text style={SharedStyles.backText}>← Back</Text>
             </Pressable>
@@ -95,8 +146,11 @@ export default function PosterView({
           </View>
 
           <ScrollView
-            style={styles.scrollView}
+            style={SharedStyles.scroller}
             contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
           >
             {applicants.length === 0 ? (
               <View style={styles.emptyState}>
@@ -115,37 +169,6 @@ export default function PosterView({
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: Spacing.lg,
-    backgroundColor: Colors.background,
-  },
-  container: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    maxWidth: 1152,
-    width: "100%",
-    minHeight: 600,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.white,
-    overflow: "hidden",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  scrollView: {
-    flex: 1,
-  },
   scrollContent: {
     padding: Spacing.lg,
   },
@@ -156,14 +179,22 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.border,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.md,
   },
-  profileIconText: {
-    fontSize: FontSizes.xs,
+  ratingText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: "400",
+    color: Colors.black, 
   },
   emptyState: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: Spacing.xxxl,
+    justifyContent: "flex-start",
+    paddingVertical: Spacing.xl,
+    marginTop: Spacing.xl,
   },
 });

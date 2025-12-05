@@ -91,7 +91,6 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     });
 
     if (error) {
-      console.error("Google login error:", error.message);
       return;
     }
 
@@ -104,9 +103,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             access_token,
             refresh_token,
           });
-          if (setErr) console.error("setSession error:", setErr.message);
         } else {
-          console.error("Token non trovati nel callback URL");
         }
       }
     }

@@ -6,8 +6,8 @@ import {
   Pressable,
   Image,
   ScrollView,
-  RefreshControl, // Add this
-  ActivityIndicator, // Add this for loading spinner
+  RefreshControl, // Already imported
+  ActivityIndicator,
 } from "react-native";
 import { supabase } from "../../lib/supabase";
 import AuthContext from "../../context/AuthContext";
@@ -36,13 +36,24 @@ export default function ProfileScreen({
     await supabase.auth.signOut();
   };
 
-  const [yourPosts, setYourPosts] = useState<PostProps[]>([]);
+  const [yourPosts, setYourPosts] = useState<any[]>([]); // Typed as any[] or PostProps[]
   const [yourRating, setYourRating] = useState<number | "X">("X");
-  const [refreshingRating, setRefreshingRating] = useState(false); // Add this
+  const [refreshingRating, setRefreshingRating] = useState(false);
+
+  // 1. Add state for refreshing posts
+  const [refreshingPosts, setRefreshingPosts] = useState(false);
 
   useEffect(() => {
     getFromDB("profile", emailHandle, setYourPosts);
   }, []);
+
+  // 2. Add the refresh handler function
+  const onRefreshPosts = async () => {
+    setRefreshingPosts(true);
+    // Assuming getFromDB returns a promise. If not, this might finish instantly.
+    await getFromDB("profile", emailHandle, setYourPosts);
+    setRefreshingPosts(false);
+  };
 
   const displayName = user?.user_metadata?.name;
 
@@ -55,12 +66,10 @@ export default function ProfileScreen({
         .maybeSingle();
 
       if (!data) {
-        console.log("Post not found");
         return;
       }
 
-      if (error) console.error(error);
-      else {
+      if (!error) {
         if (data["number_of_raters"] >= 1)
           setYourRating((data["rating"] / data["number_of_raters"]) * 10);
       }
@@ -131,11 +140,22 @@ export default function ProfileScreen({
       {/* Your Posts Section */}
       <View style={styles.yourPostsContainer}>
         <Text style={[Typography.sectionTitle, styles.sectionTitle]}>
-          Your posts
+          Your Posts
         </Text>
-        <ScrollView style={styles.yourPostsList}>
+
+        {/* 3. Add RefreshControl to ScrollView */}
+        <ScrollView
+          style={styles.yourPostsList}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshingPosts}
+              onRefresh={onRefreshPosts}
+              tintColor={Colors.primary} // Optional: change spinner color
+            />
+          }
+        >
           {yourPosts.length === 0 ? (
-            <Text style={SharedStyles.noPostsText}>You have no posts</Text>
+            <Text style={SharedStyles.noPostsText}>No posts to display</Text>
           ) : (
             yourPosts.map((post) => (
               <Post
@@ -165,13 +185,12 @@ export default function ProfileScreen({
 
       {/* Logout Button */}
       <Pressable style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={SharedStyles.primaryButtonText}>log-out</Text>
+        <Text style={SharedStyles.primaryButtonText}>Log-Out</Text>
       </Pressable>
     </View>
   );
 }
 
-// Only component-specific styles remain
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -201,6 +220,10 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginBottom: Spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
   },
   userName: {
     marginBottom: -10,

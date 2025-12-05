@@ -1,4 +1,5 @@
-import { StyleSheet, Dimensions } from "react-native";
+import { StyleSheet, Dimensions, Platform} from "react-native";
+
 
 // ==================== RESPONSIVE UTILITIES ====================
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -164,6 +165,55 @@ export const SharedStyles = StyleSheet.create({
   fullScreenContainer: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+
+  modalScreenWrapper: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.lg,
+    backgroundColor: Colors.background,
+    // Adds extra padding on iOS to avoid the status bar/notch
+    paddingTop: Platform.OS === "ios" ? Spacing.xxl : Spacing.lg, 
+  },
+
+  safeAreaContainer: {
+    flex: 1,
+    backgroundColor: Colors.white, // or Colors.background depending on preference
+    paddingTop: Platform.OS === "android" ? 30 : 0, // Handle Android status bar
+  },
+
+  // ========== Floating Card Container (NEW) ==========
+  floatingCardContainer: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    maxWidth: 1152,
+    width: "100%",
+    height: "80%",        // Forces the card to be tall
+    maxHeight: "90%",     // Prevents it from touching the screen edges
+    flexShrink: 1,        // Allows it to shrink when keyboard opens
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.white,
+    overflow: "hidden",
+  },
+
+  // ========== Flex Container (NEW) ==========
+  flexContainer: {
+    flex: 1,
+    backgroundColor: Colors.white,
+  },
+
+  bottomModalWrapper: {
+    flex: 1,
+    width: "100%",
+    // 👇 CHANGE THIS: from "flex-end" to "center"
+    justifyContent: "center", 
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Platform.OS === "ios" ? 40 : 20, 
+    backgroundColor: Colors.background,
+    paddingTop: Platform.OS === "ios" ? Spacing.xxl : Spacing.lg, 
   },
 
   // ========== Headers ==========
@@ -401,7 +451,7 @@ export const SharedStyles = StyleSheet.create({
     padding: Spacing.xxl,
     alignItems: "center",
     ...Shadows.card,
-    marginBottom: moderateScale(30),
+    marginBottom: moderateScale(10),
     marginTop: moderateScale(-40),
   },
 
@@ -609,6 +659,8 @@ export const SharedStyles = StyleSheet.create({
   noPostsText: {
     color: "#888",
     fontSize: FontSizes.base,
+    textAlign: "center",
+    fontStyle: "italic",
   },
 });
 

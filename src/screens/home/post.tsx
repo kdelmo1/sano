@@ -77,7 +77,6 @@ export default function Post({
         .maybeSingle();
 
       if (!data) {
-        console.log("Post not found");
         return;
       }
 
@@ -119,11 +118,7 @@ export default function Post({
   const endDataTime = new Date(endTime);
 
   const isCurrentlyActive = now >= startDataTime && now <= endDataTime;
-  /*
-  useEffect(() => {
-    // Reservation is handled explicitly when the user presses the reserve button.
-  }, []);
-  */
+  
   const toggleReservation = async () => {
     try {
       const { data, error } = await supabase
@@ -133,12 +128,10 @@ export default function Post({
         .maybeSingle();
 
       if (!data) {
-        console.log("Post not found");
         return;
       }
 
       if (error) {
-        console.log("Error fetching reservation:", error);
         return;
       }
 
@@ -174,8 +167,6 @@ export default function Post({
           setReservePost(false);
           setCurrentApplicants(newArray);
           setMaxSlots(slotsFromDB);
-        } else {
-          console.log("Failed to unreserve:", updateErr);
         }
       } else {
         // Reserve only if not full
@@ -218,12 +209,9 @@ export default function Post({
           setReservePost(true);
           setCurrentApplicants(newArray);
           setMaxSlots(slotsFromDB);
-        } else {
-          console.log("Failed to reserve:", updateErr);
         }
       }
     } catch (err) {
-      console.log("toggleReservation error:", err);
     }
   };
 
@@ -320,8 +308,6 @@ export default function Post({
             </View>
           )}
 
-          {/* Conditional rendering for capacity*/}
-
           {fromScreen !== "inbox" && !isFoodGiveaway && (
             <Text style={styles.spotsText}>
               {currentApplicants.length} / {maxSlots} spots filled •{" "}
@@ -332,6 +318,7 @@ export default function Post({
           <View
             style={[
               styles.userBadgeContainer,
+              // Kept row-reverse so Badge is on right, RateUser on left
               { flexDirection: "row-reverse", justifyContent: "space-between" },
             ]}
           >
@@ -381,18 +368,12 @@ export default function Post({
   );
 }
 
-// Only unique post-specific styles
 const styles = StyleSheet.create({
-  // headerRow: {
-  //   flexDirection: "row",
-  //   alignItems: "center",
-  //   justifyContent: "space-between",
-  // },
   headerRow: {
     flexDirection: "row",
-    alignItems: "flex-start", // Changed from "center" to align at top
+    alignItems: "flex-start", 
     justifyContent: "space-between",
-    gap: Spacing.md, // Add spacing between title and button
+    gap: Spacing.md, 
   },
   date: {
     fontSize: FontSizes.lg,
@@ -431,9 +412,10 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   userBadgeContainer: {
-    alignItems: "flex-end",
-    marginRight: -10,
-    marginBottom: -10,
+    // Changed to center to align larger thumbs icons with user badge
+    alignItems: "center", 
+    // Removed negative margins to avoid clipping
+    marginTop: 10,
   },
   reserveButton: {
     justifyContent: "center",
@@ -442,15 +424,11 @@ const styles = StyleSheet.create({
   iconLarge: {
     fontSize: 30,
   },
-  // title: {
-  //   marginTop: -10,
-  //   marginLeft: -5,
-  // }
   title: {
     marginTop: -10,
     marginLeft: -5,
-    flex: 1, // Add this to allow text to wrap and not push button
-    flexShrink: 1, // Add this to allow text to shrink if needed
+    flex: 1, 
+    flexShrink: 1, 
   },
   enlargedPhotoOverlay: {
     flex: 1,

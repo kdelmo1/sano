@@ -7,6 +7,7 @@ import {
   ScrollView,
   Platform,
   Modal,
+  Image,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { supabase } from "../../lib/supabase";
@@ -17,7 +18,14 @@ import {
   Spacing,
   BorderRadius,
   Typography,
+  ResponsiveUtils,
 } from "../../styles/sharedStyles";
+
+// Import local assets
+const locationIcon = require("../../assets/images/form-location.png");
+const calendarIcon = require("../../assets/images/form-calendar.png");
+const timeIcon = require("../../assets/images/form-time.png");
+const tagIcon = require("../../assets/images/filter-tag.png");
 
 interface FormProps {
   showFilter: boolean;
@@ -55,9 +63,7 @@ export default function Filter({
     async function getLocationFromDB() {
       const { data, error } = await supabase.from("location").select("*");
 
-      if (error) {
-        console.log(error);
-      } else {
+      if (!error) {
         setLocationOptions([
           "All Location",
           ...data.map((loc) => loc["location"]),
@@ -152,13 +158,12 @@ export default function Filter({
               <Text style={styles.closeButtonText}>x</Text>
             </Pressable>
             <Text style={styles.headerTitle}>Filter Posts</Text>
+            {/* Swapped: Clear button is now in the header */}
             <Pressable
               style={styles.applyButton}
-              onPress={() => {
-                onApplyFilter(tempLocation, tempDate, tempStartTime, tempTag);
-              }}
+              onPress={resetFilter}
             >
-              <Text style={styles.applyButtonText}>Apply</Text>
+              <Text style={styles.applyButtonText}>Clear</Text>
             </Pressable>
           </View>
 
@@ -171,7 +176,7 @@ export default function Filter({
               {/*Location*/}
               <View style={styles.fieldContainer}>
                 <View style={styles.iconContainer}>
-                  <Text style={styles.iconText}>📍</Text>
+                  <Image source={locationIcon} style={styles.filterIcon} />
                 </View>
                 <View style={styles.dropdownWrapper}>
                   <Pressable
@@ -217,7 +222,7 @@ export default function Filter({
               {/*Tags*/}
               <View style={styles.fieldContainer}>
                 <View style={styles.iconContainer}>
-                  <Text>🏷️</Text>
+                  <Image source={tagIcon} style={styles.filterIcon} />
                 </View>
                 <View style={styles.dropdownWrapper}>
                   <Pressable
@@ -263,7 +268,7 @@ export default function Filter({
               {/* Date Pick */}
               <View style={styles.fieldContainer}>
                 <View style={styles.iconContainer}>
-                  <Text style={styles.iconText}>📅</Text>
+                  <Image source={calendarIcon} style={styles.filterIcon} />
                 </View>
                 <Pressable
                   style={styles.dateButton}
@@ -286,7 +291,7 @@ export default function Filter({
               {/* Start Time */}
               <View style={styles.fieldContainer}>
                 <View style={styles.iconContainer}>
-                  <Text style={styles.iconText}>🕐</Text>
+                  <Image source={timeIcon} style={styles.filterIcon} />
                 </View>
                 <Pressable
                   style={styles.dateButton}
@@ -307,12 +312,15 @@ export default function Filter({
               </View>
             </View>
           </ScrollView>
+          {/* Swapped: Apply button is now at the bottom */}
           <View style={styles.postButtonContainer}>
             <Pressable
               style={[SharedStyles.primaryButton, styles.primaryButton]}
-              onPress={resetFilter}
+              onPress={() => {
+                onApplyFilter(tempLocation, tempDate, tempStartTime, tempTag);
+              }}
             >
-              <Text style={SharedStyles.primaryButtonText}>Clear</Text>
+              <Text style={SharedStyles.primaryButtonText}>Apply</Text>
             </Pressable>
           </View>
         </View>
@@ -422,8 +430,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 10,
   },
-  iconText: {
-    fontSize: 28,
+  // Replaced iconText with filterIcon image style
+  filterIcon: {
+    width: ResponsiveUtils.moderateScale(28),
+    height: ResponsiveUtils.moderateScale(28),
+    resizeMode: "contain",
+    tintColor: Colors.primary,
   },
   postButtonContainer: {
     marginTop: 10,
