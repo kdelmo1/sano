@@ -20,7 +20,7 @@ import ProfileScreen from "../profile/ProfileScreen";
 import InboxScreen from "../profile/InboxScreen";
 
 // 1. Import the new NavBar
-import NavBar, { NavButton } from "./NavBar"; 
+import NavBar, { NavButton } from "./NavBar";
 
 import {
   Colors,
@@ -88,9 +88,10 @@ export default function Home() {
     }
 
     if (selectedDate && selectedStartTime) {
-      const selectedDateTime = new Date(
-        `${selectedDate.toISOString().split("T")[0]}T${selectedStartTime.toISOString().split("T")[1]}`
-      );
+      const selectedDateTime = selectedDate;
+      selectedDate.setHours(selectedStartTime.getHours());
+      selectedDate.setMinutes(selectedStartTime.getMinutes());
+
       setFilteredPosts((prev) =>
         prev.filter((post) => {
           const postStartDate = new Date(post.startTime);
@@ -100,21 +101,24 @@ export default function Home() {
           );
         })
       );
-    }
-    else if (selectedDate) {
-      const localSelectedDate = toLocalISOWithTimezone(selectedDate).split("T")[0];
+    } else if (selectedDate) {
+      const localSelectedDate =
+        toLocalISOWithTimezone(selectedDate).split("T")[0];
       setFilteredPosts((prev) =>
         prev.filter((post) => {
-          const postStartDate = toLocalISOWithTimezone(new Date(post.startTime)).split("T")[0];
-          const postEndDate = toLocalISOWithTimezone(new Date(post.endTime)).split("T")[0];
+          const postStartDate = toLocalISOWithTimezone(
+            new Date(post.startTime)
+          ).split("T")[0];
+          const postEndDate = toLocalISOWithTimezone(
+            new Date(post.endTime)
+          ).split("T")[0];
           return (
             localSelectedDate === postStartDate ||
             localSelectedDate === postEndDate
           );
         })
       );
-    }
-    else if (selectedStartTime) {
+    } else if (selectedStartTime) {
       const selectedHour = selectedStartTime.getHours();
       const selectedMinute = selectedStartTime.getMinutes();
       const selectedTimeInMinutes = selectedHour * 60 + selectedMinute;
@@ -269,8 +273,8 @@ export default function Home() {
             onPostSuccess={() => {
               setGetPost((prev) => !prev);
               setToPost(false);
-              setScreen("profile"); 
-              animateNavButton("profile"); 
+              setScreen("profile");
+              animateNavButton("profile");
             }}
             onClose={() => {
               setToPost(false);
@@ -368,16 +372,16 @@ export default function Home() {
       }}
     >
       {renderScreen()}
-      
+
       {/* 2. Using the extracted component */}
-      <NavBar 
+      <NavBar
         onNavPress={handleNavPress}
         unreadMessages={unreadMessages}
         homeAnim={homeAnim}
         postAnim={postAnim}
         profileAnim={profileAnim}
       />
-      
+
       <StatusBar style="auto" />
     </View>
   );
