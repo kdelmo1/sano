@@ -2,7 +2,11 @@ import React, { useContext, useEffect, useState } from "react";
 import { View, Pressable, Image, StyleSheet } from "react-native";
 import AuthContext from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
-import { Colors, BorderRadius, ResponsiveUtils } from "../../styles/sharedStyles";
+import {
+  Colors,
+  BorderRadius,
+  ResponsiveUtils,
+} from "../../styles/sharedStyles";
 
 // Import local assets
 const thumbsUpIcon = require("../../assets/images/icon-thumbs-up.png");
@@ -30,8 +34,8 @@ export default function RateUser({
         .eq("rater_email_handle", emailHandle)
         .eq("rated_email", ratedEmailHandle + "@ucsc.edu")
         .maybeSingle();
-      if (error) {}
-      else {
+      if (error) {
+      } else {
         if (data) {
           setIsRated(true);
           setRating(data["rating"] === 1);
@@ -42,19 +46,25 @@ export default function RateUser({
   }, []);
 
   const handleRating = async (newRatingVal: number) => {
+    if (isRated) {
+      await cancelRating();
+    }
+
     const isUp = newRatingVal === 1;
-    
+
     // Optimistic update
     setIsRated(true);
     setRating(isUp);
 
-    const { error } = await supabase.from("ratings").upsert({
-      post_id: id,
-      rater_email_handle: emailHandle,
-      rated_email: ratedEmailHandle + "@ucsc.edu",
-      rating: newRatingVal,
-    }, { onConflict: 'post_id, rater_email_handle, rated_email' }); 
-
+    const { error } = await supabase.from("ratings").upsert(
+      {
+        post_id: id,
+        rater_email_handle: emailHandle,
+        rated_email: ratedEmailHandle + "@ucsc.edu",
+        rating: newRatingVal,
+      },
+      { onConflict: "post_id, rater_email_handle, rated_email" }
+    );
   };
 
   const cancelRating = async () => {
@@ -73,12 +83,9 @@ export default function RateUser({
   // Helper to determine styles based on current state
   const getButtonStyle = (isThumbsUp: boolean) => {
     const isActive = isRated && rating === isThumbsUp;
-    
+
     return {
-      container: [
-        styles.iconButton,
-        isActive && styles.iconButtonSelected,
-      ],
+      container: [styles.iconButton, isActive && styles.iconButtonSelected],
       tint: isActive ? Colors.white : Colors.primary,
     };
   };
@@ -99,9 +106,9 @@ export default function RateUser({
         }}
         style={upStyle.container}
       >
-        <Image 
-          source={thumbsUpIcon} 
-          style={[styles.icon, { tintColor: upStyle.tint }]} 
+        <Image
+          source={thumbsUpIcon}
+          style={[styles.icon, { tintColor: upStyle.tint }]}
         />
       </Pressable>
 
@@ -116,9 +123,9 @@ export default function RateUser({
         }}
         style={downStyle.container}
       >
-        <Image 
-          source={thumbsDownIcon} 
-          style={[styles.icon, { tintColor: downStyle.tint }]} 
+        <Image
+          source={thumbsDownIcon}
+          style={[styles.icon, { tintColor: downStyle.tint }]}
         />
       </Pressable>
     </View>
@@ -129,12 +136,12 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     // Decreased gap to bring them closer (was 15)
-    gap: ResponsiveUtils.moderateScale(8), 
+    gap: ResponsiveUtils.moderateScale(8),
     alignItems: "center",
     // Align content to the left
     justifyContent: "flex-start",
     // Override any parent alignment (like center) to force this container to the left
-    alignSelf: "flex-start", 
+    alignSelf: "flex-start",
   },
   iconButton: {
     // Increased button size (was 44)
