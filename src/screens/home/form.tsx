@@ -3,11 +3,11 @@ import {
   Text,
   View,
   Pressable,
-  Modal,
   Platform,
   ScrollView,
   Image,
   Switch,
+  Modal, 
 } from "react-native";
 import React, { useEffect, useState, useContext } from "react";
 import { supabase } from "../../lib/supabase";
@@ -18,11 +18,19 @@ import {
   SharedStyles,
   Colors,
   Spacing,
-  BorderRadius,
   Typography,
+  ResponsiveUtils,
+  FontSizes,
+  Shadows, // 1. Imported Shadows
 } from "../../styles/sharedStyles";
 
 const MAX_PHOTOS = 3;
+
+// Import local assets
+const locationIcon = require("../../assets/images/form-location.png");
+const profileIcon = require("../../assets/images/form-profile.png");
+const calendarIcon = require("../../assets/images/form-calendar.png");
+const timeIcon = require("../../assets/images/form-time.png");
 
 interface FormProps {
   toPost: boolean;
@@ -169,7 +177,6 @@ export default function Form({
       return;
     }
 
-    // Prevent multiple submissions
     if (isPosting) {
       return;
     }
@@ -254,388 +261,384 @@ export default function Form({
     const { error } = await supabase.from("Posts").insert(newPost);
 
     if (error) {
-      console.error("Supabase Insert Error:", error);
       alert("Failed to post: " + error.message);
       setIsPosting(false);
     } else {
-      console.log("Post created successfully:", newPost);
       resetForm();
       setToPost(false);
-      onPostSuccess();
-      onClose();
+      onPostSuccess(); 
       setIsPosting(false);
     }
   }
 
-  if (!toPost) return null;
-
   return (
-    <View style={SharedStyles.fullScreenContainer}>
-      <View style={styles.screenOverlay}>
-        <View style={styles.screenContent}>
-          <View style={SharedStyles.header}>
-            <Text style={Typography.headerTitle}>new post</Text>
-            <Pressable
-              style={SharedStyles.closeButton}
-              onPress={() => {
-                resetForm();
-                onClose();
-              }}
-            >
-              <Text style={SharedStyles.closeButtonText}>✕</Text>
-            </Pressable>
-          </View>
-          <ScrollView>
-            <View style={styles.formContent}>
-              {/* Location Dropdown */}
-              <View style={SharedStyles.fieldContainer}>
-                <View style={SharedStyles.iconContainer}>
-                  <Text style={SharedStyles.iconText}>📍</Text>
-                </View>
-                <View style={SharedStyles.dropdownWrapper}>
-                  <Pressable
-                    style={SharedStyles.dropdownButton}
-                    onPress={() =>
-                      setShowLocationDropdown(!showLocationDropdown)
-                    }
+    <View style={styles.fullScreenContainer}>
+      {/* Header */}
+      <View style={styles.headerContainer}>
+        <View style={styles.headerPlaceholder} />
+        <Text style={styles.headerTitle}>New Post</Text>
+        <Pressable
+          style={styles.closeButton}
+          onPress={() => {
+            resetForm();
+            onClose();
+          }}
+        >
+          <Text style={styles.closeButtonText}>✕</Text>
+        </Pressable>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.formContent}>
+          {/* Location Dropdown */}
+          <View style={SharedStyles.fieldContainer}>
+            <View style={SharedStyles.iconContainer}>
+              <Image source={locationIcon} style={styles.formIcon} />
+            </View>
+            <View style={SharedStyles.dropdownWrapper}>
+              <Pressable
+                style={SharedStyles.dropdownButton}
+                onPress={() => setShowLocationDropdown(!showLocationDropdown)}
+              >
+                <Text
+                  style={[
+                    SharedStyles.dropdownButtonText,
+                    !location && SharedStyles.placeholderText,
+                  ]}
+                >
+                  {location || "Select Location"}
+                </Text>
+                <Text style={SharedStyles.dropdownArrow}>
+                  {showLocationDropdown ? "▲" : "▼"}
+                </Text>
+              </Pressable>
+
+              {showLocationDropdown && (
+                <View style={SharedStyles.dropdownMenu}>
+                  <ScrollView
+                    style={SharedStyles.dropdownScroll}
+                    nestedScrollEnabled={true}
+                    scrollEventThrottle={16}
+                    showsVerticalScrollIndicator={false}
                   >
-                    <Text
-                      style={[
-                        SharedStyles.dropdownButtonText,
-                        !location && SharedStyles.placeholderText,
-                      ]}
-                    >
-                      {location || "select location"}
-                    </Text>
-                    <Text style={SharedStyles.dropdownArrow}>
-                      {showLocationDropdown ? "▲" : "▼"}
-                    </Text>
-                  </Pressable>
-
-                  {showLocationDropdown && (
-                    <View style={SharedStyles.dropdownMenu}>
-                      <ScrollView
-                        style={SharedStyles.dropdownScroll}
-                        nestedScrollEnabled={true}
-                        scrollEventThrottle={16}
-                        showsVerticalScrollIndicator={false}
+                    {locationOptions.map((option, index) => (
+                      <Pressable
+                        key={index}
+                        style={SharedStyles.dropdownItem}
+                        onPress={() => handleLocationSelect(option)}
                       >
-                        {locationOptions.map((option, index) => (
-                          <Pressable
-                            key={index}
-                            style={SharedStyles.dropdownItem}
-                            onPress={() => handleLocationSelect(option)}
-                          >
-                            <Text style={SharedStyles.dropdownItemText}>
-                              {option}
-                            </Text>
-                          </Pressable>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
-                </View>
-              </View>
-
-              {/* Slots Dropdown (Only if it is not a food giveaway*/}
-              {!isFoodGiveaway && (
-                <View style={SharedStyles.fieldContainer}>
-                  <View style={SharedStyles.iconContainer}>
-                    <Text style={SharedStyles.iconText}>#</Text>
-                  </View>
-                  <View style={[SharedStyles.dropdownWrapper, { zIndex: 998 }]}>
-                    <Pressable
-                      style={SharedStyles.dropdownButton}
-                      onPress={() => setShowSlotsDropdown(!showSlotsDropdown)}
-                    >
-                      <Text
-                        style={[
-                          SharedStyles.dropdownButtonText,
-                          !slots && SharedStyles.placeholderText,
-                        ]}
-                      >
-                        {slots || "select number"}
-                      </Text>
-                      <Text style={SharedStyles.dropdownArrow}>
-                        {showSlotsDropdown ? "▲" : "▼"}
-                      </Text>
-                    </Pressable>
-
-                    {showSlotsDropdown && (
-                      <View style={SharedStyles.dropdownMenu}>
-                        <ScrollView style={SharedStyles.dropdownScroll}>
-                          {slotsOptions.map((option, index) => (
-                            <Pressable
-                              key={index}
-                              style={SharedStyles.dropdownItem}
-                              onPress={() => handleSlotsSelect(option)}
-                            >
-                              <Text style={SharedStyles.dropdownItemText}>
-                                {option}
-                              </Text>
-                            </Pressable>
-                          ))}
-                        </ScrollView>
-                      </View>
-                    )}
-                  </View>
+                        <Text style={SharedStyles.dropdownItemText}>
+                          {option}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
                 </View>
               )}
+            </View>
+          </View>
 
-              {/* Date Picker */}
-              <View style={SharedStyles.fieldContainer}>
-                <View style={SharedStyles.iconContainer}>
-                  <Text style={SharedStyles.iconText}>📅</Text>
-                </View>
+          {/* Slots Dropdown */}
+          {!isFoodGiveaway && (
+            <View style={SharedStyles.fieldContainer}>
+              <View style={SharedStyles.iconContainer}>
+                <Image source={profileIcon} style={styles.formIcon} />
+              </View>
+              <View style={[SharedStyles.dropdownWrapper, { zIndex: 998 }]}>
                 <Pressable
-                  style={SharedStyles.dateButton}
-                  onPress={() => setShowDatePicker(true)}
+                  style={SharedStyles.dropdownButton}
+                  onPress={() => setShowSlotsDropdown(!showSlotsDropdown)}
                 >
-                  <Text style={SharedStyles.dateLabel}>Date</Text>
-                  <Text style={SharedStyles.dateValue}>
-                    {formatDate(selectedDate)}
+                  <Text
+                    style={[
+                      SharedStyles.dropdownButtonText,
+                      !slots && SharedStyles.placeholderText,
+                    ]}
+                  >
+                    {slots || "Select Number"}
+                  </Text>
+                  <Text style={SharedStyles.dropdownArrow}>
+                    {showSlotsDropdown ? "▲" : "▼"}
                   </Text>
                 </Pressable>
-              </View>
 
-              {/* Time Pickers */}
-              <View style={styles.timeRowContainer}>
-                <View style={styles.timeFieldContainer}>
-                  <View style={SharedStyles.iconContainer}>
-                    <Text style={SharedStyles.iconText}>🕐</Text>
-                  </View>
-                  <Pressable
-                    style={SharedStyles.dateButton}
-                    onPress={() => setShowStartPicker(true)}
-                  >
-                    <Text style={SharedStyles.dateLabel}>Start</Text>
-                    <Text style={SharedStyles.dateValue}>
-                      {formatTime(startTime)}
-                    </Text>
-                  </Pressable>
-                </View>
-
-                <View style={styles.timeFieldContainer}>
-                  <View style={SharedStyles.iconContainer}>
-                    <Text style={SharedStyles.iconText}>🕑</Text>
-                  </View>
-                  <Pressable
-                    style={SharedStyles.dateButton}
-                    onPress={() => setShowEndPicker(true)}
-                  >
-                    <Text style={SharedStyles.dateLabel}>End</Text>
-                    <Text style={SharedStyles.dateValue}>
-                      {formatTime(endTime)}
-                    </Text>
-                  </Pressable>
-                </View>
-              </View>
-            </View>
-
-            {/* Food Giveaway Switch */}
-            <View style={SharedStyles.switchContainer}>
-              <Text style={SharedStyles.switchLabel}>Food Giveaway?</Text>
-              <Switch
-                value={isFoodGiveaway}
-                onValueChange={(value) => {
-                  setIsFoodGiveaway(value);
-                  if (value) {
-                    setSlots(1);
-                  } else {
-                    setImageUris([]);
-                  }
-                }}
-                trackColor={{ false: Colors.disabled, true: Colors.primary }}
-                thumbColor={Colors.white}
-              />
-            </View>
-
-            {/* Photo Upload */}
-            {isFoodGiveaway && (
-              <View style={SharedStyles.photoUploadContainer}>
-                <Pressable
-                  style={[
-                    SharedStyles.photoUploadButton,
-                    imageUris.length >= MAX_PHOTOS &&
-                      SharedStyles.photoUploadButtonDisabled,
-                  ]}
-                  onPress={pickImage}
-                  disabled={imageUris.length >= MAX_PHOTOS}
-                >
-                  <Text style={SharedStyles.photoUploadButtonText}>
-                    {imageUris.length === 0
-                      ? "Upload Photos"
-                      : `Add Photos (${imageUris.length}/${MAX_PHOTOS})`}
-                  </Text>
-                </Pressable>
-                {imageUris.length > 0 && (
-                  <View style={SharedStyles.photoScrollContainer}>
-                    <ScrollView
-                      horizontal={true}
-                      nestedScrollEnabled={true}
-                      showsHorizontalScrollIndicator={false}
-                      scrollEventThrottle={16}
-                      contentContainerStyle={styles.photoScrollContent}
-                    >
-                      {imageUris.map((uri, index) => (
-                        <View key={index} style={SharedStyles.photoWrapper}>
-                          <Image
-                            source={{ uri }}
-                            style={SharedStyles.imagePreview}
-                          />
-                          <Pressable
-                            onPress={() =>
-                              setImageUris((prev) =>
-                                prev.filter((_, i) => i !== index)
-                              )
-                            }
-                            style={SharedStyles.removeImageButton}
-                          >
-                            <Text style={SharedStyles.removeImageButtonText}>
-                              ✕
-                            </Text>
-                          </Pressable>
-                        </View>
+                {showSlotsDropdown && (
+                  <View style={SharedStyles.dropdownMenu}>
+                    <ScrollView style={SharedStyles.dropdownScroll}>
+                      {slotsOptions.map((option, index) => (
+                        <Pressable
+                          key={index}
+                          style={SharedStyles.dropdownItem}
+                          onPress={() => handleSlotsSelect(option)}
+                        >
+                          <Text style={SharedStyles.dropdownItemText}>
+                            {option}
+                          </Text>
+                        </Pressable>
                       ))}
                     </ScrollView>
                   </View>
                 )}
               </View>
-            )}
+            </View>
+          )}
 
-            {/* Post Button */}
-            <View style={styles.postButtonContainer}>
+          {/* Date Picker */}
+          <View style={SharedStyles.fieldContainer}>
+            <View style={SharedStyles.iconContainer}>
+              <Image source={calendarIcon} style={styles.formIcon} />
+            </View>
+            <Pressable
+              style={SharedStyles.dateButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={SharedStyles.dateLabel}>Date</Text>
+              <Text style={SharedStyles.dateValue}>
+                {formatDate(selectedDate)}
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Time Pickers */}
+          <View style={styles.timeRowContainer}>
+            <View style={styles.timeFieldContainer}>
+              <View style={SharedStyles.iconContainer}>
+                <Image
+                  source={timeIcon}
+                  style={[styles.formIcon, { tintColor: "#4CAF50" }]}
+                />
+              </View>
               <Pressable
-                style={[SharedStyles.primaryButton, styles.primaryButton, isPosting && { opacity: 0.5 }]}
-                onPress={insertToDB}
-                disabled={isPosting}
+                style={SharedStyles.dateButton}
+                onPress={() => setShowStartPicker(true)}
               >
-                <Text style={SharedStyles.primaryButtonText}>
-                  {isPosting ? "posting..." : "post ✓"}
+                <Text style={SharedStyles.dateLabel}>Start</Text>
+                <Text style={SharedStyles.dateValue}>
+                  {formatTime(startTime)}
                 </Text>
               </Pressable>
             </View>
-          </ScrollView>
+
+            <View style={styles.timeFieldContainer}>
+              <View style={SharedStyles.iconContainer}>
+                <Image
+                  source={timeIcon}
+                  style={[styles.formIcon, { tintColor: Colors.error }]}
+                />
+              </View>
+              <Pressable
+                style={SharedStyles.dateButton}
+                onPress={() => setShowEndPicker(true)}
+              >
+                <Text style={SharedStyles.dateLabel}>End</Text>
+                <Text style={SharedStyles.dateValue}>
+                  {formatTime(endTime)}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
-      </View>
+
+        {/* Food Giveaway Switch */}
+        <View style={SharedStyles.switchContainer}>
+          <Text style={SharedStyles.switchLabel}>Food Giveaway?</Text>
+          <Switch
+            value={isFoodGiveaway}
+            onValueChange={(value) => {
+              setIsFoodGiveaway(value);
+              if (value) {
+                setSlots(1);
+              } else {
+                setImageUris([]);
+              }
+            }}
+            trackColor={{ false: Colors.disabled, true: Colors.primary }}
+            thumbColor={Colors.white}
+          />
+        </View>
+
+        {/* Photo Upload */}
+        {isFoodGiveaway && (
+          <View style={SharedStyles.photoUploadContainer}>
+            <Pressable
+              style={[
+                SharedStyles.photoUploadButton,
+                imageUris.length >= MAX_PHOTOS &&
+                  SharedStyles.photoUploadButtonDisabled,
+              ]}
+              onPress={pickImage}
+              disabled={imageUris.length >= MAX_PHOTOS}
+            >
+              <Text style={SharedStyles.photoUploadButtonText}>
+                {imageUris.length === 0
+                  ? "Upload Photos"
+                  : `Add Photos (${imageUris.length}/${MAX_PHOTOS})`}
+              </Text>
+            </Pressable>
+            {imageUris.length > 0 && (
+              <View style={SharedStyles.photoScrollContainer}>
+                <ScrollView
+                  horizontal={true}
+                  nestedScrollEnabled={true}
+                  showsHorizontalScrollIndicator={false}
+                  scrollEventThrottle={16}
+                  contentContainerStyle={styles.photoScrollContent}
+                >
+                  {imageUris.map((uri, index) => (
+                    <View key={index} style={SharedStyles.photoWrapper}>
+                      <Image
+                        source={{ uri }}
+                        style={SharedStyles.imagePreview}
+                      />
+                      <Pressable
+                        onPress={() =>
+                          setImageUris((prev) =>
+                            prev.filter((_, i) => i !== index)
+                          )
+                        }
+                        style={SharedStyles.removeImageButton}
+                      >
+                        <Text style={SharedStyles.removeImageButtonText}>
+                          ✕
+                        </Text>
+                      </Pressable>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Post Button */}
+        <View style={styles.postButtonContainer}>
+          <Pressable
+            style={[
+              SharedStyles.primaryButton,
+              styles.primaryButton,
+              isPosting && { opacity: 0.5 },
+            ]}
+            onPress={insertToDB}
+            disabled={isPosting}
+          >
+            <Text style={SharedStyles.primaryButtonText}>
+              {isPosting ? "Posting..." : "Post ✓"}
+            </Text>
+          </Pressable>
+        </View>
+      </ScrollView>
 
       {/* Date Picker Modal */}
       {showDatePicker && (
-        <Modal
-          transparent={true}
-          visible={showDatePicker}
-          animationType="slide"
-        >
-          <Pressable
-            style={SharedStyles.timePickerModalOverlay}
-            onPress={() => setShowDatePicker(false)}
-          >
-            <Pressable
-              style={SharedStyles.timePickerModal}
-              onPress={(e) => e.stopPropagation()}
-            >
-              <View style={SharedStyles.timePickerHeader}>
-                <Pressable onPress={() => setShowDatePicker(false)}>
-                  <Text style={SharedStyles.timePickerDone}>Done</Text>
-                </Pressable>
-              </View>
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display="spinner"
-                onChange={onTimeChange(setSelectedDate, setShowDatePicker)}
-                style={styles.timePicker}
-                textColor="#000000"
-                themeVariant="light"
-                minimumDate={getTodayMidnight()}
-              />
-            </Pressable>
-          </Pressable>
-        </Modal>
+        <React.Fragment>
+          <PlatformSpecificDatePicker
+            value={selectedDate}
+            onChange={onTimeChange(setSelectedDate, setShowDatePicker)}
+            onClose={() => setShowDatePicker(false)}
+            mode="date"
+            minimumDate={getTodayMidnight()}
+          />
+        </React.Fragment>
       )}
 
-      {/* Start Time Picker Modal */}
       {showStartPicker && (
-        <Modal
-          transparent={true}
-          visible={showStartPicker}
-          animationType="slide"
-        >
-          <Pressable
-            style={SharedStyles.timePickerModalOverlay}
-            onPress={() => setShowStartPicker(false)}
-          >
-            <Pressable
-              style={SharedStyles.timePickerModal}
-              onPress={(e) => e.stopPropagation()}
-            >
-              <View style={SharedStyles.timePickerHeader}>
-                <Pressable onPress={() => setShowStartPicker(false)}>
-                  <Text style={SharedStyles.timePickerDone}>Done</Text>
-                </Pressable>
-              </View>
-              <DateTimePicker
-                value={startTime}
-                mode="time"
-                display="spinner"
-                onChange={onTimeChange(setStartTime, setShowStartPicker)}
-                style={styles.timePicker}
-                textColor="#000000"
-                themeVariant="light"
-              />
-            </Pressable>
-          </Pressable>
-        </Modal>
+        <PlatformSpecificDatePicker
+          value={startTime}
+          onChange={onTimeChange(setStartTime, setShowStartPicker)}
+          onClose={() => setShowStartPicker(false)}
+          mode="time"
+        />
       )}
 
-      {/* End Time Picker Modal */}
       {showEndPicker && (
-        <Modal transparent={true} visible={showEndPicker} animationType="slide">
-          <Pressable
-            style={SharedStyles.timePickerModalOverlay}
-            onPress={() => setShowEndPicker(false)}
-          >
-            <Pressable
-              style={SharedStyles.timePickerModal}
-              onPress={(e) => e.stopPropagation()}
-            >
-              <View style={SharedStyles.timePickerHeader}>
-                <Pressable onPress={() => setShowEndPicker(false)}>
-                  <Text style={SharedStyles.timePickerDone}>Done</Text>
-                </Pressable>
-              </View>
-              <DateTimePicker
-                value={endTime}
-                mode="time"
-                display="spinner"
-                onChange={onTimeChange(setEndTime, setShowEndPicker)}
-                style={styles.timePicker}
-                textColor="#000000"
-                themeVariant="light"
-              />
-            </Pressable>
-          </Pressable>
-        </Modal>
+        <PlatformSpecificDatePicker
+          value={endTime}
+          onChange={onTimeChange(setEndTime, setShowEndPicker)}
+          onClose={() => setShowEndPicker(false)}
+          mode="time"
+        />
       )}
     </View>
   );
 }
 
-// Only form-specific layout styles
+const PlatformSpecificDatePicker = ({
+  value,
+  onChange,
+  onClose,
+  mode,
+  minimumDate,
+}: any) => {
+  return (
+    <Modal transparent={true} visible={true} animationType="slide">
+      <Pressable style={SharedStyles.timePickerModalOverlay} onPress={onClose}>
+        <Pressable
+          style={SharedStyles.timePickerModal}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <View style={SharedStyles.timePickerHeader}>
+            <Pressable onPress={onClose}>
+              <Text style={SharedStyles.timePickerDone}>Done</Text>
+            </Pressable>
+          </View>
+          <DateTimePicker
+            value={value}
+            mode={mode}
+            display="spinner"
+            onChange={onChange}
+            style={styles.timePicker}
+            textColor="#000000"
+            themeVariant="light"
+            minimumDate={minimumDate}
+          />
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+};
+
 const styles = StyleSheet.create({
-  screenOverlay: {
+  fullScreenContainer: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.white,
+  },
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    marginTop: Platform.OS === "android" ? 0 : 0, 
+  },
+  headerPlaceholder: {
+    width: 30,
+  },
+  headerTitle: {
+    fontSize: FontSizes.lg,
+    fontWeight: "700",
+    color: Colors.black,
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    paddingBottom: 80,
+    ...Shadows.medium, 
   },
-  screenContent: {
-    width: "90%",
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.md,
-    overflow: "hidden",
-    maxHeight: "90%",
+  closeButtonText: {
+    fontSize: FontSizes.lg,
+    color: Colors.white,
+    fontWeight: "600",
+    lineHeight: Platform.OS === "android" ? 22 : undefined,
+    marginTop: Platform.OS === "ios" ? 1 : 0, 
+  },
+  scrollContent: {
+    paddingBottom: 100, 
   },
   formContent: {
     padding: Spacing.xl,
@@ -665,5 +668,11 @@ const styles = StyleSheet.create({
   primaryButton: {
     marginTop: -15,
     paddingVertical: 12,
+  },
+  formIcon: {
+    width: ResponsiveUtils.moderateScale(24),
+    height: ResponsiveUtils.moderateScale(24),
+    resizeMode: "contain",
+    tintColor: Colors.textMedium,
   },
 });

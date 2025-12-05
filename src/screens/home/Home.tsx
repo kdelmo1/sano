@@ -7,7 +7,6 @@ import {
   Pressable,
   RefreshControl,
   Animated,
-  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useEffect, useState, useRef, useContext } from "react";
@@ -20,16 +19,16 @@ import getFromDB from "../GetFromDB";
 import ProfileScreen from "../profile/ProfileScreen";
 import InboxScreen from "../profile/InboxScreen";
 
-// Import shared styles
+// 1. Import the new NavBar
+import NavBar, { NavButton } from "./NavBar"; 
+
 import {
   Colors,
   Spacing,
   BorderRadius,
-  Shadows,
   SharedStyles,
 } from "../../styles/sharedStyles";
 
-type NavButton = "home" | "post" | "profile";
 type Screen = "feed" | "chat" | "profile" | "inbox" | "form";
 
 export default function Home() {
@@ -38,6 +37,7 @@ export default function Home() {
   const [posts, setPosts] = useState<PostProps[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<PostProps[]>([]);
 
+  // activeNav is still used for logic, even if NavBar handles the view
   const [activeNav, setActiveNav] = useState<NavButton>("home");
   const [toPost, setToPost] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -63,7 +63,6 @@ export default function Home() {
 
   const toLocalISOWithTimezone = (date: Date) => {
     const pad = (n: number) => String(n).padStart(2, "0");
-
     const offset = -date.getTimezoneOffset();
     const sign = offset >= 0 ? "+" : "-";
     const absOffset = Math.abs(offset);
@@ -88,11 +87,9 @@ export default function Home() {
       );
     }
 
-    // Filter by specific date time
     if (selectedDate && selectedStartTime) {
       const selectedDateTime = new Date(
-        `${selectedDate.toISOString().split("T")[0]}T${selectedStartTime.toISOString().split("T")[1]
-        }`
+        `${selectedDate.toISOString().split("T")[0]}T${selectedStartTime.toISOString().split("T")[1]}`
       );
       setFilteredPosts((prev) =>
         prev.filter((post) => {
@@ -104,35 +101,19 @@ export default function Home() {
         })
       );
     }
-    // Filter by specific date
     else if (selectedDate) {
-      const localSelectedDate =
-        toLocalISOWithTimezone(selectedDate).split("T")[0];
+      const localSelectedDate = toLocalISOWithTimezone(selectedDate).split("T")[0];
       setFilteredPosts((prev) =>
         prev.filter((post) => {
-          const postStartDate = toLocalISOWithTimezone(
-            new Date(post.startTime)
-          ).split("T")[0];
-          const postEndDate = toLocalISOWithTimezone(
-            new Date(post.endTime)
-          ).split("T")[0];
+          const postStartDate = toLocalISOWithTimezone(new Date(post.startTime)).split("T")[0];
+          const postEndDate = toLocalISOWithTimezone(new Date(post.endTime)).split("T")[0];
           return (
             localSelectedDate === postStartDate ||
             localSelectedDate === postEndDate
           );
         })
       );
-      //eq("date", toLocalISOWithTimezone(selectedDate).split("T"));
     }
-
-    /*
-12/3T1:38am-5:08pm
-12/3T2:38am-3:08pm
-12/3T3:38am-5:08pm
-12/4T2:38am-3:08pm
-*/
-
-    // Filter with times
     else if (selectedStartTime) {
       const selectedHour = selectedStartTime.getHours();
       const selectedMinute = selectedStartTime.getMinutes();
@@ -141,11 +122,9 @@ export default function Home() {
         prev.filter((post) => {
           const postStartTime = new Date(post.startTime);
           const postEndTime = new Date(post.endTime);
-
           const startHours = postStartTime.getHours();
           const startMinutes = postStartTime.getMinutes();
           const startTimeInMinutes = startHours * 60 + startMinutes;
-
           const differenceInMinutes =
             (postEndTime.getTime() - postStartTime.getTime()) / 60000;
 
@@ -164,7 +143,6 @@ export default function Home() {
         )
       );
     }
-
     setShowFilter(false);
   };
 
@@ -182,18 +160,16 @@ export default function Home() {
     setFilteredPosts(posts);
   }, [posts]);
 
+  // Combined Notification Effect
   useEffect(() => {
     const channelName = `notification:${emailHandle}`;
     const room = supabase.channel(channelName, {
       config: {
-        broadcast: {
-          self: true,
-        },
-        presence: {
-          key: user?.id,
-        },
+        broadcast: { self: true },
+        presence: { key: user?.id },
       },
     });
+
     const initNotification = async () => {
       const { data, error } = await supabase
         .from("chat")
@@ -201,8 +177,7 @@ export default function Home() {
         .eq("receiver", emailHandle)
         .eq("read", false);
       if (error) {
-        console.log("error notification");
-      } else if (data.length !== 0) {
+      } else if (data && data.length !== 0) {
         setUnreadMessages(true);
       }
     };
@@ -223,105 +198,31 @@ export default function Home() {
     );
 
     room.subscribe(async (status) => {
-      //console.log("status", status);
       if (status === "SUBSCRIBED") {
-        await room.track({
-          id: user?.id,
-        });
+        await room.track({ id: user?.id });
       }
     });
 
     return () => {
       room.unsubscribe();
     };
-  }, [screen]);
+  }, [emailHandle, user?.id]);
 
   useEffect(() => {
     if (screen === "profile") {
       const markRead = async () => {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from("chat")
           .update({ read: true })
           .eq("receiver", emailHandle);
         if (error) {
-          console.log("error on read message");
         } else {
           setUnreadMessages(false);
         }
       };
       markRead();
     }
-  }, [screen]);
-
-  useEffect(() => {
-    const channelName = `notification:${emailHandle}`;
-    const room = supabase.channel(channelName, {
-      config: {
-        broadcast: {
-          self: true,
-        },
-        presence: {
-          key: user?.id,
-        }
-      }
-    });
-    const initNotification = async () => {
-      const { data, error } = await supabase
-        .from("chat")
-        .select()
-        .eq("receiver", emailHandle)
-        .eq("read", false);
-      if (error) {
-        console.log("error notification");
-      } else if (data.length !== 0) {
-        setUnreadMessages(true);
-      }
-    }
-
-    initNotification();
-
-    room.on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "chat",
-        filter: `receiver=eq.${emailHandle}`,
-      }, (payload) => {
-        console.log(payload);
-        setUnreadMessages(true);
-      });
-
-    room.subscribe(async (status) => {
-      console.log(status);
-      if (status === "SUBSCRIBED") {
-        await room.track({
-          id: user?.id,
-        });
-      }
-    });
-
-    return () => {
-      room.unsubscribe();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (screen === 'profile') {
-      const markRead = async () => {
-        const { data, error } = await supabase
-          .from("chat")
-          .update({ read: true })
-          .eq("receiver", emailHandle)
-        if (error) {
-          console.log("error on read message");
-        } else {
-          setUnreadMessages(false);
-        }
-      }
-      markRead();
-    }
-  }, [screen]);
+  }, [screen, emailHandle]);
 
   const animateNavButton = (button: NavButton) => {
     const animations = {
@@ -348,7 +249,6 @@ export default function Home() {
       onRefresh();
       setToPost(false);
       setScreen("feed");
-      setToPost(false);
     } else if (button === "post") {
       setToPost(true);
       setScreen("form");
@@ -356,100 +256,7 @@ export default function Home() {
       setToPost(false);
       setScreen("profile");
     }
-    /*else if (button === "filter") {
-      setScreen("filter");
-    }*/
   };
-
-  // Single NavBar Component using SharedStyles
-  const renderNavBar = () => (
-    <View style={SharedStyles.floatingNav}>
-      <Pressable
-        style={SharedStyles.nav_button}
-        onPress={() => handleNavPress("post")}
-      >
-        <Animated.View
-          style={[
-            SharedStyles.navCircle,
-            {
-              opacity: postAnim,
-              transform: [{ scale: postAnim }],
-            },
-          ]}
-        />
-        <Animated.Image
-          source={require("../../assets/images/icon-post.png")}
-          style={[
-            SharedStyles.nav_icon_image,
-            {
-              tintColor: postAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [Colors.white, Colors.primary],
-              }),
-            },
-          ]}
-        />
-      </Pressable>
-
-      <Pressable
-        style={SharedStyles.nav_button}
-        onPress={() => handleNavPress("home")}
-      >
-        <Animated.View
-          style={[
-            SharedStyles.navCircle,
-            {
-              opacity: homeAnim,
-              transform: [{ scale: homeAnim }],
-            },
-          ]}
-        />
-        <Animated.Image
-          source={require("../../assets/images/icon-home.png")}
-          style={[
-            SharedStyles.nav_icon_image,
-            {
-              tintColor: homeAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [Colors.white, Colors.primary],
-              }),
-            },
-          ]}
-        />
-      </Pressable>
-      <Pressable
-        style={SharedStyles.nav_button}
-        onPress={() => handleNavPress("profile")}
-      >
-        {unreadMessages && (
-          <View style={styles.notificationBadge}>
-            <View style={styles.redDot} />
-          </View>
-        )}
-        <Animated.View
-          style={[
-            SharedStyles.navCircle,
-            {
-              opacity: profileAnim,
-              transform: [{ scale: profileAnim }],
-            },
-          ]}
-        />
-        <Animated.Image
-          source={require("../../assets/images/profile-icon.png")}
-          style={[
-            SharedStyles.nav_icon_image,
-            {
-              tintColor: profileAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [Colors.white, Colors.primary],
-              }),
-            },
-          ]}
-        />
-      </Pressable>
-    </View>
-  );
 
   // Render different screens based on state
   const renderScreen = () => {
@@ -461,6 +268,9 @@ export default function Home() {
             setToPost={setToPost}
             onPostSuccess={() => {
               setGetPost((prev) => !prev);
+              setToPost(false);
+              setScreen("profile"); 
+              animateNavButton("profile"); 
             }}
             onClose={() => {
               setToPost(false);
@@ -546,12 +356,6 @@ export default function Home() {
     }
   };
 
-  function combineDateAndTime(date: Date, time: Date) {
-    const combined = new Date(date);
-    combined.setHours(time.getHours(), time.getMinutes(), 0, 0);
-    return combined;
-  }
-
   return (
     <View
       style={{
@@ -564,13 +368,21 @@ export default function Home() {
       }}
     >
       {renderScreen()}
-      {renderNavBar()}
+      
+      {/* 2. Using the extracted component */}
+      <NavBar 
+        onNavPress={handleNavPress}
+        unreadMessages={unreadMessages}
+        homeAnim={homeAnim}
+        postAnim={postAnim}
+        profileAnim={profileAnim}
+      />
+      
       <StatusBar style="auto" />
     </View>
   );
 }
 
-// Component-specific styles with overrides to match original
 const styles = StyleSheet.create({
   container: {
     display: "flex",
@@ -607,33 +419,5 @@ const styles = StyleSheet.create({
   filterButtonText: {
     fontSize: 16,
     fontWeight: "600",
-  },
-  filterHeader: {
-    backgroundColor: "#D4B75F",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  filterActionText: {
-    fontSize: 18,
-    color: "#007AFF",
-  },
-  filterTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    zIndex: 2,
-  },
-  redDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 10,
-    backgroundColor: Colors.error,
   },
 });

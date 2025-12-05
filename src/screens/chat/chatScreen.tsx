@@ -7,8 +7,12 @@ import {
   FlatList,
   ListRenderItemInfo,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
+  Keyboard, // 1. Import Keyboard
 } from "react-native";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useRef } from "react";
 import AuthContext from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 import {
@@ -17,13 +21,16 @@ import {
   Spacing,
   FontSizes,
   BorderRadius,
-  Shadows,
+  ResponsiveUtils,
 } from "../../styles/sharedStyles";
+
+const { moderateScale } = ResponsiveUtils;
 
 interface Message {
   message: string;
   id: string;
   sender: string;
+  created_at?: string;
 }
 
 interface ChatScreenProps {
@@ -44,6 +51,21 @@ export default function ChatScreen({
   const { user, emailHandle } = useContext(AuthContext);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const flatListRef = useRef<FlatList>(null);
+
+  // 2. Add Listener to scroll to bottom when keyboard opens
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const channelName = `chat:${postID}`;
@@ -62,13 +84,12 @@ export default function ChatScreen({
       const initChat = async () => {
         const { data, error } = await supabase
           .from("chat")
-          .select("id,sender,receiver,message")
+          .select("id,sender,receiver,message,created_at")
           .eq("postID", postID)
           .or(`sender.eq.${receiver},sender.eq.${emailHandle}`)
           .or(`receiver.eq.${receiver},receiver.eq.${emailHandle}`)
           .order("created_at", { ascending: true });
         if (error) {
-          console.log("Error fetching messages:", error);
         } else {
           setMessages(
             data.map((val) => {
@@ -76,6 +97,7 @@ export default function ChatScreen({
                 message: val["message"],
                 id: val["id"],
                 sender: val["sender"],
+                created_at: val["created_at"],
               };
             })
           );
@@ -93,11 +115,6 @@ export default function ChatScreen({
           filter: `postID=eq.${postID}`,
         },
         (payload) => {
-          console.log(
-            payload.new["receiver"],
-            payload.new["sender"],
-            emailHandle
-          );
           if (
             (payload.new["receiver"] === emailHandle &&
               payload.new["sender"] === receiver) ||
@@ -109,6 +126,7 @@ export default function ChatScreen({
                 message: payload.new["message"],
                 id: payload.new["id"],
                 sender: payload.new["sender"],
+                created_at: payload.new["created_at"],
               };
               return [...prev, newMess];
             });
@@ -130,20 +148,28 @@ export default function ChatScreen({
   }, [openChat]);
 
   const sendMessage = async () => {
-    // Don't send if message is empty or only whitespace
     if (!newMessage.trim()) {
       return;
     }
 
-    const currentUsername = user?.email?.split("@")[0];
+    const msg = newMessage;
+    setNewMessage("");
+
     const { error } = await supabase.from("chat").insert({
       postID: postID,
       receiver: receiver,
       sender: emailHandle,
-      message: newMessage,
+      message: msg,
     });
-    if (error) console.log(error);
-    setNewMessage("");
+  };
+
+  const formatTime = (dateString?: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    });
   };
 
   const renderMessage = ({ item }: ListRenderItemInfo<Message>) => {
@@ -174,6 +200,15 @@ export default function ChatScreen({
             {item.message}
           </Text>
         </View>
+        
+        {item.created_at && (
+          <Text style={[
+            styles.timestamp, 
+            { textAlign: isMyMessage ? 'right' : 'left' }
+          ]}>
+            {formatTime(item.created_at)}
+          </Text>
+        )}
       </View>
     );
   };
@@ -181,23 +216,49 @@ export default function ChatScreen({
   const backButtonText = `Back to ${fromScreen}`;
 
   return (
-    <Modal visible={openChat}>
-      <View style={styles.screen}>
-        <View style={styles.container}>
+    <Modal
+      visible={openChat}
+      animationType="none" 
+      transparent={false}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={0}
+      >
+        <View style={styles.chatContainer}>
           <View style={styles.header}>
-            <Pressable onPress={goBack} style={SharedStyles.backButton}>
-              <Text style={SharedStyles.backText}>{backButtonText}</Text>
-            </Pressable>
-            <Text style={styles.headerTitle}>Chat with {receiver}</Text>
-            <View style={SharedStyles.placeholder} />
+            <View style={styles.headerSideContainer}>
+              <Pressable onPress={goBack} style={SharedStyles.backButton}>
+                <Text style={SharedStyles.backText}>{backButtonText}</Text>
+              </Pressable>
+            </View>
+
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              Chat with {receiver}
+            </Text>
+
+            <View style={styles.headerSideContainer} />
           </View>
+          
           <FlatList
-            style={styles.mainChat}
+            ref={flatListRef}
+            style={styles.messageList}
             contentContainerStyle={styles.contentMainChat}
             data={messages}
             renderItem={renderMessage}
             keyExtractor={(item, index) => item.id || index.toString()}
+            onContentSizeChange={() =>
+              flatListRef.current?.scrollToEnd({ animated: true })
+            }
+            // onLayout handles resizing of the container itself
+            onLayout={() =>
+              flatListRef.current?.scrollToEnd({ animated: true })
+            }
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
           />
+          
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.textInput}
@@ -205,79 +266,111 @@ export default function ChatScreen({
               placeholderTextColor={Colors.placeholder}
               value={newMessage}
               onChangeText={(text) => setNewMessage(text)}
+              multiline
+              maxLength={500}
             />
-            <Pressable style={styles.sendButton} onPress={sendMessage}>
+            <Pressable 
+              style={styles.sendButton} 
+              onPressIn={sendMessage}
+              hitSlop={10}
+            >
               <Text style={styles.sendButtonText}>Send</Text>
             </Pressable>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
+const STATUSBAR_HEIGHT = Platform.OS === 'ios' ? 50 : StatusBar.currentHeight || 0;
+
 const styles = StyleSheet.create({
-  screen: {
+  keyboardView: {
     flex: 1,
-    width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: Spacing.lg,
     backgroundColor: Colors.background,
   },
-  container: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    maxWidth: 1152,
-    width: "100%",
-    minHeight: 600,
-    borderRadius: BorderRadius.lg,
+  chatContainer: {
+    flex: 1,
     backgroundColor: Colors.white,
-    overflow: "hidden",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    height: 70,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    height: 60 + STATUSBAR_HEIGHT, 
+    paddingTop: STATUSBAR_HEIGHT,
     paddingHorizontal: Spacing.lg,
-    backgroundColor: Colors.inputBg,
+    backgroundColor: Colors.white, 
+    zIndex: 10, 
+    shadowColor: Colors.shadow || "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5, 
+  },
+  headerSideContainer: {
+    width: 120, 
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   headerTitle: {
     fontSize: FontSizes.md,
-    fontWeight: "600",
+    fontWeight: "700",
     color: Colors.text,
     flex: 1,
     textAlign: "center",
   },
-  inputContainer: {
-    flexDirection: "row",
-    padding: Spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    alignItems: "center",
-    gap: Spacing.base,
-    backgroundColor: Colors.inputBg,
-  },
-  sendButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.base,
-    borderRadius: BorderRadius.sm,
-  },
-  sendButtonText: {
-    fontSize: FontSizes.base,
-    fontWeight: "600",
-    color: Colors.white,
-  },
-  mainChat: {
+  messageList: {
     flex: 1,
     backgroundColor: Colors.white,
   },
   contentMainChat: {
     padding: Spacing.lg,
+    paddingBottom: Spacing.base,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    paddingVertical: Spacing.base, 
+    paddingHorizontal: Spacing.base,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    alignItems: "flex-end", 
+    gap: Spacing.sm,
+    backgroundColor: Colors.white,
+    paddingBottom: Platform.OS === 'ios' ? 35 : Spacing.base,
+  },
+  textInput: {
+    flex: 1,
+    minHeight: 40, 
+    maxHeight: 120,
+    padding: Spacing.base,
+    paddingTop: 10, 
+    backgroundColor: Colors.inputBg,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    color: Colors.text,
+    fontSize: FontSizes.base,
+  },
+  sendButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.base,
+    borderRadius: BorderRadius.md,
+    justifyContent: "center",
+    height: 40, 
+    
+    shadowColor: Colors.shadow || "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  sendButtonText: {
+    fontSize: FontSizes.base,
+    fontWeight: "600",
+    color: Colors.white,
   },
   messageContainer: {
     width: "100%",
@@ -309,14 +402,11 @@ const styles = StyleSheet.create({
   theirMessageText: {
     color: "#000",
   },
-  textInput: {
-    flex: 1,
-    padding: Spacing.base,
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    color: Colors.text,
-    fontSize: FontSizes.base,
-  },
+  timestamp: {
+    fontSize: 11,
+    color: Colors.textLight || "#999",
+    marginTop: 4,
+    marginHorizontal: 2,
+    fontStyle: "italic",
+  }
 });

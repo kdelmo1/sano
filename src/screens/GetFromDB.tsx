@@ -27,7 +27,6 @@ export default async function getFromDB(
   const { data, error } = await query;
 
   if (error) {
-    console.log("err", error);
     setPosts([]);
   } else if (data) {
     // Filter out posts that are full for users who haven't reserved (only in feed)
@@ -64,7 +63,7 @@ export default async function getFromDB(
       return rating;
     }, {} as Record<string, number | "X">);
 
-    if (ratingError) console.error(ratingError);
+    if (ratingError) {}
     else {
       setPosts(
         filteredData.map((val) => {
