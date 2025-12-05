@@ -112,7 +112,7 @@ export default function ProfileScreen({
 
         {/* User Name */}
         <Text style={[Typography.userName, styles.userName]}>
-          {displayName}
+          {emailHandle}
         </Text>
 
         <View style={styles.ratingContainer}>
