@@ -9,19 +9,15 @@ import {
   Modal,
   Image,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import { supabase } from "../../lib/supabase";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   SharedStyles,
   Colors,
   Spacing,
-  BorderRadius,
-  Typography,
   ResponsiveUtils,
 } from "../../styles/sharedStyles";
 
-// Import local assets
 const locationIcon = require("../../assets/images/form-location.png");
 const calendarIcon = require("../../assets/images/form-calendar.png");
 const timeIcon = require("../../assets/images/form-time.png");

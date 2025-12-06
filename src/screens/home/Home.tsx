@@ -18,10 +18,7 @@ import Filter from "./filter";
 import getFromDB from "../GetFromDB";
 import ProfileScreen from "../profile/ProfileScreen";
 import InboxScreen from "../profile/InboxScreen";
-
-// 1. Import the new NavBar
 import NavBar, { NavButton } from "./NavBar";
-
 import {
   Colors,
   Spacing,
@@ -49,8 +46,6 @@ export default function Home() {
   const profileAnim = useRef(new Animated.Value(0)).current;
 
   const [unreadMessages, setUnreadMessages] = useState(false);
-
-  // Filter values
   const [showFilter, setShowFilter] = useState(false);
 
   const onRefresh = () => {
@@ -164,7 +159,6 @@ export default function Home() {
     setFilteredPosts(posts);
   }, [posts]);
 
-  // Combined Notification Effect
   useEffect(() => {
     const channelName = `notification:${emailHandle}`;
     const room = supabase.channel(channelName, {
@@ -262,7 +256,6 @@ export default function Home() {
     }
   };
 
-  // Render different screens based on state
   const renderScreen = () => {
     switch (screen) {
       case "form":
@@ -372,8 +365,6 @@ export default function Home() {
       }}
     >
       {renderScreen()}
-
-      {/* 2. Using the extracted component */}
       <NavBar
         onNavPress={handleNavPress}
         unreadMessages={unreadMessages}

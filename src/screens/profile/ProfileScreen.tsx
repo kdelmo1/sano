@@ -27,30 +27,25 @@ interface ProfileScreenProps {
 }
 
 export default function ProfileScreen({
-  goBack,
   onInboxPress,
 }: ProfileScreenProps) {
-  const { isLoggedIn, user, emailHandle } = useContext(AuthContext);
+  const {user, emailHandle } = useContext(AuthContext);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
 
-  const [yourPosts, setYourPosts] = useState<any[]>([]); // Typed as any[] or PostProps[]
+  const [yourPosts, setYourPosts] = useState<any[]>([]);
   const [yourRating, setYourRating] = useState<number | "X">("X");
   const [refreshingRating, setRefreshingRating] = useState(false);
-
-  // 1. Add state for refreshing posts
   const [refreshingPosts, setRefreshingPosts] = useState(false);
 
   useEffect(() => {
     getFromDB("profile", emailHandle, setYourPosts);
   }, []);
 
-  // 2. Add the refresh handler function
   const onRefreshPosts = async () => {
     setRefreshingPosts(true);
-    // Assuming getFromDB returns a promise. If not, this might finish instantly.
     await getFromDB("profile", emailHandle, setYourPosts);
     setRefreshingPosts(false);
   };
@@ -150,7 +145,7 @@ export default function ProfileScreen({
             <RefreshControl
               refreshing={refreshingPosts}
               onRefresh={onRefreshPosts}
-              tintColor={Colors.primary} // Optional: change spinner color
+              tintColor={Colors.primary}
             />
           }
         >

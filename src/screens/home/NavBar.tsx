@@ -4,17 +4,14 @@ import {
   Pressable, 
   Animated, 
   StyleSheet, 
-  Image 
 } from "react-native";
 import { SharedStyles, Colors } from "../../styles/sharedStyles";
 
-// Define the specific type for navigation buttons
 export type NavButton = "home" | "post" | "profile";
 
 interface NavBarProps {
   onNavPress: (button: NavButton) => void;
   unreadMessages: boolean;
-  // We pass the animated values from Home so Home can control the transition logic
   homeAnim: Animated.Value;
   postAnim: Animated.Value;
   profileAnim: Animated.Value;
@@ -121,7 +118,6 @@ const NavBar = ({
   );
 };
 
-// Local styles specifically for the badge (moved from Home.tsx)
 const styles = StyleSheet.create({
   notificationBadge: {
     position: 'absolute',

@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
-  Keyboard, // 1. Import Keyboard
+  Keyboard,
 } from "react-native";
 import { useContext, useEffect, useState, useRef } from "react";
 import AuthContext from "../../context/AuthContext";
@@ -53,7 +53,6 @@ export default function ChatScreen({
   const [newMessage, setNewMessage] = useState("");
   const flatListRef = useRef<FlatList>(null);
 
-  // 2. Add Listener to scroll to bottom when keyboard opens
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       'keyboardDidShow',

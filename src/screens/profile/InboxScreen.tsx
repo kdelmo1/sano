@@ -4,7 +4,7 @@ import {
   Text, 
   Pressable, 
   ScrollView, 
-  RefreshControl // 1. Import RefreshControl
+  RefreshControl,
 } from "react-native";
 import Post from "../home/post";
 import getFromDB from "../GetFromDB";
@@ -22,18 +22,14 @@ interface InboxScreenProps {
 export default function InboxScreen({ goBack }: InboxScreenProps) {
   const [posts, setPosts] = useState<PostProps[]>([]);
   const { emailHandle } = useContext(AuthContext);
-
-  // 2. Add refreshing state
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     getFromDB("inbox", emailHandle, setPosts);
   }, []);
 
-  // 3. Add refresh handler
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    // Re-fetch data
     await getFromDB("inbox", emailHandle, setPosts);
     setRefreshing(false);
   }, [emailHandle]);
@@ -52,12 +48,11 @@ export default function InboxScreen({ goBack }: InboxScreenProps) {
       <ScrollView
         style={SharedStyles.scroller}
         contentContainerStyle={SharedStyles.scrollContent}
-        // 4. Attach RefreshControl
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 
             onRefresh={onRefresh}
-            tintColor={Colors.primary} // Optional: Matches your app theme on iOS
+            tintColor={Colors.primary}
           />
         }
       >

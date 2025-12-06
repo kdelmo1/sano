@@ -78,8 +78,6 @@ export default async function getFromDB(
               photoUrls = [];
             }
           }
-
-          //const reservationArray: string[] = Array.isArray(val["reservation"]) ? val["reservation"] : [];
           return {
             id: val["postID"],
             location: val["location"],
@@ -92,7 +90,6 @@ export default async function getFromDB(
             isFoodGiveaway: val["is_food_giveaway"] || false,
             photoUrls: photoUrls,
             posterRating: posterRatingRecord?.[val["studentEmail"]],
-            //reservePostInit: reservationArray.includes(emailHandle),
             reservePostInit: val["reservation"].includes(emailHandle),
             refreshHome: () => {},
           };

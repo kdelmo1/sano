@@ -8,7 +8,6 @@ import {
   ResponsiveUtils,
 } from "../../styles/sharedStyles";
 
-// Import local assets
 const thumbsUpIcon = require("../../assets/images/icon-thumbs-up.png");
 const thumbsDownIcon = require("../../assets/images/icon-thumbs-down.png");
 
@@ -22,7 +21,6 @@ export default function RateUser({
   const { emailHandle } = useContext(AuthContext);
 
   const [isRated, setIsRated] = useState(false);
-  // rating: true = thumbs up (1), false = thumbs down (0)
   const [rating, setRating] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -68,7 +66,6 @@ export default function RateUser({
   };
 
   const cancelRating = async () => {
-    // Optimistic update
     setIsRated(false);
     setRating(null);
 
@@ -79,8 +76,6 @@ export default function RateUser({
       .eq("rater_email_handle", emailHandle)
       .eq("rated_email", `${ratedEmailHandle}@ucsc.edu`);
   };
-
-  // Helper to determine styles based on current state
   const getButtonStyle = (isThumbsUp: boolean) => {
     const isActive = isRated && rating === isThumbsUp;
 
@@ -135,16 +130,12 @@ export default function RateUser({
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    // Decreased gap to bring them closer (was 15)
     gap: ResponsiveUtils.moderateScale(8),
     alignItems: "center",
-    // Align content to the left
     justifyContent: "flex-start",
-    // Override any parent alignment (like center) to force this container to the left
     alignSelf: "flex-start",
   },
   iconButton: {
-    // Increased button size (was 44)
     width: ResponsiveUtils.moderateScale(52),
     height: ResponsiveUtils.moderateScale(52),
     borderRadius: BorderRadius.circle,
@@ -156,7 +147,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   icon: {
-    // Increased icon size (was 24)
     width: ResponsiveUtils.moderateScale(32),
     height: ResponsiveUtils.moderateScale(32),
     resizeMode: "contain",

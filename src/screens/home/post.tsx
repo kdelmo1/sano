@@ -56,8 +56,6 @@ export default function Post({
   isFoodGiveaway,
   photoUrls,
   posterRating,
-  reservePostInit,
-  refreshHome,
 }: PostProps) {
   const { emailHandle } = useContext(AuthContext);
 
@@ -69,11 +67,10 @@ export default function Post({
 
   useEffect(() => {
     const checkReservationStatus = async () => {
-      // Fetch the post data to check if current user has reserved
       const { data, error } = await supabase
-        .from("Posts") // Your table is named 'Posts'
+        .from("Posts") 
         .select("reservation, slots")
-        .eq("postID", id) // Using postID as the primary key
+        .eq("postID", id)
         .maybeSingle();
 
       if (!data) {
@@ -81,7 +78,6 @@ export default function Post({
       }
 
       if (data && !error) {
-        // Check if the reservation field contains the current user's email
         const reservationArray: string[] = data.reservation || [];
         const isReserved = reservationArray.includes(emailHandle);
         setCurrentApplicants(reservationArray);
@@ -140,7 +136,6 @@ export default function Post({
       const isReserved = reservationArray.includes(emailHandle);
 
       if (isReserved) {
-        // Try RPC unreserve first
         try {
           const { error: rpcErr } = await supabase.rpc("unreserve_spot", {
             post_id: id,
@@ -154,10 +149,8 @@ export default function Post({
             return;
           }
         } catch (rpcErr) {
-          // fallthrough to non-RPC fallback
         }
 
-        // Fallback: update array directly
         const newArray = reservationArray.filter((r) => r !== emailHandle);
         const { error: updateErr } = await supabase
           .from("Posts")
@@ -169,13 +162,10 @@ export default function Post({
           setMaxSlots(slotsFromDB);
         }
       } else {
-        // Reserve only if not full
         if (reservationArray.length >= slotsFromDB) {
           alert("This post is full.");
           return;
         }
-
-        // Try RPC reserve first for atomic operation
         try {
           const { data: rpcData, error: rpcErr } = await supabase.rpc(
             "reserve_spot",
@@ -185,7 +175,6 @@ export default function Post({
             }
           );
           if (!rpcErr) {
-            // If RPC returns updated reservation list, use it; otherwise append locally
             const newArray: string[] = rpcData?.reservation || [
               ...reservationArray,
               emailHandle,
@@ -196,10 +185,7 @@ export default function Post({
             return;
           }
         } catch (rpcErr) {
-          // fallthrough to non-RPC fallback
         }
-
-        // Fallback: update array directly
         const newArray = [...reservationArray, emailHandle];
         const { error: updateErr } = await supabase
           .from("Posts")
@@ -216,7 +202,6 @@ export default function Post({
   };
 
   const handleOpenChat = () => {
-    // Allow opening chat only if user is poster or has reserved
     if (isPoster || reservePost) {
       setOpenChat(true);
     } else {
@@ -412,9 +397,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   userBadgeContainer: {
-    // Changed to center to align larger thumbs icons with user badge
     alignItems: "center", 
-    // Removed negative margins to avoid clipping
     marginTop: 10,
   },
   reserveButton: {

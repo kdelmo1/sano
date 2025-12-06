@@ -9,7 +9,6 @@ import {
   Image,
   RefreshControl,
 } from "react-native";
-// 1. Import hook for precise safe area measurements
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ChatScreen from "./chatScreen";
 import AuthContext from "../../context/AuthContext";
@@ -35,7 +34,7 @@ export default function PosterView({
   goBack: () => void;
 }) {
   const { emailHandle } = useContext(AuthContext);
-  const insets = useSafeAreaInsets(); // Get precise safe area values
+  const insets = useSafeAreaInsets();
 
   const [applicants, setApplicants] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -75,14 +74,12 @@ export default function PosterView({
 
     useEffect(() => {
       const fetchRating = async () => {
-        // 2. FIXED: Changed 'stars' to 'rating' to match your schema
         const { data, error } = await supabase
           .from("ratings")
           .select("rating") 
           .eq("rated_email", applicant);
 
         if (!error && data && data.length > 0) {
-          // 3. FIXED: Summing 'curr.rating' instead of 'curr.stars'
           const total = data.reduce((acc, curr) => acc + (curr.rating || 0), 0);
           setApplicantRating(total / data.length);
         }

@@ -18,15 +18,13 @@ import {
   SharedStyles,
   Colors,
   Spacing,
-  Typography,
   ResponsiveUtils,
   FontSizes,
-  Shadows, // 1. Imported Shadows
+  Shadows,
 } from "../../styles/sharedStyles";
 
 const MAX_PHOTOS = 3;
 
-// Import local assets
 const locationIcon = require("../../assets/images/form-location.png");
 const profileIcon = require("../../assets/images/form-profile.png");
 const calendarIcon = require("../../assets/images/form-calendar.png");
@@ -182,8 +180,6 @@ export default function Form({
     }
 
     setIsPosting(true);
-
-    const postSlots = isFoodGiveaway ? 1 : slots;
 
     const startDateTime = new Date(selectedDate);
     startDateTime.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);

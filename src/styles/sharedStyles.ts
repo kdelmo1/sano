@@ -4,7 +4,7 @@ import { StyleSheet, Dimensions, Platform} from "react-native";
 // ==================== RESPONSIVE UTILITIES ====================
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-// Base dimensions (iPhone 13 Pro Max)
+// Base dimensions
 const BASE_WIDTH = 428;
 const BASE_HEIGHT = 926;
 
